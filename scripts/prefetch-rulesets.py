@@ -23,6 +23,13 @@ import os
 import sys
 import urllib.request
 
+# Windows 上 Python 的 stdout 默认用 ANSI 代码页（cp1252/cp936），
+# 输出中文会抛 UnicodeEncodeError 而中断整个构建。
+# GitHub Actions 的 windows-latest 正是这种情况，因此显式切到 UTF-8。
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
 REPO = "2dust/sing-box-rules"
 API = f"https://api.github.com/repos/{REPO}/contents"
 

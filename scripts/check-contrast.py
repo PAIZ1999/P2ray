@@ -1,3 +1,12 @@
+import sys
+
+# Windows 上 Python 的 stdout 默认是 ANSI 代码页（cp1252/cp936），
+# 输出中文会抛 UnicodeEncodeError。CI 与本地控制台都会遇到，统一转 UTF-8。
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
+
 def lum(hexcolor):
     h = hexcolor.lstrip('#')
     if len(h) == 8:
