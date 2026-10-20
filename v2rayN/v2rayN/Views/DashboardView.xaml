@@ -115,7 +115,7 @@
                     </Border>
 
                     <!-- TUN -->
-                    <Border Style="{StaticResource P2rayRowLast}">
+                    <Border Style="{StaticResource P2rayRow}">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" />
@@ -150,6 +150,74 @@
                                 VerticalAlignment="Center"
                                 Click="TogTun_Click"
                                 Style="{StaticResource P2rayToggle}" />
+                        </Grid>
+                    </Border>
+                    <!-- 路由模式：分段按钮，三种内置模式各一个 -->
+                    <Border Style="{StaticResource P2rayRowLast}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <Border
+                                Grid.Column="0"
+                                Background="{StaticResource P2rayIconOrange}"
+                                Style="{StaticResource P2rayRowIcon}">
+                                <materialDesign:PackIcon
+                                    Width="13"
+                                    Height="13"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Foreground="White"
+                                    Kind="ArrowSplitVertical" />
+                            </Border>
+
+                            <StackPanel Grid.Column="1">
+                                <TextBlock Style="{StaticResource P2rayBody}" Text="代理模式" />
+
+                                <!-- 一条轨道里均分三段：宽度固定，选中段才不会被文字长度带偏 -->
+                                <Border
+                                    Width="300"
+                                    Margin="0,9,0,0"
+                                    HorizontalAlignment="Left"
+                                    Style="{StaticResource P2raySegmentTrack}">
+                                    <ItemsControl x:Name="lstRoutingModes">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <UniformGrid Columns="3" Rows="1" />
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <RadioButton
+                                                    Checked="RoutingMode_Checked"
+                                                    GroupName="P2rayRoutingMode"
+                                                    Style="{StaticResource P2raySegment}"
+                                                    Tag="{Binding}">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <materialDesign:PackIcon
+                                                            Width="13"
+                                                            Height="13"
+                                                            Margin="0,0,6,0"
+                                                            VerticalAlignment="Center"
+                                                            Kind="{Binding Remarks, Converter={x:Static conv:RoutingKindConverter.Instance}}" />
+                                                        <TextBlock
+                                                            VerticalAlignment="Center"
+                                                            Text="{Binding Remarks, Converter={x:Static conv:RoutingNameConverter.Instance}}" />
+                                                    </StackPanel>
+                                                </RadioButton>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </Border>
+
+                                <TextBlock
+                                    x:Name="txtRoutingHint"
+                                    Margin="1,8,0,0"
+                                    Style="{StaticResource P2rayCaption}"
+                                    TextWrapping="Wrap" />
+                            </StackPanel>
                         </Grid>
                     </Border>
                 </StackPanel>

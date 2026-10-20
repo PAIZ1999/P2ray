@@ -82,11 +82,11 @@ public partial class ProfilesView
             this.BindCommand(ViewModel, vm => vm.Export2ShareUrlBase64Cmd, v => v.menuExport2ShareUrlBase64).DisposeWith(disposables);
             this.BindCommand(ViewModel, vm => vm.Export2InnerUriCmd, v => v.menuExport2InnerUri).DisposeWith(disposables);
 
-            ViewModel.ShowYesNoInteraction.RegisterHandler(interaction =>
+            ViewModel.ShowYesNoInteraction.RegisterHandler(async interaction =>
             {
                 var message = interaction.Input;
-                var result = UI.ShowYesNo(message) != MessageBoxResult.No;
-                interaction.SetOutput(result);
+                // 用主题内的确认面板替换系统 MessageBox：后者恒为浅色，与深色界面割裂。
+                interaction.SetOutput(await ConfirmDialog.ShowAsync(message));
             }).DisposeWith(disposables);
 
             ViewModel.SaveFileDialogInteraction.RegisterHandler(async interaction =>

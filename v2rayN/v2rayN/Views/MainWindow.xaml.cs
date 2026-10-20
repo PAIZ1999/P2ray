@@ -286,17 +286,26 @@ public partial class MainWindow
         AppManager.Instance.ShowInTaskbar = bl;
     }
 
+    /// <summary>
+    /// 在窗口句柄创建后、窗口显示前立刻设置深色标题栏。
+    ///
+    /// 不能放在 OnLoaded：那时窗口已经以浅色边框绘制过至少一帧，
+    /// 用户会看到白色标题栏"闪一下再变黑"。
+    /// 也不能放到构造函数：DwmSetWindowAttribute 需要有效 HWND。
+    /// OnSourceInitialized 是唯一可靠的时机。
+    /// </summary>
+    protected override void OnSourceInitialized(EventArgs e)
+    {
+        base.OnSourceInitialized(e);
+
+        // 不能传 CurrentTheme：P2ray 界面配色是硬编码深色，而 CurrentTheme 默认
+        // FollowSystem，在浅色系统上会算出 isDark=false，白标题栏配深色界面必然割裂。
+        WindowsUtils.SetDarkBorder(this, nameof(ETheme.Dark));
+    }
+
     protected override void OnLoaded(object? sender, RoutedEventArgs e)
     {
         base.OnLoaded(sender, e);
-
-        // 主窗口从未调用过 SetDarkBorder，因此标题栏一直是系统白。
-        // 其余对话框都在各自构造函数里调了，只漏了主窗口。
-        //
-        // 注意不能直接传 CurrentTheme：P2ray 的界面配色是硬编码深色，
-        // 而 CurrentTheme 默认是 FollowSystem，在浅色系统上会算出 isDark=false，
-        // 白色标题栏配深色界面必然割裂。这里直接钉死深色。
-        WindowsUtils.SetDarkBorder(this, nameof(ETheme.Dark));
 
         if (_config.UiItem.AutoHideStartup)
         {

@@ -1,7 +1,10 @@
 <Project>
 
+    <!-- P2ray 独立版本线。与上游 v2rayN 的版本号解耦：
+         自更新用 SemanticVersion 比对 Utils.GetVersionInfo()，沿用 7.25.6 会导致
+         Release tag 必须永远大于 7.25.6，语义上也不像独立产品。 -->
     <PropertyGroup>
-        <Version>7.25.6</Version>
+        <Version>1.0.0</Version>
     </PropertyGroup>
 
     <PropertyGroup>

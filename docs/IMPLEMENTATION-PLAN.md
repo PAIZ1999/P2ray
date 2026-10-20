@@ -1,6 +1,6 @@
 # P2ray 实施状态
 
-基于 [v2rayN](https://github.com/2dust/v2rayN) 7.25.6（GPL-3.0）二创的 Windows 桌面代理客户端。
+基于 [v2rayN](https://github.com/2dust/v2rayN) 7.25.6（GPL-3.0）二创的 Windows 桌面代理客户端。P2ray 自身版本从 1.0.0 起算，与上游版本号解耦。
 
 > 本文档记录**实际完成状态与验证证据**，不是计划稿。规划期的跨平台（Avalonia/macOS）方案已作废。
 

@@ -111,7 +111,11 @@ public partial class DashboardViewModel : MyReactiveObject
         #region 节点与订阅镜像
 
         this.WhenAnyValue(x => x._profiles.ProfileItems)
-            .Subscribe(_ => Nodes = _profiles.ProfileItems);
+            .Subscribe(items =>
+            {
+                BindNodes(items);
+                Nodes = items;
+            });
         this.WhenAnyValue(x => x._profiles.SelectedProfile)
             .Subscribe(v => SelectedNode = v);
 
@@ -130,7 +134,47 @@ public partial class DashboardViewModel : MyReactiveObject
         // 真实订阅列表由 LoadSubscriptionsAsync 从数据库读取。
 
         Nodes = _profiles.ProfileItems;
+        BindNodes(Nodes);
         SelectedNode = _profiles.SelectedProfile;
+
+        #endregion
+
+        #region 路由模式
+
+        // 上游把路由列表存在 StatusBarViewModel.RoutingItems，切换动作是
+        // SelectedRouting 变更 → RoutingSelectedChangedAsync → ReloadRequested。
+        // 首页直接复用这条链路，不自己写 SetDefaultRouting，避免绕开重载逻辑。
+        this.WhenAnyValue(x => x._statusBar.RoutingItems)
+            .Subscribe(items => RoutingModes = items);
+
+        this.WhenAnyValue(x => x._statusBar.SelectedRouting)
+            .Subscribe(v =>
+            {
+                // 用 _suppressRoutingSync 打断回环：首页赋值 → 上游赋值 → 首页再赋值…
+                _suppressRoutingSync = true;
+                try
+                {
+                    SelectedRoutingMode = v;
+                }
+                finally
+                {
+                    _suppressRoutingSync = false;
+                }
+            });
+
+        RoutingModes = _statusBar.RoutingItems;
+        SelectedRoutingMode = _statusBar.SelectedRouting;
+
+        // 反向同步：首页下拉选新模式后写回上游，由它触发重载。
+        this.WhenAnyValue(x => x.SelectedRoutingMode)
+            .Where(v => v is not null && !_suppressRoutingSync)
+            .Where(v => !ReferenceEquals(_statusBar.SelectedRouting, v))
+            .Subscribe(v =>
+            {
+                // SelectedRouting 的 setter 会触发 RoutingSelectedChangedAsync，
+                // 内部完成 SetDefaultRouting + ReloadRequested.Publish()。
+                _statusBar.SelectedRouting = v;
+            });
 
         #endregion
 
@@ -228,12 +272,68 @@ public partial class DashboardViewModel : MyReactiveObject
     [Reactive]
     public partial BulkObservableCollection<ProfileItemModel> Nodes { get; set; }
 
+    /// <summary>
+    /// 节点数量。不能直接用 Nodes.Count 做绑定：
+    /// Nodes 和 ProfilesViewModel.ProfileItems 是同一个实例，刷新时内容被原地
+    /// ReplaceRange，属性本身从未换过引用，WhenAnyValue(x => x.Nodes) 不会再触发，
+    /// 界面会一直停在首次的 0 条。这里改为监听集合自身的变更来更新计数。
+    /// </summary>
+    [Reactive]
+    public partial int NodeCount { get; set; }
+
+    private void BindNodes(BulkObservableCollection<ProfileItemModel>? items)
+    {
+        if (_boundNodes == items)
+        {
+            return;
+        }
+
+        _nodesChanged?.Dispose();
+        _nodesChanged = null;
+        _boundNodes = items;
+
+        if (items is null)
+        {
+            NodeCount = 0;
+            return;
+        }
+
+        _nodesChanged = items
+            .ObserveCollectionChanges()
+            .ObserveOn(RxSchedulers.MainThreadScheduler)
+            .Subscribe(_ => NodeCount = items.Count);
+
+        NodeCount = items.Count;
+    }
+
+    private BulkObservableCollection<ProfileItemModel>? _boundNodes;
+    private IDisposable? _nodesChanged;
+
     [Reactive]
     public partial ProfileItemModel SelectedNode { get; set; }
 
     /// <summary>真实订阅列表（不含虚拟分组）。</summary>
     [Reactive]
     public partial BulkObservableCollection<SubItem> Subscriptions { get; set; }
+
+    #endregion
+
+    #region 路由模式
+
+    /// <summary>可选的路由模式（绕过大陆 / 黑名单 / 全局 等）。</summary>
+    [Reactive]
+    public partial BulkObservableCollection<RoutingItem> RoutingModes { get; set; }
+
+    /// <summary>
+    /// 当前生效的路由模式。
+    /// 写入即切模式：委托给 StatusBarViewModel.SelectedRouting，
+    /// 由它负责 SetDefaultRouting + 重载内核。
+    /// </summary>
+    [Reactive]
+    public partial RoutingItem SelectedRoutingMode { get; set; }
+
+    /// <summary>防止 SelectedRoutingMode 与上游 SelectedRouting 互相赋值形成回环。</summary>
+    private bool _suppressRoutingSync;
 
     #endregion
 

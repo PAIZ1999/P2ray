@@ -20,12 +20,14 @@ public partial class NodesView : ReactiveUserControl<DashboardViewModel>
             this.OneWayBind(ViewModel, vm => vm.Nodes, v => v.lstNodes.ItemsSource).DisposeWith(disposables);
             this.Bind(ViewModel, vm => vm.SelectedNode, v => v.lstNodes.SelectedItem).DisposeWith(disposables);
 
-            this.OneWayBind(ViewModel, vm => vm.Nodes, v => v.txtCount.Text,
-                    nodes => nodes is { Count: > 0 } ? $"共 {nodes.Count} 个节点" : string.Empty)
+            // 数量与空状态必须跟 NodeCount 走，不能用 Nodes：
+            // Nodes 是上游集合的同一个实例，原地 ReplaceRange 不会改变属性值。
+            this.OneWayBind(ViewModel, vm => vm.NodeCount, v => v.txtCount.Text,
+                    count => count > 0 ? $"共 {count} 个节点" : string.Empty)
                 .DisposeWith(disposables);
 
-            this.OneWayBind(ViewModel, vm => vm.Nodes, v => v.txtEmpty.Visibility,
-                    nodes => nodes is { Count: > 0 } ? Visibility.Collapsed : Visibility.Visible)
+            this.OneWayBind(ViewModel, vm => vm.NodeCount, v => v.txtEmpty.Visibility,
+                    count => count > 0 ? Visibility.Collapsed : Visibility.Visible)
                 .DisposeWith(disposables);
         });
 

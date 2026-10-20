@@ -107,7 +107,7 @@
             x:Name="tbNotify"
             IconSource="/Resources/P2ray.ico"
             NoLeftClickDelay="True"
-            ToolTipText="v2rayN">
+            ToolTipText="P2ray">
             <tb:TaskbarIcon.ContextMenu>
                 <ContextMenu Style="{StaticResource DefContextMenu}">
                     <MenuItem

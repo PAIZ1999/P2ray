@@ -99,7 +99,12 @@ public class CoreManager
 
         if (_processService != null)
         {
-            await UpdateFunc(true, $"{node.GetSummary()}");
+            // 这里原本是 UpdateFunc(true, ...)：notify=true 会额外弹一个 Snackbar，
+            // 内容是 "[VMess] 名称(192***11:443)" 这种技术摘要。
+            // 切代理模式 / 改系统代理都会走 LoadCore，于是每切一次就弹一次，
+            // 表现为界面右下角有个灰白小框不停闪烁。
+            // 节点摘要上面已经用 notify=false 写进日志面板，这里不必再重复，也不必弹给用户看。
+            await UpdateFunc(false, $"{node.GetSummary()}");
         }
     }
 

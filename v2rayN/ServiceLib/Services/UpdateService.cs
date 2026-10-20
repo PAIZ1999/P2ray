@@ -125,7 +125,9 @@ public partial class UpdateService(Config config, Func<bool, string, Task> updat
             var result = await CheckHasUpdateOnly(type, preRelease, blProxy, cancellationToken);
             if (result.Success && result.Version != null)
             {
-                var msg = string.Format(ResUI.MsgCheckUpdateHasNewVersion, type, result.Version);
+                // 应用自身的更新不应显示成内核名 "v2rayN"，那是上游的枚举值。
+                var displayName = type == ECoreType.v2rayN ? ProductInfo.AppName : type.ToString();
+                var msg = string.Format(ResUI.MsgCheckUpdateHasNewVersion, displayName, result.Version);
                 msgs.Add(msg);
                 AppManager.Instance.SetLastCheckUpdateResult(type, msg);
             }

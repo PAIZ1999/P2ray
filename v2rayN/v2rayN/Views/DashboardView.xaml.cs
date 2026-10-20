@@ -1,4 +1,5 @@
 using System.Windows;
+using System.Windows.Controls;
 using ReactiveUI;
 using ServiceLib.Manager;
 using ServiceLib.ViewModels;
@@ -31,9 +32,19 @@ public partial class DashboardView : ReactiveUserControl<DashboardViewModel>
             this.OneWayBind(ViewModel, vm => vm.RunTimeDisplay, v => v.txtRunTime.Text).DisposeWith(disposables);
             this.OneWayBind(ViewModel, vm => vm.CoreTypeDisplay, v => v.txtCoreType.Text).DisposeWith(disposables);
             this.OneWayBind(ViewModel, vm => vm.Subscriptions, v => v.lstSubscriptions.ItemsSource).DisposeWith(disposables);
-            this.OneWayBind(ViewModel, vm => vm.Nodes, v => v.txtNodeCount.Text,
-                    nodes => $"{nodes?.Count ?? 0} 条").DisposeWith(disposables);
+            this.OneWayBind(ViewModel, vm => vm.NodeCount, v => v.txtNodeCount.Text,
+                    count => $"{count} 条").DisposeWith(disposables);
             this.OneWayBind(ViewModel, vm => vm.InboundPortDisplay, v => v.txtLocalPort.Text).DisposeWith(disposables);
+
+            // 路由模式：分段按钮，数量与名称都来自上游 RoutingItems。
+            this.OneWayBind(ViewModel, vm => vm.RoutingModes, v => v.lstRoutingModes.ItemsSource).DisposeWith(disposables);
+
+            // 上游选中项变化时高亮对应按钮（含启动时的初始态）。
+            this.WhenAnyValue(x => x.ViewModel!.SelectedRoutingMode)
+                .Where(v => v is not null)
+                .ObserveOn(RxSchedulers.MainThreadScheduler)
+                .Subscribe(v => SyncRoutingSelection(v))
+                .DisposeWith(disposables);
 
             // 连接方式开关：状态源是 StatusBarViewModel，单向镜像到开关，点击时反向写回。
             var statusBar = StatusBarViewModel.Instance;
@@ -91,6 +102,98 @@ public partial class DashboardView : ReactiveUserControl<DashboardViewModel>
     private void TogTun_Click(object sender, RoutedEventArgs e)
     {
         StatusBarViewModel.Instance.EnableTun = togTun.IsChecked == true;
+    }
+
+    private void CmbRouting_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        // 提示文案随模式变化：从"规则"切到"全局"意味着流量走向完全变了，
+        // 用户需要知道当前处于哪种模式，而不是只看到一段按钮里高亮了哪一个。
+        if (ViewModel?.SelectedRoutingMode is not { } item)
+        {
+            return;
+        }
+
+        UpdateRoutingHint(item.Remarks);
+    }
+
+    /// <summary>
+    /// 把 ViewModel 的当前路由模式同步到分段按钮的选中态。
+    /// ItemsControl 生成的容器与数据项顺序一致，但容器可能是延迟生成的，
+    /// 因此用 Tag 反查而不依赖索引位置。
+    /// </summary>
+    private void SyncRoutingSelection(ServiceLib.Models.Entities.RoutingItem? selected)
+    {
+        if (selected is null)
+        {
+            return;
+        }
+
+        foreach (var btn in EnumerateRouteButtons())
+        {
+            btn.IsChecked = ReferenceEquals(btn.Tag, selected)
+                            || (btn.Tag is ServiceLib.Models.Entities.RoutingItem it && it.Id == selected.Id);
+        }
+
+        UpdateRoutingHint(selected.Remarks);
+    }
+
+    /// <summary>分段按钮都在 lstRoutingModes 里，逐项取容器再取内容。</summary>
+    private IEnumerable<RadioButton> EnumerateRouteButtons()
+    {
+        if (lstRoutingModes.ItemsSource is null)
+        {
+            yield break;
+        }
+
+        // 模板已实例化，直接遍历可视树即可
+        foreach (var btn in FindVisualChildren<RadioButton>(lstRoutingModes))
+        {
+            yield return btn;
+        }
+    }
+
+    private static IEnumerable<T> FindVisualChildren<T>(DependencyObject root) where T : DependencyObject
+    {
+        var count = System.Windows.Media.VisualTreeHelper.GetChildrenCount(root);
+        for (var i = 0; i < count; i++)
+        {
+            var child = System.Windows.Media.VisualTreeHelper.GetChild(root, i);
+            if (child is T typed)
+            {
+                yield return typed;
+            }
+
+            foreach (var nested in FindVisualChildren<T>(child))
+            {
+                yield return nested;
+            }
+        }
+    }
+
+    private void RoutingMode_Checked(object sender, RoutedEventArgs e)
+    {
+        if (sender is not RadioButton { Tag: ServiceLib.Models.Entities.RoutingItem item })
+        {
+            return;
+        }
+
+        ViewModel!.SelectedRoutingMode = item;
+        UpdateRoutingHint(item.Remarks);
+    }
+
+    /// <summary>把上游的 "V4-绕过大陆(Whitelist)" 翻译成一句人话。</summary>
+    private void UpdateRoutingHint(string? remarks)
+    {
+        // 用和按钮标签同一套映射（规则 / 黑名单 / 全局），避免按钮写着"规则"、
+        // 下面的说明却按"绕过大陆"分支去匹配，两边判断标准不一致。
+        var name = Converters.RoutingNameConverter.ToShortName(remarks);
+        txtRoutingHint.Text = name switch
+        {
+            "全局" => "全部网站都走代理。速度取决于线路，流量消耗也最大。",
+            "黑名单" => "只有列表内的网站走代理，其余直连。适合明确知道要访问哪些站点的场景。",
+            "规则" => "国内网站直连，境外网站走代理。日常使用推荐这一项。",
+            _ => "决定哪些网站的流量经过代理。"
+        };
     }
 
     private void BtnCopyPort_Click(object sender, RoutedEventArgs e)

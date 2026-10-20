@@ -87,16 +87,63 @@ public class SemanticVersion : IEquatable<SemanticVersion>, IComparable
 
     public static bool TryParse(string? version, out SemanticVersion? result)
     {
-        try
-        {
-            result = new SemanticVersion(version);
-            return true;
-        }
-        catch
+        // 不能靠 catch 判断失败：构造函数内部已经 catch 并回退成 0.0.0，
+        // 因此 "releases" 这种非版本串会"成功"解析为 0.0.0。
+        // 更新检查据此判定"有新版本"，会误报 v0.0.0。
+        if (!LooksLikeVersion(version))
         {
             result = null;
             return false;
         }
+
+        result = new SemanticVersion(version);
+        return true;
+    }
+
+    /// <summary>
+    /// 形如 "1.2" / "1.2.3" / "v1.2.3" / "v1.2.3-beta.1" / "1.2.3+build" 才算版本号。
+    /// 只校验到"能否被构造函数正确解析"的程度，不追求完整 SemVer 校验。
+    /// </summary>
+    private static bool LooksLikeVersion(string? version)
+    {
+        if (string.IsNullOrWhiteSpace(version))
+        {
+            return false;
+        }
+
+        var s = version.Trim();
+        if (s.StartsWith('v') || s.StartsWith('V'))
+        {
+            s = s[1..];
+        }
+
+        // 截掉 +build 与 -prerelease
+        var plus = s.IndexOf('+');
+        if (plus >= 0)
+        {
+            s = s[..plus];
+        }
+        var dash = s.IndexOf('-');
+        if (dash >= 0)
+        {
+            s = s[..dash];
+        }
+
+        var parts = s.Split('.');
+        if (parts.Length is not (2 or 3 or 4))
+        {
+            return false;
+        }
+
+        foreach (var part in parts)
+        {
+            if (part.Length == 0 || !part.All(char.IsAsciiDigit))
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     public override bool Equals(object? obj)
