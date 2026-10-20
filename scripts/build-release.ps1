@@ -51,12 +51,37 @@ Write-Host ""
 # ---------------------------------------------------------------------------
 # 0. 前置检查
 # ---------------------------------------------------------------------------
-$dotnet = (Get-Command dotnet -ErrorAction SilentlyContinue)?.Source
-if (-not $dotnet) {
-    throw "未找到 dotnet。请先安装 .NET 10 SDK，或把 SDK 目录加入 PATH。"
+# 候选顺序：DOTNET_ROOT（便携式 SDK）→ PATH 里的 dotnet。
+# 逐个用 --version 验证，只有真的能报出版本号的才算可用 ——
+# 本机可能装着仅运行时、没有 SDK 的 dotnet.exe，那种会直接失败。
+$candidates = @()
+if ($env:DOTNET_ROOT) {
+    $candidates += (Join-Path $env:DOTNET_ROOT 'dotnet.exe')
 }
-$sdkVersion = & dotnet --version
-Write-Host "dotnet SDK : $sdkVersion" -ForegroundColor Cyan
+$onPath = (Get-Command dotnet -ErrorAction SilentlyContinue)?.Source
+if ($onPath) {
+    $candidates += $onPath
+}
+
+$dotnet = $null
+$sdkVersion = $null
+foreach ($candidate in $candidates) {
+    if (-not (Test-Path $candidate)) { continue }
+    $ver = & $candidate --version 2>$null
+    if ($LASTEXITCODE -eq 0 -and $ver) {
+        $dotnet = $candidate
+        $sdkVersion = $ver
+        break
+    }
+}
+
+if (-not $dotnet) {
+    throw "未找到可用的 .NET 10 SDK。请安装 SDK，或设置 DOTNET_ROOT 指向 SDK 根目录。已尝试：$($candidates -join ', ')"
+}
+
+# 后续调用统一走 $dotnet，避免 PATH 与 DOTNET_ROOT 不一致时找不到
+$env:DOTNET_ROOT = Split-Path $dotnet -Parent
+Write-Host "dotnet SDK : $sdkVersion ($dotnet)" -ForegroundColor Cyan
 Write-Host ""
 
 if (Test-Path $OutDir) {
@@ -79,7 +104,7 @@ $mainArgs = @(
     '-p:PublishSingleFile=false',
     '-o', $OutDir
 )
-& dotnet @mainArgs
+& $dotnet @mainArgs
 if ($LASTEXITCODE -ne 0) { throw "主程序发布失败 ($LASTEXITCODE)" }
 
 # ---------------------------------------------------------------------------
@@ -95,7 +120,7 @@ $toolArgs = @(
     '-p:PublishSingleFile=true',
     '-o', $OutDir
 )
-& dotnet @toolArgs
+& $dotnet @toolArgs
 if ($LASTEXITCODE -ne 0) { throw "辅助工具发布失败 ($LASTEXITCODE)" }
 
 # ---------------------------------------------------------------------------
