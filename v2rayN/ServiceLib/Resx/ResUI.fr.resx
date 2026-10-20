@@ -1750,7 +1750,7 @@ The "Get Certificate" action may fail if a self-signed certificate is used or if
     <value>PreSharedKey</value>
   </data>
   <data name="menuExport2InnerUri" xml:space="preserve">
-    <value>Exporter le lien interne v2rayN vers le presse-papiers</value>
+    <value>Exporter le lien interne P2ray vers le presse-papiers</value>
   </data>
   <data name="MsgCheckUpdateHasNewVersion" xml:space="preserve">
     <value>{0} a une nouvelle version disponible: {1}</value>

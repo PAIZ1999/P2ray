@@ -72,7 +72,7 @@ internal static class Program
     {
         Console.WriteLine("Restarting application...");
         Thread.Sleep(1000);
-        Utils.StartV2RayN();
+        Utils.StartP2ray();
     }
 
     /// <summary>

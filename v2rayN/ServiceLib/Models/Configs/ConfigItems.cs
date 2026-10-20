@@ -113,6 +113,13 @@ public class ConstItem
     public string? GeoSourceUrl { get; set; }
     public string? SrsSourceUrl { get; set; }
     public string? RouteRulesTemplateSourceUrl { get; set; }
+
+    /// <summary>
+    /// 自更新使用的 GitHub 仓库（owner/repo）。
+    /// 留空时回退到 ProductInfo.GithubRepo。
+    /// 可覆盖，使得更换更新源无需重新编译。
+    /// </summary>
+    public string? SelfUpdateRepo { get; set; }
 }
 
 [Serializable]

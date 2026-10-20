@@ -9,10 +9,11 @@
         <ResourceDictionary xmlns:system="clr-namespace:System;assembly=mscorlib">
             <ResourceDictionary.MergedDictionaries>
                 <materialDesign:BundledTheme
-                    BaseTheme="Light"
-                    PrimaryColor="Blue"
-                    SecondaryColor="Lime" />
+                    BaseTheme="Dark"
+                    PrimaryColor="Indigo"
+                    SecondaryColor="DeepPurple" />
                 <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesign2.Defaults.xaml" />
+                <ResourceDictionary Source="Themes/P2rayTokens.xaml" />
             </ResourceDictionary.MergedDictionaries>
             <system:Double x:Key="MenuItemHeight">32</system:Double>
             <system:Double x:Key="StdFontSize">12</system:Double>
@@ -133,6 +134,8 @@
                 BasedOn="{StaticResource MaterialDesignMenu}"
                 TargetType="{x:Type Menu}">
                 <Setter Property="FontSize" Value="{DynamicResource StdFontSize}" />
+                <!-- 深色主题下显式指定前景，避免 MaterialDesign 残留导致文字过暗 -->
+                <Setter Property="Foreground" Value="{StaticResource P2rayTextSecondaryBrush}" />
                 <Setter Property="FontFamily" Value="{x:Static conv:MaterialDesignFonts.MyFont}" />
             </Style>
 
@@ -207,11 +210,12 @@
                 x:Key="WindowGlobal"
                 BasedOn="{StaticResource {x:Type Window}}"
                 TargetType="{x:Type Window}">
-                <Setter Property="TextOptions.TextFormattingMode" Value="Display" />
-                <Setter Property="TextOptions.TextRenderingMode" Value="ClearType" />
-                <Setter Property="TextOptions.TextHintingMode" Value="Fixed" />
-                <Setter Property="TextElement.Foreground" Value="{DynamicResource MaterialDesignBody}" />
-                <Setter Property="Background" Value="{DynamicResource MaterialDesignPaper}" />
+                <!-- 深色背景下 ClearType 会在字形边缘产生彩色描边，改用灰度抗锯齿更干净 -->
+                <Setter Property="TextOptions.TextFormattingMode" Value="Ideal" />
+                <Setter Property="TextOptions.TextRenderingMode" Value="Grayscale" />
+                <Setter Property="TextOptions.TextHintingMode" Value="Animated" />
+                <Setter Property="TextElement.Foreground" Value="{StaticResource P2rayTextPrimaryBrush}" />
+                <Setter Property="Background" Value="{StaticResource P2rayBgBrush}" />
                 <Setter Property="TextElement.FontFamily" Value="{x:Static conv:MaterialDesignFonts.MyFont}" />
                 <Setter Property="FontFamily" Value="{x:Static conv:MaterialDesignFonts.MyFont}" />
                 <Setter Property="ResizeMode" Value="CanResize" />
@@ -220,11 +224,12 @@
                 x:Key="ViewGlobal"
                 BasedOn="{StaticResource {x:Type UserControl}}"
                 TargetType="{x:Type UserControl}">
-                <Setter Property="TextOptions.TextFormattingMode" Value="Display" />
-                <Setter Property="TextOptions.TextRenderingMode" Value="ClearType" />
-                <Setter Property="TextOptions.TextHintingMode" Value="Fixed" />
-                <Setter Property="TextElement.Foreground" Value="{DynamicResource MaterialDesignBody}" />
-                <Setter Property="Background" Value="{DynamicResource MaterialDesignPaper}" />
+                <!-- 深色背景下 ClearType 会在字形边缘产生彩色描边，改用灰度抗锯齿更干净 -->
+                <Setter Property="TextOptions.TextFormattingMode" Value="Ideal" />
+                <Setter Property="TextOptions.TextRenderingMode" Value="Grayscale" />
+                <Setter Property="TextOptions.TextHintingMode" Value="Animated" />
+                <Setter Property="TextElement.Foreground" Value="{StaticResource P2rayTextPrimaryBrush}" />
+                <Setter Property="Background" Value="{StaticResource P2rayBgBrush}" />
                 <Setter Property="TextElement.FontFamily" Value="{x:Static conv:MaterialDesignFonts.MyFont}" />
                 <Setter Property="FontFamily" Value="{x:Static conv:MaterialDesignFonts.MyFont}" />
             </Style>

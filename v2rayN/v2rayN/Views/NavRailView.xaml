@@ -1,0 +1,196 @@
+<reactiveui:ReactiveUserControl
+    x:Class="v2rayN.Views.NavRailView"
+    x:TypeArguments="vms:DashboardViewModel"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:reactiveui="http://reactiveui.net"
+    xmlns:vms="clr-namespace:ServiceLib.ViewModels;assembly=ServiceLib"
+    d:DesignHeight="760"
+    d:DesignWidth="208"
+    mc:Ignorable="d">
+
+    <UserControl.Resources>
+        <Style x:Key="NavText" TargetType="{x:Type TextBlock}">
+            <Setter Property="Margin" Value="10,0,0,0" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="FontSize" Value="{StaticResource P2rayFontH2}" />
+        </Style>
+    </UserControl.Resources>
+
+    <Border Background="{StaticResource P2raySidebarBrush}">
+        <DockPanel>
+
+            <!-- ═══ 品牌区 ═══ -->
+            <StackPanel
+                Margin="16,18,16,22"
+                DockPanel.Dock="Top"
+                Orientation="Horizontal">
+                <!-- 品牌图标：piflow logo（黑底 + 白色字形），与 exe/托盘图标同一套几何。
+                     Data 开头的 F0 是路径迷你语法里的 EvenOdd 填充规则，
+                     中间的小方块要靠它才会镂空。 -->
+                <Border
+                    Width="30"
+                    Height="30"
+                    Background="#111111"
+                    CornerRadius="7">
+                    <Path
+                        Width="18"
+                        Height="18"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Data="F0 M 25.33,12.20 L 70.69,12.20 L 58.53,57.56 L 28.29,57.56 L 20.19,87.80 L 5.07,87.80 Z M 36.40,27.32 L 51.52,27.32 L 47.47,42.44 L 32.35,42.44 Z M 51.52,27.32 L 96.88,27.32 L 92.83,42.44 L 62.59,42.44 L 58.53,57.56 L 73.65,57.56 L 69.60,72.68 L 54.48,72.68 L 50.43,87.80 L 35.31,87.80 Z"
+                        Fill="White"
+                        Stretch="Uniform" />
+                </Border>
+                <StackPanel Margin="9,0,0,0" VerticalAlignment="Center">
+                    <TextBlock
+                        FontSize="14"
+                        FontWeight="SemiBold"
+                        Foreground="{StaticResource P2rayTextPrimaryBrush}"
+                        Text="P2ray" />
+                    <TextBlock x:Name="txtVersion" Style="{StaticResource P2rayMicro}" />
+                </StackPanel>
+            </StackPanel>
+
+            <!-- ═══ 底部：状态 + 更多菜单 ═══ -->
+            <StackPanel DockPanel.Dock="Bottom">
+                <!-- 连接状态（可点击回首页） -->
+                <Button
+                    x:Name="btnStatusCard"
+                    Margin="10,0,10,8"
+                    Padding="10,8"
+                    HorizontalContentAlignment="Left"
+                    Background="Transparent"
+                    Click="BtnStatusCard_Click"
+                    Cursor="Hand"
+                    ToolTip="返回首页">
+                    <Button.Template>
+                        <ControlTemplate TargetType="{x:Type Button}">
+                            <Border
+                                x:Name="Bg"
+                                Padding="{TemplateBinding Padding}"
+                                Background="Transparent"
+                                CornerRadius="{StaticResource P2rayRadiusS}">
+                                <ContentPresenter />
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Bg" Property="Background" Value="{StaticResource P2raySurfaceBrush}" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Button.Template>
+                    <StackPanel Orientation="Horizontal">
+                        <Ellipse
+                            x:Name="ellStatus"
+                            Width="7"
+                            Height="7"
+                            Margin="0,0,7,0"
+                            VerticalAlignment="Center"
+                            Fill="{StaticResource P2rayIdleBrush}" />
+                        <TextBlock
+                            x:Name="txtStatus"
+                            VerticalAlignment="Center"
+                            Style="{StaticResource P2rayMicro}" />
+                    </StackPanel>
+                </Button>
+
+                <!-- 常用操作直接暴露，不进菜单 -->
+                <Button
+                    x:Name="btnImport"
+                    Margin="10,0,10,4"
+                    Padding="10,8"
+                    HorizontalContentAlignment="Left"
+                    Background="Transparent"
+                    Cursor="Hand"
+                    Style="{StaticResource NavGhostButton}">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon
+                            Width="16"
+                            Height="16"
+                            VerticalAlignment="Center"
+                            Foreground="{StaticResource P2rayTextSecondaryBrush}"
+                            Kind="ContentPaste" />
+                        <TextBlock
+                            Style="{StaticResource NavText}"
+                            Foreground="{StaticResource P2rayTextSecondaryBrush}"
+                            Text="导入" />
+                    </StackPanel>
+                </Button>
+
+                <Button
+                    x:Name="btnCheckUpdateRail"
+                    Margin="10,0,10,10"
+                    Padding="10,8"
+                    HorizontalContentAlignment="Left"
+                    Background="Transparent"
+                    Cursor="Hand"
+                    Style="{StaticResource NavGhostButton}">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon
+                            Width="16"
+                            Height="16"
+                            VerticalAlignment="Center"
+                            Foreground="{StaticResource P2rayTextSecondaryBrush}"
+                            Kind="Update" />
+                        <TextBlock
+                            Style="{StaticResource NavText}"
+                            Foreground="{StaticResource P2rayTextSecondaryBrush}"
+                            Text="检查更新" />
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+
+            <!-- ═══ 导航项 ═══ -->
+            <StackPanel DockPanel.Dock="Top">
+                <RadioButton
+                    x:Name="navHome"
+                    GroupName="P2rayNav"
+                    IsChecked="True"
+                    Style="{StaticResource P2rayNavItem}">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon
+                            Width="16"
+                            Height="16"
+                            VerticalAlignment="Center"
+                            Kind="HomeOutline" />
+                        <TextBlock Style="{StaticResource NavText}" Text="首页" />
+                    </StackPanel>
+                </RadioButton>
+
+                <RadioButton
+                    x:Name="navNodes"
+                    GroupName="P2rayNav"
+                    Style="{StaticResource P2rayNavItem}">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon
+                            Width="16"
+                            Height="16"
+                            VerticalAlignment="Center"
+                            Kind="ServerNetwork" />
+                        <TextBlock Style="{StaticResource NavText}" Text="线路" />
+                    </StackPanel>
+                </RadioButton>
+
+                <RadioButton
+                    x:Name="navSettings"
+                    GroupName="P2rayNav"
+                    Style="{StaticResource P2rayNavItem}">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon
+                            Width="16"
+                            Height="16"
+                            VerticalAlignment="Center"
+                            Kind="CogOutline" />
+                        <TextBlock Style="{StaticResource NavText}" Text="设置" />
+                    </StackPanel>
+                </RadioButton>
+            </StackPanel>
+
+            <Grid />
+        </DockPanel>
+    </Border>
+</reactiveui:ReactiveUserControl>

@@ -217,6 +217,15 @@ public partial class UpdateService(Config config, Func<bool, string, Task> updat
 
             tagName = lastUrl?.Split("/tag/").LastOrDefault();
         }
+
+        // tagName 为空说明请求没有拿到有效的 Release（例如仓库不存在返回 404，
+        // UrlRedirectAsync 仍可能返回原始 URL 而非 null）。
+        // 上游在此无条件返回 Success=true，会导致界面误报"有更新"。
+        if (tagName.IsNullOrEmpty() || !SemanticVersion.TryParse(tagName, out _))
+        {
+            return new UpdateResult(false, "");
+        }
+
         return new UpdateResult(true, new SemanticVersion(tagName));
     }
 

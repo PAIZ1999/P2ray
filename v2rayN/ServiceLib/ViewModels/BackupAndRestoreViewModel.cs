@@ -163,7 +163,7 @@ public partial class BackupAndRestoreViewModel : MyReactiveObject
         }
 
         var configDir = Utils.GetConfigPath();
-        var configDirZipTemp = Utils.GetTempPath($"v2rayN_{DateTime.Now:yyyyMMddHHmmss}");
+        var configDirZipTemp = Utils.GetTempPath($"{ProductInfo.AppName}_{DateTime.Now:yyyyMMddHHmmss}");
         var configDirTemp = Path.Combine(configDirZipTemp, _guiConfigs);
 
         FileUtils.CopyDirectory(configDir, configDirTemp, false, true, "");

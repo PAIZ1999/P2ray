@@ -2492,6 +2492,13 @@ public static class ConfigHandler
     public static async Task<int> SetDefaultRouting(Config config, RoutingItem routingItem)
     {
         var items = await AppManager.Instance.RoutingItems();
+        // RoutingItems() 声明为可空：首次启动或数据库尚未初始化时会返回 null。
+        // 上游直接 items.Any(...) 会抛 NullReferenceException，导致每次冷启动都记一条错误日志。
+        if (items is null || items.Count == 0)
+        {
+            return -1;
+        }
+
         if (items.Any(t => t.Id == routingItem.Id && t.IsActive == true))
         {
             return -1;

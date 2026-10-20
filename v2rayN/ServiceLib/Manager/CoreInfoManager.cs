@@ -108,14 +108,10 @@ public sealed class CoreInfoManager
                     CoreType = ECoreType.v2rayN,
                     Url = GetCoreUrl(ECoreType.v2rayN),
                     ReleaseApiUrl = urlN.Replace(Global.GithubUrl, Global.GithubApiUrl),
-                    DownloadUrlWin64 = urlN + "/download/{0}/v2rayN-windows-64.zip",
-                    DownloadUrlWinArm64 = urlN + "/download/{0}/v2rayN-windows-arm64.zip",
-                    DownloadUrlLinux64 = urlN + "/download/{0}/v2rayN-linux-64.zip",
-                    DownloadUrlLinuxArm64 = urlN + "/download/{0}/v2rayN-linux-arm64.zip",
-                    DownloadUrlLinuxRiscV64 = urlN + "/download/{0}/v2rayN-linux-riscv64.zip",
-                    DownloadUrlLinuxLoong64 = urlN + "/download/{0}/v2rayN-linux-loong64.zip",
-                    DownloadUrlOSX64 = urlN + "/download/{0}/v2rayN-macos-64.zip",
-                    DownloadUrlOSXArm64 = urlN + "/download/{0}/v2rayN-macos-arm64.zip",
+                    // 资产名必须与 .github/workflows/build.yml 产出的 zip 名称一致，
+                    // 否则自更新会 404。除 Windows 外的下载地址已无意义（本项目仅支持 Windows）。
+                    DownloadUrlWin64 = urlN + "/download/{0}/" + ProductInfo.ReleaseAssetWin64,
+                    DownloadUrlWinArm64 = urlN + "/download/{0}/" + ProductInfo.ReleaseAssetWinArm64,
                 },
 
                 new CoreInfo

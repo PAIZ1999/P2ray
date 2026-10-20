@@ -1,95 +1,102 @@
-name: build
+name: build and release
+
+# P2ray 发布流程
+# - push 到 master：构建产物作为 artifact 保留，便于回看
+# - 打 tag（如 v1.0.0）：构建并创建 GitHub Release，供客户端自更新拉取
 
 on:
-  workflow_call:
-    inputs:
-      target: # windows linux macos
-        required: true
-        type: string
-      project:
-        required: false
-        type: string
-        default: './v2rayN.Desktop/v2rayN.Desktop.csproj'
+  push:
+    branches: [master]
+    tags: ['v*']
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  DOTNET_VERSION: '10.0.x'
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
 
 jobs:
+  test:
+    name: test
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Run tests
+        working-directory: ./v2rayN
+        run: dotnet test ServiceLib.Tests/ServiceLib.Tests.csproj -c Release
+
   build:
-    name: build x64 arm64
+    name: build ${{ matrix.rid }}
+    needs: test
+    runs-on: windows-latest
     strategy:
+      fail-fast: false
       matrix:
-        arch: [ x64, arm64 ]
-    runs-on: |-
-      ${{
-        case(
-          inputs.target == 'macos', 'macos-latest',
-          inputs.target == 'linux', 'ubuntu-24.04',
-          inputs.target == 'windows', 'windows-latest',
-          'ubuntu-latest'
-        )
-      }}
-    env:
-      Output: "${{ github.workspace }}/${{ matrix.arch }}"
-      RID: |-
-        ${{
-          case(
-            inputs.target == 'macos', format('osx-{0}', matrix.arch),
-            inputs.target == 'windows', format('win-{0}', matrix.arch),
-            format('{0}-{1}', inputs.target, matrix.arch)
-          )
-        }}
-      Project: ${{ inputs.project }}
-      ExtOpt: |-
-        ${{
-          case(
-            inputs.target == 'windows', '-p:EnableWindowsTargeting=true',
-            ''
-          )
-        }}
+        include:
+          - rid: win-x64
+            archive_suffix: windows-64
+          - rid: win-arm64
+            archive_suffix: windows-arm64
 
     steps:
-    - name: Checkout
-      uses: actions/checkout@v7
-      with:
-        submodules: 'recursive'
-        fetch-depth: '0'
+      - uses: actions/checkout@v4
 
-    - name: Purge SDKs
-      shell: pwsh
-      run: |
-        echo "Before:"
-        dotnet --list-sdks
-        
-        dotnet --list-sdks | % {
-          $_ -match '^\S+\s+\[(.+)\]$' > $null
-          $d = Join-Path $Matches[1] $_.Split()[0]
-          Write-Host "Removing $d"
-          if ($IsWindows) { rm $d -r -fo } else { sudo rm -rf "$d" }
-        }
-        
-        echo "After:"
-        dotnet --list-sdks 2>$null; $LASTEXITCODE=0
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
 
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v6
-      with:
-        dotnet-version: 10.0.1xx
-        
-    - name: Build v2rayN
-      shell: bash
-      working-directory: ./v2rayN
-      run: dotnet publish $Project -c Release -r $RID -p:SelfContained=true $ExtOpt -o $Output
+      - name: Build release
+        shell: pwsh
+        run: |
+          ./scripts/build-release.ps1 -Runtime ${{ matrix.rid }}
 
-    - name: Build AmazTool
-      shell: bash
-      working-directory: ./v2rayN
-      run: dotnet publish ./AmazTool/AmazTool.csproj -c Release -r $RID -p:SelfContained=true -p:PublishTrimmed=true $ExtOpt -o $Output
+      - name: Package archive
+        shell: pwsh
+        run: |
+          $src = "dist/P2ray-${{ matrix.rid }}"
+          $dst = "P2ray-${{ matrix.archive_suffix }}.zip"
+          Compress-Archive -Path "$src/*" -DestinationPath $dst -CompressionLevel Optimal
+          $hash = (Get-FileHash $dst -Algorithm SHA256).Hash
+          "$hash  $dst" | Out-File -FilePath "$dst.sha256" -Encoding ascii
+          Write-Host "archive: $dst ($([math]::Round((Get-Item $dst).Length / 1MB, 1)) MB)"
+          Write-Host "sha256 : $hash"
 
-    - name: Remove Debug Symbols
-      shell: bash
-      run: |
-        find ${{ matrix.arch }} -type f -name '*.pdb' -delete
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: P2ray-${{ matrix.archive_suffix }}
+          path: |
+            P2ray-${{ matrix.archive_suffix }}.zip
+            P2ray-${{ matrix.archive_suffix }}.zip.sha256
+          if-no-files-found: error
 
-    - name: Upload build artifacts
-      uses: actions/upload-artifact@v7
-      with:
-        name: ${{ matrix.arch }}
-        path: ${{ matrix.arch }}
+  release:
+    name: publish release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            artifacts/*.zip
+            artifacts/*.zip.sha256
+          generate_release_notes: true
+          draft: false
+          prerelease: false

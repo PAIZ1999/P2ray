@@ -1,7 +1,12 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<OutputType>Exe</OutputType>
+		<!-- 与 ServiceLib.ProductInfo.UpgradeToolName 保持一致，主程序按此名查找自更新工具 -->
+		<AssemblyName>P2rayUpgrade</AssemblyName>
+		<!-- 该工具只做解压与进程重启，裁剪可把自包含体积从 ~70MB 降到个位数 -->
+		<PublishTrimmed>true</PublishTrimmed>
+		<TrimMode>partial</TrimMode>
 	</PropertyGroup>
 
 	<ItemGroup>

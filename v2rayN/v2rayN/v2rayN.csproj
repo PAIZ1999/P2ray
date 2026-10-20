@@ -5,7 +5,9 @@
 		<TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
 		<GenerateSatelliteAssembliesForCore>true</GenerateSatelliteAssembliesForCore>
 		<UseWPF>true</UseWPF>
-		<ApplicationIcon>Resources\v2rayN.ico</ApplicationIcon>
+		<AssemblyName>P2ray</AssemblyName>
+		<RootNamespace>v2rayN</RootNamespace>
+		<ApplicationIcon>Resources\P2ray.ico</ApplicationIcon>
 		<ApplicationManifest>app.manifest</ApplicationManifest>
 		<ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
 		<SupportedOSPlatformVersion>7.0</SupportedOSPlatformVersion>
@@ -25,14 +27,14 @@
 
 	<ItemGroup>
 		<AdditionalFiles Include="app.manifest" />
-		<EmbeddedResource Include="Resources\v2rayN.ico">
+		<EmbeddedResource Include="Resources\P2ray.ico">
 			<CopyToOutputDirectory>Never</CopyToOutputDirectory>
 		</EmbeddedResource>
 		<Resource Include="Resources\NotifyIcon1.ico" />
 		<Resource Include="Resources\NotifyIcon2.ico" />
 		<Resource Include="Resources\NotifyIcon3.ico" />
 		<Resource Include="Resources\NotifyIcon4.ico" />
-		<Resource Include="Resources\v2rayN.ico" />
+		<Resource Include="Resources\P2ray.ico" />
 	</ItemGroup>
 
 	<ItemGroup>

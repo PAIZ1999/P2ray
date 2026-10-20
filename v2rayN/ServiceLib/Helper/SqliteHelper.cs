@@ -9,7 +9,7 @@ public sealed class SQLiteHelper
     private readonly string _connstr;
     private SQLiteConnection _db;
     private SQLiteAsyncConnection _dbAsync;
-    private readonly string _configDB = "guiNDB.db";
+    private readonly string _configDB = ProductInfo.DatabaseFileName;
 
     public SQLiteHelper()
     {

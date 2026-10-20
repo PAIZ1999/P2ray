@@ -1,80 +1,99 @@
-# v2rayN
+# P2ray
 
-### A GUI client for Windows, Linux and macOS. Support [Xray](https://github.com/XTLS/Xray-core) and [sing-box](https://github.com/SagerNet/sing-box) and [others](https://github.com/2dust/v2rayN/wiki/List-of-supported-cores)
+Windows 桌面代理客户端。[Xray-core](https://github.com/XTLS/Xray-core) 与 [sing-box](https://github.com/SagerNet/sing-box) 双内核，卡片式界面。
 
-[![CodeFactor](https://www.codefactor.io/repository/github/2dust/v2rayn/badge)](https://www.codefactor.io/repository/github/2dust/v2rayn)
-[![Release](https://img.shields.io/github/v/release/2dust/v2rayN?logo=github&label=Release)](https://github.com/2dust/v2rayN/releases)
-[![Downloads](https://img.shields.io/github/downloads/2dust/v2rayN/latest/total?logo=github&label=Downloads)](https://github.com/2dust/v2rayN/releases)
-[![Telegram](https://img.shields.io/badge/Telegram-Chat-26A5E4?logo=telegram)](https://t.me/v2rayn)
- 
-[![Windows](https://img.shields.io/badge/Windows-supported-0078D6?logo=windows)](https://github.com/2dust/v2rayN) 
-[![Linux](https://img.shields.io/badge/Linux-supported-FCC624?logo=linux&logoColor=000)](https://github.com/2dust/v2rayN) 
-[![macOS](https://img.shields.io/badge/macOS-supported-000000?logo=apple)](https://github.com/2dust/v2rayN) 
-[![GPG Signed](https://img.shields.io/badge/GPG-signed-4B32C3?logo=gnuprivacyguard)](https://github.com/2dust/v2rayN)
-
+> 本项目基于 [v2rayN](https://github.com/2dust/v2rayN)（GPL-3.0）二次开发，遵循 GPL-3.0 发布。
 
 ---
 
-## Download / 下载
+## 下载
 
-Download the latest release here:
+从 [Releases](https://github.com/PAIZ1999/P2ray/releases) 获取最新版本。
 
-在这里下载最新版本：
+| 平台 | 文件 |
+|---|---|
+| Windows x64 | `P2ray-windows-64.zip` |
+| Windows arm64 | `P2ray-windows-arm64.zip` |
 
-[https://github.com/2dust/v2rayN/releases](https://github.com/2dust/v2rayN/releases)
+解压后直接运行 `P2ray.exe`，内置代理内核，无需另装。
 
+每个包附带 `.sha256` 校验文件：
 
-> [!TIP]
-> v2rayN is the desktop version. For the mobile version, please visit the v2rayNG \
-> v2rayN 是电脑版，手机版请访问 v2rayNG
->
-> https://github.com/2dust/v2rayNG
-
----
-
-## Documentation / 使用文档
-
-Read the Wiki for usage guides and configuration details.
-
-请阅读 Wiki 获取使用说明和配置教程。
-
-[https://github.com/2dust/v2rayN/wiki](https://github.com/2dust/v2rayN/wiki)
-
----
-
-## Supported Platforms / 支持平台
-
-| Platform / 平台 | x64 | x86 | arm64 | riscv64 | loong64 |
-| --- | --- | --- | --- | --- | --- |
-| Windows | ✅ | ✅ | ✅ | - | - |
-| Linux | ✅ | - | ✅ | ✅ | ✅ |
-| macOS | ✅ | - | ✅ | - | - |
-
-Minimum OS requirements: [Release files introduction](https://github.com/2dust/v2rayN/wiki/Release-files-introduction) / 最低系统要求：[发布文件介绍](https://github.com/2dust/v2rayN/wiki/Release-files-introduction)
-
----
-
-## GPG Verification / GPG 签名校验
-
-Release files are signed with GPG to verify authenticity and integrity, helping prevent mirror, ISP, or CDN hijacking.
-
-发布文件已使用 GPG 签名，可用于校验文件真实性与完整性，预防镜像站、运营商或 CDN 劫持。
-
-### Fingerprint / 公钥指纹
-
-```text
-7694 5E9F 3E9A 168F 8070 F195 805D 661C
-134D FAF6 8903 C199 463C 31E5 AE90 3AE0
+```powershell
+Get-FileHash .\P2ray-windows-64.zip -Algorithm SHA256
 ```
 
 ---
 
-## Community / 社区
+## 功能
 
-Telegram Group / Telegram 群组：
+- 支持 VLESS / VMess / Shadowsocks / Trojan / Hysteria2 / TUIC / Anytls / WireGuard 等协议
+- 订阅导入与自动更新
+- 系统代理与 TUN 模式
+- 实时速率曲线
+- 节点延迟测试与分组管理
 
-[https://t.me/v2rayN](https://t.me/v2rayN)
+---
 
-Telegram Channel / Telegram 频道：
+## 从源码构建
 
-[https://t.me/github_2dust](https://t.me/github_2dust)
+需要 .NET 10 SDK。
+
+```powershell
+git clone https://github.com/PAIZ1999/P2ray.git
+cd P2ray
+pwsh ./scripts/build-release.ps1 -Runtime win-x64
+```
+
+产物在 `dist/P2ray-win-x64/`。
+
+构建脚本会从上游官方 Release 拉取内核并钉扎版本，见 `scripts/fetch-cores.ps1`。
+
+### 开发构建
+
+```powershell
+dotnet build v2rayN/v2rayN.slnx -c Debug
+dotnet test v2rayN/ServiceLib.Tests/ServiceLib.Tests.csproj
+```
+
+---
+
+## 项目结构
+
+```
+scripts/
+  fetch-cores.ps1     拉取并钉扎 Xray-core / sing-box
+  build-release.ps1   完整发布构建
+  make-icons.py       由 SVG 生成多尺寸图标
+  check-contrast.py   配色对比度审计
+v2rayN/
+  ServiceLib/         业务逻辑（协议、订阅、配置生成、系统代理）
+  ServiceLib.Tests/   单元测试
+  v2rayN/             WPF 界面
+  AmazTool/           自更新辅助进程
+```
+
+品牌相关的全部常量集中在 `v2rayN/ServiceLib/ProductInfo.cs`。
+
+---
+
+## 许可
+
+本项目遵循 [GPL-3.0](LICENSE)。
+
+二次开发基于 v2rayN，其版权归原作者 2dust 及贡献者所有，原始版权声明保留于源码中。
+
+随包分发的第三方组件：
+
+| 组件 | 许可 |
+|---|---|
+| [Xray-core](https://github.com/XTLS/Xray-core) | MPL-2.0 |
+| [sing-box](https://github.com/SagerNet/sing-box) | GPL-3.0 |
+| [MaterialDesignInXamlToolkit](https://github.com/MaterialDesignInXAML/MaterialDesignInXamlToolkit) | MIT |
+
+完整声明见 [NOTICE.md](NOTICE.md)。
+
+### 源码获取
+
+GPL-3.0 要求分发二进制时提供对应源码。本仓库即完整源码，任何发布版本都能在
+[Releases](https://github.com/PAIZ1999/P2ray/releases) 对应 tag 下取得源码归档。

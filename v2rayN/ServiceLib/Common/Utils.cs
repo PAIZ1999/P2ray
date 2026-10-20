@@ -914,7 +914,7 @@ public class Utils
 
     public static bool UpgradeAppExists(out string upgradeFileName)
     {
-        upgradeFileName = Path.Combine(GetBaseDirectory(), GetExeName("AmazTool"));
+        upgradeFileName = Path.Combine(GetBaseDirectory(), GetExeName(ProductInfo.UpgradeToolName));
         return File.Exists(upgradeFileName);
     }
 
@@ -1125,7 +1125,7 @@ public class Utils
         {
             var basePath = GetBaseDirectory();
             //When this file exists, it is equivalent to having no permission to read and write
-            if (File.Exists(Path.Combine(basePath, "NotStoreConfigHere.txt")))
+            if (File.Exists(Path.Combine(basePath, ProductInfo.NoStoreConfigMarkerFileName)))
             {
                 return false;
             }
@@ -1178,7 +1178,7 @@ public class Utils
     {
         if (Environment.GetEnvironmentVariable(Global.LocalAppData) == "1")
         {
-            return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "v2rayN");
+            return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), ProductInfo.DataDirName);
         }
 
         return GetBaseDirectory();
@@ -1372,17 +1372,17 @@ public class Utils
                 return false;
             }
 
-            if (p.StartsWith("/opt/v2rayN", StringComparison.OrdinalIgnoreCase))
+            if (p.StartsWith("/opt/P2ray", StringComparison.OrdinalIgnoreCase))
             {
                 return true;
             }
 
-            if (p.StartsWith("/usr/lib/v2rayN", StringComparison.OrdinalIgnoreCase))
+            if (p.StartsWith("/usr/lib/P2ray", StringComparison.OrdinalIgnoreCase))
             {
                 return true;
             }
 
-            if (p.StartsWith("/usr/share/v2rayN", StringComparison.OrdinalIgnoreCase))
+            if (p.StartsWith("/usr/share/P2ray", StringComparison.OrdinalIgnoreCase))
             {
                 return true;
             }

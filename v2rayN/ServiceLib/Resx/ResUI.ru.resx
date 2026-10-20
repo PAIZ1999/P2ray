@@ -1777,7 +1777,7 @@
     <value>Общий ключ (PSK)</value>
   </data>
   <data name="menuExport2InnerUri" xml:space="preserve">
-    <value>Экспорт внутренней ссылки v2rayN в буфер обмена</value>
+    <value>Экспорт внутренней ссылки P2ray в буфер обмена</value>
   </data>
   <data name="MsgCheckUpdateHasNewVersion" xml:space="preserve">
     <value>Доступна новая версия {0}: {1}</value>

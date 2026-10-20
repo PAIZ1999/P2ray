@@ -1,0 +1,630 @@
+<reactiveui:ReactiveUserControl
+    x:Class="v2rayN.Views.SettingsView"
+    x:TypeArguments="vms:DashboardViewModel"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:reactiveui="http://reactiveui.net"
+    xmlns:vms="clr-namespace:ServiceLib.ViewModels;assembly=ServiceLib"
+    d:DesignHeight="820"
+    d:DesignWidth="1060"
+    mc:Ignorable="d">
+
+    <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+        <!-- macOS 设置页的分组是撑满内容区的，不设 MaxWidth，否则右侧会留一片空 -->
+        <StackPanel Margin="24,18,24,28">
+
+            <TextBlock Margin="4,0,0,14" Style="{StaticResource P2rayH1}" Text="设置" />
+
+            <!-- ═══ 通用 ═══ -->
+            <TextBlock Style="{StaticResource P2raySectionLabel}" Text="通用" />
+            <Border Margin="0,0,0,16" Style="{StaticResource P2rayCard}">
+                <StackPanel>
+                    <!-- 开机自启动 -->
+                    <Border Style="{StaticResource P2rayRow}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <Border
+                                Grid.Column="0"
+                                Background="{StaticResource P2rayIconGreen}"
+                                Style="{StaticResource P2rayRowIcon}">
+                                <materialDesign:PackIcon
+                                    Width="13"
+                                    Height="13"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Foreground="White"
+                                    Kind="Power" />
+                            </Border>
+
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                <TextBlock Style="{StaticResource P2rayBody}" Text="开机自启动" />
+                                <TextBlock
+                                    Margin="0,2,0,0"
+                                    Style="{StaticResource P2rayMicro}"
+                                    Text="登录 Windows 后自动运行 P2ray" />
+                            </StackPanel>
+
+                            <ToggleButton
+                                x:Name="togAutoRun"
+                                Grid.Column="2"
+                                VerticalAlignment="Center"
+                                Click="TogAutoRun_Click"
+                                Style="{StaticResource P2rayToggle}" />
+                        </Grid>
+                    </Border>
+
+                    <!-- 启动时最小化 -->
+                    <Border Style="{StaticResource P2rayRow}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <Border
+                                Grid.Column="0"
+                                Background="{StaticResource P2rayIconGray}"
+                                Style="{StaticResource P2rayRowIcon}">
+                                <materialDesign:PackIcon
+                                    Width="13"
+                                    Height="13"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Foreground="White"
+                                    Kind="ArrowDownThin" />
+                            </Border>
+
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                <TextBlock Style="{StaticResource P2rayBody}" Text="启动时最小化" />
+                                <TextBlock
+                                    Margin="0,2,0,0"
+                                    Style="{StaticResource P2rayMicro}"
+                                    Text="下次启动直接收进托盘，不弹窗打扰" />
+                            </StackPanel>
+
+                            <ToggleButton
+                                x:Name="togAutoHideStartup"
+                                Grid.Column="2"
+                                VerticalAlignment="Center"
+                                Click="TogAutoHideStartup_Click"
+                                Style="{StaticResource P2rayToggle}" />
+                        </Grid>
+                    </Border>
+
+                    <!-- 自动更新间隔 -->
+                    <Border Style="{StaticResource P2rayRowLast}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <Border
+                                Grid.Column="0"
+                                Background="{StaticResource P2rayIconTeal}"
+                                Style="{StaticResource P2rayRowIcon}">
+                                <materialDesign:PackIcon
+                                    Width="13"
+                                    Height="13"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Foreground="White"
+                                    Kind="ClockOutline" />
+                            </Border>
+
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                <TextBlock Style="{StaticResource P2rayBody}" Text="自动更新间隔" />
+                                <TextBlock
+                                    Margin="0,2,0,0"
+                                    Style="{StaticResource P2rayMicro}"
+                                    Text="定期刷新规则与识别库，点一下切换取值" />
+                            </StackPanel>
+
+                            <Button
+                                x:Name="btnAutoUpdate"
+                                Grid.Column="2"
+                                VerticalAlignment="Center"
+                                Click="BtnAutoUpdate_Click"
+                                Style="{StaticResource P2raySecondaryButton}" />
+                        </Grid>
+                    </Border>
+                </StackPanel>
+            </Border>
+
+            <!-- ═══ 网络 ═══ -->
+            <TextBlock Style="{StaticResource P2raySectionLabel}" Text="网络" />
+            <Border Margin="0,0,0,16" Style="{StaticResource P2rayCard}">
+                <StackPanel>
+                    <!-- 局域网连接 -->
+                    <Border Style="{StaticResource P2rayRow}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <Border
+                                Grid.Column="0"
+                                Background="{StaticResource P2rayIconBlue}"
+                                Style="{StaticResource P2rayRowIcon}">
+                                <materialDesign:PackIcon
+                                    Width="13"
+                                    Height="13"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Foreground="White"
+                                    Kind="LanConnect" />
+                            </Border>
+
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                <TextBlock Style="{StaticResource P2rayBody}" Text="允许局域网连接" />
+                                <TextBlock
+                                    Margin="0,2,0,0"
+                                    Style="{StaticResource P2rayMicro}"
+                                    Text="同一 WiFi 下的手机等设备也能走这台电脑" />
+                            </StackPanel>
+
+                            <ToggleButton
+                                x:Name="togAllowLan"
+                                Grid.Column="2"
+                                VerticalAlignment="Center"
+                                Click="TogAllowLan_Click"
+                                Style="{StaticResource P2rayToggle}" />
+                        </Grid>
+                    </Border>
+
+                    <!-- UDP 转发 -->
+                    <Border Style="{StaticResource P2rayRow}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <Border
+                                Grid.Column="0"
+                                Background="{StaticResource P2rayIconPurple}"
+                                Style="{StaticResource P2rayRowIcon}">
+                                <materialDesign:PackIcon
+                                    Width="13"
+                                    Height="13"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Foreground="White"
+                                    Kind="Earth" />
+                            </Border>
+
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                <TextBlock Style="{StaticResource P2rayBody}" Text="UDP 转发" />
+                                <TextBlock
+                                    Margin="0,2,0,0"
+                                    Style="{StaticResource P2rayMicro}"
+                                    Text="语音通话与联机游戏需要，关掉可能导致它们断线" />
+                            </StackPanel>
+
+                            <ToggleButton
+                                x:Name="togUdp"
+                                Grid.Column="2"
+                                VerticalAlignment="Center"
+                                Click="TogUdp_Click"
+                                Style="{StaticResource P2rayToggle}" />
+                        </Grid>
+                    </Border>
+
+                    <!-- 日志级别 -->
+                    <Border Style="{StaticResource P2rayRowLast}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <Border
+                                Grid.Column="0"
+                                Background="{StaticResource P2rayIconOrange}"
+                                Style="{StaticResource P2rayRowIcon}">
+                                <materialDesign:PackIcon
+                                    Width="13"
+                                    Height="13"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Foreground="White"
+                                    Kind="FileDocumentOutline" />
+                            </Border>
+
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                <TextBlock Style="{StaticResource P2rayBody}" Text="日志级别" />
+                                <TextBlock
+                                    Margin="0,2,0,0"
+                                    Style="{StaticResource P2rayMicro}"
+                                    Text="排查问题时调高，平时保持 warning 即可" />
+                            </StackPanel>
+
+                            <Button
+                                x:Name="btnLogLevel"
+                                Grid.Column="2"
+                                VerticalAlignment="Center"
+                                Click="BtnLogLevel_Click"
+                                Style="{StaticResource P2raySecondaryButton}" />
+                        </Grid>
+                    </Border>
+                </StackPanel>
+            </Border>
+
+            <!-- ═══ 订阅 ═══ -->
+            <TextBlock Style="{StaticResource P2raySectionLabel}" Text="订阅" />
+            <Border Margin="0,0,0,16" Style="{StaticResource P2rayCard}">
+                <StackPanel>
+                    <Border Style="{StaticResource P2rayRow}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <Border
+                                Grid.Column="0"
+                                Background="{StaticResource P2rayIconPurple}"
+                                Style="{StaticResource P2rayRowIcon}">
+                                <materialDesign:PackIcon
+                                    Width="13"
+                                    Height="13"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Foreground="White"
+                                    Kind="CloudDownloadOutline" />
+                            </Border>
+
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                <TextBlock Style="{StaticResource P2rayBody}" Text="订阅管理" />
+                                <TextBlock
+                                    x:Name="txtSubCount"
+                                    Margin="0,2,0,0"
+                                    Style="{StaticResource P2rayMicro}" />
+                            </StackPanel>
+
+                            <Button
+                                Grid.Column="2"
+                                VerticalAlignment="Center"
+                                Click="BtnManageSub_Click"
+                                Content="管理"
+                                Style="{StaticResource P2raySecondaryButton}" />
+                        </Grid>
+                    </Border>
+
+                    <Border Style="{StaticResource P2rayRowLast}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <Border
+                                Grid.Column="0"
+                                Background="{StaticResource P2rayIconBlue}"
+                                Style="{StaticResource P2rayRowIcon}">
+                                <materialDesign:PackIcon
+                                    Width="13"
+                                    Height="13"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Foreground="White"
+                                    Kind="Refresh" />
+                            </Border>
+
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                <TextBlock Style="{StaticResource P2rayBody}" Text="更新全部订阅" />
+                                <TextBlock
+                                    x:Name="txtSubUpdateHint"
+                                    Margin="0,2,0,0"
+                                    Style="{StaticResource P2rayMicro}"
+                                    Text="拉取最新节点列表，失败时自动重试" />
+                            </StackPanel>
+
+                            <Button
+                                Grid.Column="2"
+                                VerticalAlignment="Center"
+                                Click="BtnUpdateSub_Click"
+                                Content="更新"
+                                Style="{StaticResource P2raySecondaryButton}" />
+                        </Grid>
+                    </Border>
+                </StackPanel>
+            </Border>
+
+            <!-- ═══ 高级功能 ═══ -->
+            <TextBlock Style="{StaticResource P2raySectionLabel}" Text="高级功能" />
+            <Border Margin="0,0,0,16" Style="{StaticResource P2rayCard}">
+                <Border Style="{StaticResource P2rayRowLast}">
+                    <StackPanel>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <Border
+                                Grid.Column="0"
+                                Background="{StaticResource P2rayIconOrange}"
+                                Style="{StaticResource P2rayRowIcon}">
+                                <materialDesign:PackIcon
+                                    Width="13"
+                                    Height="13"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Foreground="White"
+                                    Kind="CogOutline" />
+                            </Border>
+
+                            <TextBlock
+                                Grid.Column="1"
+                                VerticalAlignment="Center"
+                                Style="{StaticResource P2rayBody}"
+                                Text="配置与规则" />
+                        </Grid>
+
+                        <!-- 原来的顶栏功能收在这里 -->
+                        <WrapPanel Margin="32,10,0,0">
+                            <Button
+                                x:Name="btnCoreSetting"
+                                Margin="0,0,8,8"
+                                Click="BtnCoreSetting_Click"
+                                Content="核心设置"
+                                Style="{StaticResource P2raySecondaryButton}" />
+                            <Button
+                                x:Name="btnRoutingSetting"
+                                Margin="0,0,8,8"
+                                Click="BtnRouting_Click"
+                                Content="路由"
+                                Style="{StaticResource P2raySecondaryButton}" />
+                            <Button
+                                x:Name="btnDnsSetting"
+                                Margin="0,0,8,8"
+                                Click="BtnDns_Click"
+                                Content="DNS"
+                                Style="{StaticResource P2raySecondaryButton}" />
+                            <Button
+                                x:Name="btnFullConfig"
+                                Margin="0,0,8,8"
+                                Click="BtnFullConfig_Click"
+                                Content="完整配置模板"
+                                Style="{StaticResource P2raySecondaryButton}" />
+                            <Button
+                                x:Name="btnHotkey"
+                                Margin="0,0,8,8"
+                                Click="BtnHotkey_Click"
+                                Content="全局热键"
+                                Style="{StaticResource P2raySecondaryButton}" />
+                            <Button
+                                x:Name="btnBackup"
+                                Margin="0,0,8,8"
+                                Click="BtnBackup_Click"
+                                Content="备份与恢复"
+                                Style="{StaticResource P2raySecondaryButton}" />
+                            <Button
+                                x:Name="btnRebootAdmin"
+                                Margin="0,0,8,8"
+                                Click="BtnRebootAdmin_Click"
+                                Content="以管理员重启"
+                                Style="{StaticResource P2raySecondaryButton}" />
+                            <Button
+                                x:Name="btnClearStat"
+                                Margin="0,0,8,8"
+                                Click="BtnClearStat_Click"
+                                Content="清除统计"
+                                Style="{StaticResource P2raySecondaryButton}" />
+                        </WrapPanel>
+                    </StackPanel>
+                </Border>
+            </Border>
+
+            <!-- ═══ 数据 ═══ -->
+            <TextBlock Style="{StaticResource P2raySectionLabel}" Text="数据" />
+            <Border Margin="0,0,0,16" Style="{StaticResource P2rayCard}">
+                <StackPanel>
+                    <Border Style="{StaticResource P2rayRow}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <Border
+                                Grid.Column="0"
+                                Background="{StaticResource P2rayIconGray}"
+                                Style="{StaticResource P2rayRowIcon}">
+                                <materialDesign:PackIcon
+                                    Width="13"
+                                    Height="13"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Foreground="White"
+                                    Kind="FolderOutline" />
+                            </Border>
+
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                <TextBlock Style="{StaticResource P2rayBody}" Text="程序目录" />
+                                <TextBlock
+                                    x:Name="txtDataDir"
+                                    Margin="0,2,0,0"
+                                    Style="{StaticResource P2rayMicro}"
+                                    TextTrimming="CharacterEllipsis" />
+                            </StackPanel>
+
+                            <Button
+                                Grid.Column="2"
+                                VerticalAlignment="Center"
+                                Click="BtnOpenDir_Click"
+                                Content="打开"
+                                Style="{StaticResource P2raySecondaryButton}" />
+                        </Grid>
+                    </Border>
+
+                    <Border Style="{StaticResource P2rayRowLast}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <Border
+                                Grid.Column="0"
+                                Background="{StaticResource P2rayIconTeal}"
+                                Style="{StaticResource P2rayRowIcon}">
+                                <materialDesign:PackIcon
+                                    Width="13"
+                                    Height="13"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Foreground="White"
+                                    Kind="FileDocumentOutline" />
+                            </Border>
+
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                <TextBlock Style="{StaticResource P2rayBody}" Text="日志与备份" />
+                                <TextBlock
+                                    Margin="0,2,0,0"
+                                    Style="{StaticResource P2rayMicro}"
+                                    Text="运行记录与自动备份存放的位置" />
+                            </StackPanel>
+
+                            <Button
+                                Grid.Column="2"
+                                VerticalAlignment="Center"
+                                Click="BtnOpenLogDir_Click"
+                                Content="打开"
+                                Style="{StaticResource P2raySecondaryButton}" />
+                        </Grid>
+                    </Border>
+                </StackPanel>
+            </Border>
+
+            <!-- ═══ 关于 ═══ -->
+            <TextBlock Style="{StaticResource P2raySectionLabel}" Text="关于" />
+            <Border Style="{StaticResource P2rayCard}">
+                <StackPanel>
+                    <Border Style="{StaticResource P2rayRow}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <Border
+                                Grid.Column="0"
+                                Background="{StaticResource P2rayIconTeal}"
+                                Style="{StaticResource P2rayRowIcon}">
+                                <materialDesign:PackIcon
+                                    Width="13"
+                                    Height="13"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Foreground="White"
+                                    Kind="InformationOutline" />
+                            </Border>
+
+                            <TextBlock
+                                Grid.Column="1"
+                                VerticalAlignment="Center"
+                                Style="{StaticResource P2rayBody}"
+                                Text="版本" />
+
+                            <TextBlock
+                                x:Name="txtVersionAbout"
+                                Grid.Column="2"
+                                VerticalAlignment="Center"
+                                Style="{StaticResource P2rayCaption}" />
+                        </Grid>
+                    </Border>
+
+                    <Border Style="{StaticResource P2rayRow}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <Border
+                                Grid.Column="0"
+                                Background="{StaticResource P2rayIconGray}"
+                                Style="{StaticResource P2rayRowIcon}">
+                                <materialDesign:PackIcon
+                                    Width="13"
+                                    Height="13"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Foreground="White"
+                                    Kind="ShieldCheck" />
+                            </Border>
+
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                <TextBlock Style="{StaticResource P2rayBody}" Text="开源许可" />
+                                <TextBlock
+                                    Margin="0,2,0,0"
+                                    Style="{StaticResource P2rayMicro}"
+                                    Text="基于 v2rayN 二次开发，遵循 GPL-3.0" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <Border Style="{StaticResource P2rayRowLast}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <Border
+                                Grid.Column="0"
+                                Background="{StaticResource P2rayIconOrange}"
+                                Style="{StaticResource P2rayRowIcon}">
+                                <materialDesign:PackIcon
+                                    Width="13"
+                                    Height="13"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Foreground="White"
+                                    Kind="Update" />
+                            </Border>
+
+                            <TextBlock
+                                Grid.Column="1"
+                                VerticalAlignment="Center"
+                                Style="{StaticResource P2rayBody}"
+                                Text="检查更新" />
+
+                            <Button
+                                x:Name="btnCheckUpdate"
+                                Grid.Column="2"
+                                VerticalAlignment="Center"
+                                Click="BtnCheckUpdate_Click"
+                                Content="检查"
+                                Style="{StaticResource P2raySecondaryButton}" />
+                        </Grid>
+                    </Border>
+                </StackPanel>
+            </Border>
+
+        </StackPanel>
+    </ScrollViewer>
+</reactiveui:ReactiveUserControl>

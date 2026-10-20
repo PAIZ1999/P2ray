@@ -46,9 +46,9 @@ internal class Utils
             : StringComparison.Ordinal;
     }
 
-    public static string V2rayN => "v2rayN";
+    public static string V2rayN => "P2ray";
 
-    public static void StartV2RayN()
+    public static void StartP2ray()
     {
         Process process = new()
         {

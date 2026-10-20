@@ -5,6 +5,7 @@ public class ProfileExManager
     private static readonly Lazy<ProfileExManager> _instance = new(() => new());
     private ConcurrentBag<ProfileExItem> _lstProfileEx = [];
     private readonly ConcurrentQueue<string> _queIndexIds = new();
+    private readonly Lock _lstProfileExLock = new();
     public static ProfileExManager Instance => _instance.Value;
     private static readonly string _tag = "ProfileExHandler";
 
@@ -27,7 +28,11 @@ public class ProfileExManager
     {
         await SQLiteHelper.Instance.ExecuteAsync($"delete from ProfileExItem where indexId not in ( select indexId from ProfileItem )");
 
-        _lstProfileEx = new(await SQLiteHelper.Instance.TableAsync<ProfileExItem>().ToListAsync());
+        var lstLoaded = await SQLiteHelper.Instance.TableAsync<ProfileExItem>().ToListAsync();
+        lock (_lstProfileExLock)
+        {
+            _lstProfileEx = new(lstLoaded);
+        }
     }
 
     private void IndexIdEnqueue(string indexId)
@@ -109,13 +114,21 @@ public class ProfileExManager
 
     private ProfileExItem GetProfileExItem(string? indexId)
     {
-        return _lstProfileEx.FirstOrDefault(t => t.IndexId == indexId) ?? AddProfileEx(indexId);
+        // 并行测速会对同一个 indexId 并发调用。查找与插入必须原子，
+        // 否则 check-then-add 会为同一节点创建重复条目。
+        lock (_lstProfileExLock)
+        {
+            return _lstProfileEx.FirstOrDefault(t => t.IndexId == indexId) ?? AddProfileEx(indexId);
+        }
     }
 
     public async Task ClearAll()
     {
         await SQLiteHelper.Instance.ExecuteAsync($"delete from ProfileExItem ");
-        _lstProfileEx = [];
+        lock (_lstProfileExLock)
+        {
+            _lstProfileEx = [];
+        }
     }
 
     public async Task SaveTo()

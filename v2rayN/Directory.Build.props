@@ -14,6 +14,9 @@
         <PackageLicenseExpression>GPL-3.0</PackageLicenseExpression>
         <Copyright>Copyright © 2017-$([System.DateTime]::UtcNow.Year) $(Authors)</Copyright>
         <InvariantGlobalization>false</InvariantGlobalization>
+        <!-- Roslyn 在未完整支持 CET 的 Windows 10 上会 Fatal。上游只在两个 UI 项目里单独设置，
+             这里提升为全局，避免类库项目编译失败。 -->
+        <CETCompat>false</CETCompat>
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(Configuration)' == 'Release'">

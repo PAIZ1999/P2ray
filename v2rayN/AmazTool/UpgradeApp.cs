@@ -110,7 +110,7 @@ internal class UpgradeApp
         Console.WriteLine(Resx.Resource.Restartv2rayN);
         Utils.Waiting(2);
 
-        Utils.StartV2RayN();
+        Utils.StartP2ray();
     }
 
     private static bool TryExtractToFile(ZipArchiveEntry entry, string outputPath)
