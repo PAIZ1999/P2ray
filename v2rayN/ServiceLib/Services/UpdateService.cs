@@ -303,7 +303,10 @@ public partial class UpdateService(Config config, Func<bool, string, Task> updat
                 case ECoreType.v2rayN:
                     {
                         curVersion = new SemanticVersion(Utils.GetVersionInfo());
-                        message = string.Format(ResUI.IsLatestN, type, curVersion.ToStandardVersionString("v"));
+                        // 用产品名而不是枚举名。ECoreType.v2rayN 是上游遗留的枚举值，
+                        // 直接显示出来会变成「v2rayN v1.0.0 已是最新版本」——
+                        // 用户装的是 P2ray，看到 v2rayN 只会困惑。
+                        message = string.Format(ResUI.IsLatestN, ProductInfo.AppName, curVersion.ToStandardVersionString("v"));
                         url = string.Format(coreUrl, version);
                         break;
                     }

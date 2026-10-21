@@ -51,68 +51,68 @@
         </StackPanel>
 
         <StackPanel>
+            <!-- 背景透明：不设的话 ListView 会用系统默认的白色底，
+                 在深色主题里就是一块突兀的白板。 -->
             <ListView
                 x:Name="lstCheckUpdates"
-                BorderThickness="1"
+                Background="Transparent"
+                BorderThickness="0"
                 ItemContainerStyle="{StaticResource lvItemSelected}">
-                <ListView.ItemsPanel>
-                    <ItemsPanelTemplate>
-                        <StackPanel Orientation="Vertical" />
-                    </ItemsPanelTemplate>
-                </ListView.ItemsPanel>
                 <ListView.ItemTemplate>
                     <DataTemplate>
-                        <Border
-                            Width="660"
-                            Margin="{StaticResource Margin8}"
-                            Padding="0"
-                            VerticalAlignment="Center">
+                        <!-- 不再写死 Width=660。固定宽度在窗口拉宽后会让内容浮在
+                             左侧、右侧一片空，而四列 1*/2*/1*/3* 等比分配又会把
+                             "Pre-Release" 那格撑得过大。改为占满可用宽度 + Auto 列。 -->
+                        <Border Margin="0,1" Padding="0">
                             <Grid>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto" />
-                                </Grid.RowDefinitions>
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="1*" />
-                                    <ColumnDefinition Width="2*" />
-                                    <ColumnDefinition Width="1*" />
-                                    <ColumnDefinition Width="3*" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
+
                                 <ToggleButton
-                                    x:Name="togAutoRefresh"
                                     Grid.Column="0"
-                                    Margin="{StaticResource Margin8}"
-                                    HorizontalAlignment="Left"
+                                    Width="36"
+                                    Height="20"
+                                    Margin="4,0,10,0"
                                     VerticalAlignment="Center"
                                     IsChecked="{Binding IsSelected}" />
 
-                                <DockPanel
+                                <StackPanel
                                     Grid.Column="1"
-                                    Margin="{StaticResource MarginLeftRight4}"
+                                    Margin="0,0,14,0"
+                                    VerticalAlignment="Center"
+                                    Orientation="Horizontal"
                                     Visibility="{Binding ShowCheckPreRelease, Converter={StaticResource BoolToVisConverter}}">
                                     <ToggleButton
-                                        Margin="{StaticResource Margin4}"
-                                        HorizontalAlignment="Left"
+                                        Width="36"
+                                        Height="20"
+                                        Margin="0,0,6,0"
                                         VerticalAlignment="Center"
                                         IsChecked="{Binding IsCheckPreRelease}" />
                                     <TextBlock
-                                        Margin="{StaticResource Margin4}"
                                         VerticalAlignment="Center"
-                                        Style="{StaticResource ToolbarTextBlock}"
-                                        Text="{x:Static resx:ResUI.TbSettingsEnableCheckPreReleaseUpdate}"
-                                        TextWrapping="Wrap" />
-                                </DockPanel>
+                                        Style="{StaticResource P2rayMicro}"
+                                        Text="Pre-Release" />
+                                </StackPanel>
 
                                 <TextBlock
                                     Grid.Column="2"
+                                    MinWidth="80"
+                                    Margin="0,0,14,0"
                                     VerticalAlignment="Center"
-                                    Style="{StaticResource ListItemTitle}"
+                                    Style="{StaticResource P2rayBody}"
                                     Text="{Binding CoreTypeForStorage}" />
+
                                 <TextBlock
                                     Grid.Column="3"
                                     VerticalAlignment="Center"
-                                    Style="{StaticResource ListItemSubTitle}"
+                                    Style="{StaticResource P2rayMicro}"
                                     Text="{Binding Remarks}"
-                                    TextWrapping="WrapWithOverflow" />
+                                    TextTrimming="CharacterEllipsis"
+                                    TextWrapping="Wrap" />
                             </Grid>
                         </Border>
                     </DataTemplate>
