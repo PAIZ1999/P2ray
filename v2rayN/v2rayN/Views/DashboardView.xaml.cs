@@ -62,6 +62,11 @@ public partial class DashboardView : ReactiveUserControl<DashboardViewModel>
                     has => has ? "境外出口 IP" : "当前出口 IP").DisposeWith(disposables);
             this.OneWayBind(ViewModel, vm => vm.NetProbeStatus, v => v.txtNetProbeStatus.Text).DisposeWith(disposables);
             this.OneWayBind(ViewModel, vm => vm.NetProbeSummary, v => v.txtNetProbeSummary.Text).DisposeWith(disposables);
+
+            // 订阅更新状态：有内容才占位，避免空白行把卡片撑高
+            this.OneWayBind(ViewModel, vm => vm.SubscriptionStatus, v => v.txtSubStatus.Text).DisposeWith(disposables);
+            this.OneWayBind(ViewModel, vm => vm.SubscriptionStatus, v => v.txtSubStatus.Visibility,
+                    s => string.IsNullOrEmpty(s) ? Visibility.Collapsed : Visibility.Visible).DisposeWith(disposables);
             this.OneWayBind(ViewModel, vm => vm.IsNetProbeRunning, v => v.btnRefreshNetProbe.IsEnabled,
                     running => !running).DisposeWith(disposables);
 

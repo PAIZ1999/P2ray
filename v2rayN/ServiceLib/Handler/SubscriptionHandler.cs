@@ -41,6 +41,15 @@ public static class SubscriptionHandler
                 if (await ProcessDownloadResult(config, item.Id, result, hashCode, updateFunc))
                 {
                     successCount++;
+
+                    // 更新成功必须写回时间戳。
+                    //
+                    // 上游只在 TaskManager 的"定时自动更新"分支里写 UpdateTime，
+                    // 手动更新从不写 —— 结果就是用户点了更新、内容也确实换掉了，
+                    // 界面上却永远显示"从未更新"，看着像没生效。
+                    // 放在这里，手动和自动两条路径共用。
+                    item.UpdateTime = ((DateTimeOffset)DateTime.Now).ToUnixTimeSeconds();
+                    await ConfigHandler.AddSubItem(config, item);
                 }
 
                 await updateFunc?.Invoke(false, "-------------------------------------------------------");
@@ -101,15 +110,42 @@ public static class SubscriptionHandler
 
     private static async Task<string> DownloadSubscriptionContent(DownloadService downloadHandle, string url, bool blProxy, string userAgent)
     {
-        var result = await downloadHandle.TryDownloadString(url, blProxy, userAgent);
+        // 节点挂了也要能更新订阅 —— 这是最容易把用户逼进死锁的地方：
+        // 当前节点失效，恰恰是最需要拉新订阅的时候。所以代理失败必须回退直连。
+        //
+        // 但回退的代价很不友好：TryDownloadString 内部对同一个代理会重试两次
+        // （HttpClient 一次 + Downloader 一次），每次超时 10 秒，
+        // 于是每个订阅白白多等 20 秒才轮到直连。节点不通时用户体感就是"点了没反应"。
+        //
+        // 这里先探一次本地 socks 端口：不通就直接走直连，不为一个必然失败的
+        // 代理路径付两次超时。端口通但节点本身不通的情况仍交给下面的回退处理。
+        var effectiveProxy = blProxy && await IsLocalProxyListening();
+        var result = await downloadHandle.TryDownloadString(url, effectiveProxy, userAgent);
 
         // If download with proxy fails, try direct connection
-        if (blProxy && result.IsNullOrEmpty())
+        if (effectiveProxy && result.IsNullOrEmpty())
         {
             result = await downloadHandle.TryDownloadString(url, false, userAgent);
         }
 
         return result ?? string.Empty;
+    }
+
+    /// <summary>本地 socks 入站是否在监听。50ms 足够判定回环连接。</summary>
+    private static async Task<bool> IsLocalProxyListening()
+    {
+        try
+        {
+            var port = AppManager.Instance.GetLocalPort(EInboundProtocol.socks);
+            using var client = new System.Net.Sockets.TcpClient();
+            using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(300));
+            await client.ConnectAsync(Global.Loopback, port, cts.Token);
+            return client.Connected;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     private static async Task<string> DownloadAllSubscriptions(Config config, SubItem item, bool blProxy, DownloadService downloadHandle)

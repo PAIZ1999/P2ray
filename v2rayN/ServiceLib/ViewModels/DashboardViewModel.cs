@@ -238,8 +238,14 @@ public partial class DashboardViewModel : MyReactiveObject
         DisconnectCmd = ReactiveCommand.CreateFromTask(async () =>
             await _statusBar.SystemProxyClearCmd.Execute().FirstOrDefaultAsync());
 
-        UpdateSubscriptionCmd = ReactiveCommand.CreateFromTask(async () =>
-            await _statusBar.SubUpdateViaProxyCmd.Execute().FirstOrDefaultAsync());
+        // 订阅更新直接走 SubscriptionHandler，而不是转发 SubUpdateViaProxyCmd。
+        //
+        // 原来的做法只发布 SubscriptionsUpdateRequested 事件，真正的执行在
+        // MainWindowViewModel 的订阅者里，结果通过 UpdateTaskHandler 写进主窗口
+        // 的日志面板 —— 而首页没有日志面板。用户点完首页的「更新」什么也看不到，
+        // 只能以为按钮坏了（实际后台已经在跑）。
+        // 这里自己调用、自己接结果，把进度和结论就地显示出来。
+        UpdateSubscriptionCmd = ReactiveCommand.CreateFromTask(UpdateSubscriptionsAsync);
 
         AddFromClipboardCmd = ReactiveCommand.CreateFromTask(async () =>
             await _statusBar.AddServerViaClipboardCmd.Execute().FirstOrDefaultAsync());
@@ -876,6 +882,80 @@ public partial class DashboardViewModel : MyReactiveObject
         DirectRuleStatus = error ?? "已移除";
         await LoadDirectRulesAsync();
     }
+
+    #endregion
+
+    #region 订阅更新
+
+    /// <summary>
+    /// 更新所有订阅，并把过程就地反馈到首页。
+    ///
+    /// blProxy 固定为 true：订阅地址多半在墙外，走本地内核最可靠；
+    /// 内核没起来时 DownloadService 会退化成直连，不会因此失败。
+    /// </summary>
+    private async Task UpdateSubscriptionsAsync()
+    {
+        if (_subUpdating)
+        {
+            return;
+        }
+
+        _subUpdating = true;
+        var failed = new List<string>();
+        var okCount = 0;
+        SubscriptionStatus = "正在更新订阅…";
+        try
+        {
+            await SubscriptionHandler.UpdateProcess(
+                AppManager.Instance.Config,
+                string.Empty,
+                true,
+                (notify, msg) =>
+                {
+                    // notify 为 true 是结果行，false 是过程行。
+                    // 过程行里带「失败」的记下来，最后汇总成一句结论 ——
+                    // 只把最后一行结果丢给用户，会掩盖"部分订阅失败"。
+                    if (msg.Contains(ResUI.MsgFailedImportSubscription, StringComparison.Ordinal))
+                    {
+                        failed.Add(msg);
+                    }
+                    else if (notify)
+                    {
+                        okCount++;
+                    }
+
+                    SubscriptionStatus = msg;
+                    return Task.CompletedTask;
+                });
+
+            // 更新完必须重载列表：节点和"上次更新"时间都变了。
+            // 只改 SubscriptionStatus 而不重载，界面上还是旧数据，
+            // 用户会以为没更新成功。
+            await LoadSubscriptionsAsync();
+            await _profiles.RefreshServersBiz();
+
+            SubscriptionStatus = failed.Count == 0 && okCount > 0
+                ? "订阅已更新"
+                : failed.Count > 0
+                    ? $"部分订阅更新失败（{failed.Count} 个），详见设置页日志"
+                    : "没有可更新的订阅";
+        }
+        catch (Exception ex)
+        {
+            Logging.SaveLog("DashboardViewModel.UpdateSubscriptionsAsync", ex);
+            SubscriptionStatus = $"订阅更新失败：{ex.GetBaseException().Message}";
+        }
+        finally
+        {
+            _subUpdating = false;
+        }
+    }
+
+    /// <summary>订阅更新的状态行，显示在「更新全部订阅」下方。</summary>
+    [Reactive]
+    public partial string SubscriptionStatus { get; set; } = string.Empty;
+
+    private bool _subUpdating;
 
     #endregion
 

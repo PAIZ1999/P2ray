@@ -33,7 +33,13 @@ jobs:
 
       - name: Run tests
         working-directory: ./v2rayN
-        run: dotnet test ServiceLib.Tests/ServiceLib.Tests.csproj -c Release
+        # TUnit 是 Microsoft.Testing.Platform 项目，本身就是一个可执行的测试宿主。
+        # .NET 10 SDK 已移除 `dotnet test` 的 VSTest 路径（MTP 要求 opt-in），
+        # 直接 `dotnet test` 会报 "Testing with VSTest target is no longer supported"。
+        # 所以先 build 再运行测试宿主 exe —— 与本地验证方式完全一致。
+        run: |
+          dotnet build ServiceLib.Tests/ServiceLib.Tests.csproj -c Release
+          ./ServiceLib.Tests/bin/Release/net10.0/ServiceLib.Tests.exe
 
   build:
     name: build ${{ matrix.rid }}

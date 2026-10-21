@@ -832,6 +832,15 @@
                                 Style="{StaticResource P2raySecondaryButton}" />
                         </Grid>
                     </Border>
+
+                    <!-- 更新结果就地显示。之前这个操作的结果只写进别的窗口的日志面板，
+                         首页点完毫无反馈，看起来就像按钮没反应。 -->
+                    <TextBlock
+                        x:Name="txtSubStatus"
+                        Margin="12,0,12,10"
+                        Style="{StaticResource P2rayMicro}"
+                        TextTrimming="CharacterEllipsis"
+                        Visibility="Collapsed" />
                 </StackPanel>
             </Border>
 
