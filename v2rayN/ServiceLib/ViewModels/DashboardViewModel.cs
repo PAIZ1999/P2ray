@@ -414,6 +414,7 @@ public partial class DashboardViewModel : MyReactiveObject
             IpAsnDisplay = string.Empty;
             IpRiskDisplay = string.Empty;
             IpAiVerdictDisplay = string.Empty;
+            IpMetaDisplay = string.Empty;
             return;
         }
 
@@ -433,6 +434,12 @@ public partial class DashboardViewModel : MyReactiveObject
         IpAiVerdictDisplay = score.AiVerdictLabel.IsNullOrEmpty()
             ? string.Empty
             : $"{score.AiVerdictLabel} · {score.AiVerdictConfidence}%";
+
+        // 合成一行附注：住宅 IP · AS979 NetLab Global · Residential-like 70%
+        // 只留类型与 ASN：AI 判定（"Residential-like · 70%"）与类型高度重复，
+        // 左栏宽度就那么点，塞四项必然被裁成省略号，反而比不显示更难看。
+        IpMetaDisplay = string.Join(" · ", new[] { IpTypeDisplay, IpAsnDisplay }
+            .Where(s => !string.IsNullOrWhiteSpace(s)));
     }
 
     /// <summary>
@@ -553,6 +560,16 @@ public partial class DashboardViewModel : MyReactiveObject
     [Reactive]
     public partial string IpAiVerdictDisplay { get; set; }
 
+    /// <summary>
+    /// 评分行右侧的附加信息，把类型 / ASN / 风险 / AI 判定压成一行。
+    ///
+    /// 原先这四项各占一行，四条 11pt 的灰字排在 IP 下面，
+    /// 左栏被拉到和右栏一样高、还多出一层背景块，整块面板显得又乱又满。
+    /// 这些是"补充说明"而不是主数据，合成一行、放小字号就够了。
+    /// </summary>
+    [Reactive]
+    public partial string IpMetaDisplay { get; set; }
+
     private IpScoreResult? _ipScore;
 
     #endregion
@@ -580,12 +597,14 @@ public partial class DashboardViewModel : MyReactiveObject
     public partial bool NetProbeViaProxy { get; set; }
 
     /// <summary>
-    /// 连通性汇总文本，如「7 / 10 可用」。
+    /// 连通性汇总文本，如「站点连通性　10 / 10 可用」。
     /// 直连测得的数字后面缀上「直连」，避免用户把"本地网络能上"误读成"代理已经工作"。
+    /// 标题并在这一行左侧，避免又多一行小标题把面板撑高。
     /// </summary>
     public string NetProbeSummary => NetProbeTotalCount > 0
-        ? $"{NetProbeOkCount} / {NetProbeTotalCount} 可用" + (NetProbeViaProxy ? string.Empty : "（直连）")
-        : "—";
+        ? $"站点连通性　{NetProbeOkCount} / {NetProbeTotalCount} 可用"
+            + (NetProbeViaProxy ? string.Empty : "（直连）")
+        : "站点连通性　—";
 
     public ReactiveCommand<RxVoid, RxVoid> RefreshNetProbeCmd { get; }
 

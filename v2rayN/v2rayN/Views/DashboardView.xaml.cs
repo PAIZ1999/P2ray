@@ -84,10 +84,7 @@ public partial class DashboardView : ReactiveUserControl<DashboardViewModel>
                         score, typeof(System.Windows.Media.Brush), null, System.Globalization.CultureInfo.CurrentCulture)
                         as System.Windows.Media.Brush).DisposeWith(disposables);
             this.OneWayBind(ViewModel, vm => vm.IpScoreLevel, v => v.txtIpScoreLevel.Text).DisposeWith(disposables);
-            this.OneWayBind(ViewModel, vm => vm.IpTypeDisplay, v => v.txtIpType.Text).DisposeWith(disposables);
-            this.OneWayBind(ViewModel, vm => vm.IpAsnDisplay, v => v.txtIpAsn.Text).DisposeWith(disposables);
-            this.OneWayBind(ViewModel, vm => vm.IpRiskDisplay, v => v.txtIpRisk.Text).DisposeWith(disposables);
-            this.OneWayBind(ViewModel, vm => vm.IpAiVerdictDisplay, v => v.txtIpAiVerdict.Text).DisposeWith(disposables);
+            this.OneWayBind(ViewModel, vm => vm.IpMetaDisplay, v => v.txtIpMeta.Text).DisposeWith(disposables);
 
             // 首屏探测：等内核就绪后再跑。
             //
