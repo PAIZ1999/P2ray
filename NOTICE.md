@@ -40,6 +40,31 @@ v2rayN 版权归 2dust 及贡献者所有，原始版权声明保留于各源文
 
 ---
 
+## 随包分发的素材
+
+### Twemoji 国旗
+
+- 来源：<https://github.com/twitter/twemoji>
+- 许可：**CC-BY 4.0**
+- 用途：`v2rayN/v2rayN/Resources/Flags/*.png`（48×48 国旗）
+
+Windows 不渲染区域指示符（U+1F1E6..U+1F1FF）组合，界面里直接写字面国旗 emoji 只会
+显示成两个方框，因此改为随包分发位图。由 `scripts/fetch-flags.py` 从 twemoji 的
+旗帜 SVG 渲染而来。
+
+### 站点图标
+
+- 来源：<https://ip.net.coffee/> 的 `/favicons/` 静态资源
+- 用途：`v2rayN/v2rayN/Resources/Sites/*.png`（24×24 站点图标）
+
+各图标为对应商标持有者的标志，此处仅作「该站点是否可达」的识别用途，不表示任何
+关联或背书。由 `scripts/fetch-site-icons.py` 抓取并缩放。
+
+连通性面板的图标必须在本地：那是用户断网时最需要看的界面之一，图标若也要联网取，
+恰恰会在最该显示的时候全是破图。
+
+---
+
 ## 编译期依赖（.NET 包）
 
 | 包 | 许可 |

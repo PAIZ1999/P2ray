@@ -41,6 +41,32 @@ public partial class ProfileItemModel : ReactiveObject
     [Reactive]
     public partial string TotalDown { get; set; }
 
+    /// <summary>
+    /// 今日流量，形如 "12.3 MB / 45.6 MB"（上传 / 下载）。
+    ///
+    /// 上游把上下行拆成 TodayUp / TodayDown 两个字段，界面上分两列显示会挤掉
+    /// 分组和地址的空间。这里合成一格，未统计过时给破折号 ——
+    /// 直接绑空字符串会留下一个看不出含义的空白格。
+    /// </summary>
+    public string TodayTrafficText => Format(TodayUp, TodayDown);
+
+    /// <summary>累计流量，格式同 TodayTrafficText。</summary>
+    public string TotalTrafficText => Format(TotalUp, TotalDown);
+
+    private static string Format(string? up, string? down)
+    {
+        var hasUp = !string.IsNullOrEmpty(up);
+        var hasDown = !string.IsNullOrEmpty(down);
+
+        return (hasUp, hasDown) switch
+        {
+            (true, true) => $"{up} / {down}",
+            (true, false) => up!,
+            (false, true) => $"0 / {down}",
+            _ => "—",
+        };
+    }
+
     public string GetSummary()
     {
         var summary = $"[{ConfigType}] {Remarks}";

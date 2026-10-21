@@ -49,7 +49,7 @@
     <DockPanel Margin="{StaticResource P2rayPagePadding}">
 
         <!-- ===== 顶部操作栏 ===== -->
-        <Grid DockPanel.Dock="Top" Margin="0,0,0,16">
+        <Grid DockPanel.Dock="Top" Margin="0,0,0,14">
             <StackPanel>
                 <TextBlock Style="{StaticResource P2rayH1}" Text="节点" />
                 <TextBlock
@@ -74,8 +74,38 @@
             </StackPanel>
         </Grid>
 
+        <!-- ===== 分组切换 =====
+             横向排列而非下拉框：分组通常只有几个，摊开一眼可见，少一次点击。
+             首项「所有」由 ViewModel 追加（Id 为空，代表不按订阅过滤）。 -->
+        <ScrollViewer
+            Margin="0,0,0,12"
+            HorizontalScrollBarVisibility="Auto"
+            VerticalScrollBarVisibility="Disabled"
+            DockPanel.Dock="Top">
+            <ItemsControl x:Name="lstGroups">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel Orientation="Horizontal" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <RadioButton
+                            Margin="0,0,8,0"
+                            Checked="Group_Checked"
+                            Content="{Binding Remarks}"
+                            GroupName="NodeGroup"
+                            Style="{StaticResource P2rayGroupChip}"
+                            Tag="{Binding}" />
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+
         <!-- ===== 节点列表 ===== -->
-        <Border Style="{StaticResource P2rayCard}" Padding="0">
+        <Border
+            Padding="0"
+            Style="{StaticResource P2rayCard}">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
@@ -93,14 +123,31 @@
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="90" />
-                            <ColumnDefinition Width="90" />
-                            <ColumnDefinition Width="110" />
+                            <ColumnDefinition Width="72" />
+                            <ColumnDefinition Width="72" />
+                            <ColumnDefinition Width="124" />
+                            <ColumnDefinition Width="124" />
                         </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Style="{StaticResource P2rayMicro}" Text="节点" />
-                        <TextBlock Grid.Column="1" Style="{StaticResource P2rayMicro}" Text="协议" />
-                        <TextBlock Grid.Column="2" Style="{StaticResource P2rayMicro}" Text="延迟" />
-                        <TextBlock Grid.Column="3" Style="{StaticResource P2rayMicro}" Text="分组" />
+                        <TextBlock
+                            Grid.Column="0"
+                            Style="{StaticResource P2rayMicro}"
+                            Text="节点" />
+                        <TextBlock
+                            Grid.Column="1"
+                            Style="{StaticResource P2rayMicro}"
+                            Text="协议" />
+                        <TextBlock
+                            Grid.Column="2"
+                            Style="{StaticResource P2rayMicro}"
+                            Text="延迟" />
+                        <TextBlock
+                            Grid.Column="3"
+                            Style="{StaticResource P2rayMicro}"
+                            Text="今日 ↑ / ↓" />
+                        <TextBlock
+                            Grid.Column="4"
+                            Style="{StaticResource P2rayMicro}"
+                            Text="累计 ↑ / ↓" />
                     </Grid>
                 </Border>
 
@@ -126,9 +173,10 @@
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="90" />
-                                    <ColumnDefinition Width="90" />
-                                    <ColumnDefinition Width="110" />
+                                    <ColumnDefinition Width="72" />
+                                    <ColumnDefinition Width="72" />
+                                    <ColumnDefinition Width="124" />
+                                    <ColumnDefinition Width="124" />
                                 </Grid.ColumnDefinitions>
 
                                 <StackPanel Grid.Column="0" VerticalAlignment="Center">
@@ -182,11 +230,21 @@
                                     Style="{StaticResource P2rayCaption}"
                                     Text="{Binding DelayVal}" />
 
+                                <!-- 流量：数据来自 ServerStatItem，由统计服务定时写入。
+                                     未产生过流量时显示破折号，而不是留一格空白 ——
+                                     空白看不出是"没有流量"还是"这功能没实现"。 -->
                                 <TextBlock
                                     Grid.Column="3"
                                     VerticalAlignment="Center"
                                     Style="{StaticResource P2rayCaption}"
-                                    Text="{Binding SubRemarks}"
+                                    Text="{Binding TodayTrafficText}"
+                                    TextTrimming="CharacterEllipsis" />
+
+                                <TextBlock
+                                    Grid.Column="4"
+                                    VerticalAlignment="Center"
+                                    Style="{StaticResource P2rayCaption}"
+                                    Text="{Binding TotalTrafficText}"
                                     TextTrimming="CharacterEllipsis" />
                             </Grid>
                         </DataTemplate>

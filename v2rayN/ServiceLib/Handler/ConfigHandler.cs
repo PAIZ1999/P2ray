@@ -99,6 +99,21 @@ public static class ConfigHandler
         {
             config.GuiItem.RootCertProvider = Global.RootCertProviders.First();
         }
+
+        // 流量统计默认开启（见 GUIItem 的注释）。
+        // 只改默认值对老用户无效 —— 他们的配置文件里早就是 false 了，
+        // 反序列化会把这个 false 读回来。因此补一次一次性迁移，
+        // 用 AppliedMigrations 打标记，只对从没跑过该迁移的配置生效。
+        const string statisticsOnMigration = "EnableStatisticsByDefault";
+        var applied = config.AppliedMigrations ?? string.Empty;
+        if (!applied.Split(',', StringSplitOptions.RemoveEmptyEntries).Contains(statisticsOnMigration))
+        {
+            config.GuiItem.EnableStatistics = true;
+            config.GuiItem.DisplayRealTimeSpeed = true;
+            config.AppliedMigrations = string.IsNullOrEmpty(applied)
+                ? statisticsOnMigration
+                : $"{applied},{statisticsOnMigration}";
+        }
         config.MsgUIItem ??= new();
 
         config.UiItem ??= new();

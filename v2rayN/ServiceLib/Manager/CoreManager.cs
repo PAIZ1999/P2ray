@@ -95,6 +95,17 @@ public class CoreManager
         await WaitForProxyPort(preContext);
         await CoreStartPreService(preContext);
 
+        // 只有进程确实活着才写 RunningCoreType。
+        // 它是"内核是否在跑"的唯一全局信号，写入它等于对外宣称本地 socks 端口可用：
+        // 启动失败（端口被占用、配置有误）却照样写成 Xray，会让首页网络探测
+        // 把请求发到那个端口上 —— 端口可能正被别的程序占着，于是探测拿到的是
+        // 别人的结果，界面显示"境外站点全部可用"，而实际上内核根本没起来。
+        if (_processService is not { HasExited: false })
+        {
+            AppManager.Instance.RunningCoreType = default;
+            return;
+        }
+
         AppManager.Instance.RunningCoreType = preContext?.RunCoreType ?? mainContext.RunCoreType;
 
         if (_processService != null)
@@ -176,6 +187,13 @@ public class CoreManager
         catch (Exception ex)
         {
             Logging.SaveLog(_tag, ex);
+        }
+        finally
+        {
+            // 内核已经停了，RunningCoreType 必须一起归零，否则"内核在跑"的信号会一直为真。
+            // LoadCore 里 CoreStop 之后就紧接着 CoreStart，成功时会重新写入一次，
+            // 因此这里先清空不会影响正常流程。
+            AppManager.Instance.RunningCoreType = default;
         }
     }
 

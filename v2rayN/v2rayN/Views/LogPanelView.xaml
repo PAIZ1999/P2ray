@@ -49,8 +49,14 @@
             BorderBrush="{StaticResource P2rayBorderBrush}"
             BorderThickness="1"
             CornerRadius="{StaticResource P2rayRadiusS}">
+            <!-- 日志区必须有固定高度上限。
+                 TextBox 默认按内容撑高，展开日志后窗口会被拉到几千像素，
+                 外层 ScrollViewer 里的滚动条随之失效 —— 用户只能靠拖窗口才能看全。
+                 MaxHeight + 内部滚动条让日志在自己的框里滚，页面高度不变。 -->
             <TextBox
                 x:Name="txtLog"
+                MinHeight="120"
+                MaxHeight="300"
                 Padding="10,8"
                 AcceptsReturn="True"
                 Background="Transparent"

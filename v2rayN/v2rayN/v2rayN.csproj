@@ -35,6 +35,13 @@
 		<Resource Include="Resources\NotifyIcon3.ico" />
 		<Resource Include="Resources\NotifyIcon4.ico" />
 		<Resource Include="Resources\P2ray.ico" />
+		<!-- 国旗：Windows 不渲染区域指示符 emoji，必须用位图。
+		     素材由 scripts/fetch-flags.py 从 twemoji 拉取。 -->
+		<Resource Include="Resources\Flags\*.png" />
+		<!-- 站点图标：连通性面板用。内置而非运行时下载 ——
+		     面板恰恰是断网时最需要看的界面，图标不能依赖网络。
+		     素材由 scripts/fetch-site-icons.py 拉取。 -->
+		<Resource Include="Resources\Sites\*.png" />
 	</ItemGroup>
 
 	<ItemGroup>

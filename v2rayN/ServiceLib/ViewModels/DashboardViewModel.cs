@@ -133,6 +133,36 @@ public partial class DashboardViewModel : MyReactiveObject
         // 不用 _profiles.SubItems：它含一个 Id 为空的"所有"虚拟分组，不是真实订阅。
         // 真实订阅列表由 LoadSubscriptionsAsync 从数据库读取。
 
+        #region 节点页分组切换
+
+        // 上游 SelectedSub 变化 → 首页镜像到 SelectedNodeGroup（含启动初值同步）
+        this.WhenAnyValue(x => x._profiles.SelectedSub)
+            .Subscribe(v =>
+            {
+                _suppressGroupSync = true;
+                try
+                {
+                    SelectedNodeGroup = v;
+                }
+                finally
+                {
+                    _suppressGroupSync = false;
+                }
+            });
+
+        // 反向：用户在节点页选了分组 → 写回上游，由它重载节点列表。
+        // _suppressGroupSync 打断回环：上面写 SelectedNodeGroup 会再次触发这里。
+        this.WhenAnyValue(x => x.SelectedNodeGroup)
+            .Where(v => v is not null && !_suppressGroupSync)
+            .Where(v => !ReferenceEquals(_profiles.SelectedSub, v)
+                        && _profiles.SelectedSub?.Id != v.Id)
+            .Subscribe(v =>
+            {
+                _profiles.SelectedSub = v;
+            });
+
+        #endregion
+
         Nodes = _profiles.ProfileItems;
         BindNodes(Nodes);
         SelectedNode = _profiles.SelectedProfile;
@@ -145,7 +175,29 @@ public partial class DashboardViewModel : MyReactiveObject
         // SelectedRouting 变更 → RoutingSelectedChangedAsync → ReloadRequested。
         // 首页直接复用这条链路，不自己写 SetDefaultRouting，避免绕开重载逻辑。
         this.WhenAnyValue(x => x._statusBar.RoutingItems)
-            .Subscribe(items => RoutingModes = items);
+            .Subscribe(items =>
+            {
+                RoutingModes = items;
+
+                // 兜底选中：上游 SelectedRouting 在冷启动时可能还没来得及赋值，
+                // 于是分段控件一个都不高亮，看起来像"没启用任何分流"。
+                // 这里按 IsActive 找回真正生效的那条，找不到就选第一条（规则）。
+                if (SelectedRoutingMode is null && items is { Count: > 0 })
+                {
+                    var active = items.FirstOrDefault(r => r.IsActive) ?? items[0];
+                    _suppressRoutingSync = true;
+                    try
+                    {
+                        SelectedRoutingMode = active;
+                    }
+                    finally
+                    {
+                        _suppressRoutingSync = false;
+                    }
+
+                    UpdateRoutingHintText(active.Remarks);
+                }
+            });
 
         this.WhenAnyValue(x => x._statusBar.SelectedRouting)
             .Subscribe(v =>
@@ -201,28 +253,331 @@ public partial class DashboardViewModel : MyReactiveObject
         RefreshNodesCmd = ReactiveCommand.CreateFromTask(async () =>
             await _profiles.RefreshServersBiz());
 
+        // 网络探测：探测本身要跑十几个请求，用 ReactiveCommand 自带的重入保护，
+        // 避免用户连点刷新按钮叠出多轮探测。
+        RefreshNetProbeCmd = ReactiveCommand.CreateFromTask(RefreshNetProbeAsync);
+
+        // 直连规则
+        AddDirectRuleCmd = ReactiveCommand.CreateFromTask(AddDirectRuleAsync);
+        OpenDirectRulePanelCmd = ReactiveCommand.CreateFromTask(async () =>
+        {
+            IsDirectRulePanelOpen = !IsDirectRulePanelOpen;
+            if (IsDirectRulePanelOpen)
+            {
+                await LoadDirectRulesAsync();
+            }
+        });
+
+        // NetProbeSummary 是由两个计数和代理标记拼出来的，需要跟着它们一起通知，
+        // 否则界面上的「x / y 可用」不会刷新。
+        this.WhenAnyValue(x => x.NetProbeOkCount, x => x.NetProbeTotalCount, x => x.NetProbeViaProxy)
+            .Subscribe(_ => this.RaisePropertyChanged(nameof(NetProbeSummary)));
+
         #endregion
 
         _ = LoadSubscriptionsAsync();
     }
 
     /// <summary>
-    /// 拉取订阅列表用于设置页展示（含上次更新时间）。
+    /// 跑一轮网络探测：出口 IP + 归属地，然后逐个站点测连通性。
+    /// 每次切换代理模式 / 节点后网络位置会变，视图层据此重新调用。
+    /// </summary>
+    public async Task RefreshNetProbeAsync()
+    {
+        if (_netProbeRunning)
+        {
+            return;
+        }
+
+        _netProbeRunning = true;
+        try
+        {
+            IsNetProbeRunning = true;
+            NetProbeStatus = "正在检测…";
+
+            // 上一轮的数字必须立刻清零。
+            // 探测要跑十几秒，这期间每个站点都是灰的"未测"，如果汇总还挂着
+            // 上一轮的"5 / 10 可用"，用户会看到一个和下面格子对不上的数字，
+            // 分不清它说的是现在还是刚才。
+            NetProbeOkCount = 0;
+            NetProbeTotalCount = 0;
+
+            // 探测目标先按已知清单铺好占位行，用户能立刻看到要测哪些站点，
+            // 而不是面对一块空白等十几秒。
+            NetProbes = new BulkObservableCollection<NetProbeResult>(NetProbeService.CreatePlaceholders());
+
+            // 分组也要跟着清空，否则上一轮的分组小结会挂在下面
+            NetProbeGroups = [];
+
+            var service = new NetProbeService();
+
+            // 把本轮走的是代理还是直连记下来。未连接时境外站点当然可能全部"可用"，
+            // 但那是本地网络直连的结果，不能和"代理已生效"混为一谈。
+            NetProbeViaProxy = service.UsedProxy;
+
+            var location = await service.GetIpLocationAsync();
+            ApplyIpLocation(location);
+
+            // 评分要等 IP 出来后才能查，和连通性并行跑：
+            // 评分接口单次约 300ms-1.5s，串在站点探测前面会白等一轮。
+            var scoreTask = location?.Ip is { Length: > 0 } ip
+                ? service.GetIpScoreAsync(ip)
+                : Task.FromResult<IpScoreResult?>(null);
+
+            var results = await service.ProbeAllAsync();
+
+            NetProbes = new BulkObservableCollection<NetProbeResult>(results);
+            NetProbeOkCount = results.Count(r => r.Ok);
+            NetProbeTotalCount = results.Count;
+            RebuildNetProbeGroups();
+
+            ApplyIpScore(await scoreTask);
+
+            NetProbeStatus = NetProbeUpdatedAt;
+        }
+        catch (Exception ex)
+        {
+            Logging.SaveLog("DashboardViewModel.RefreshNetProbeAsync", ex);
+            NetProbeStatus = "检测失败";
+        }
+        finally
+        {
+            _netProbeRunning = false;
+            IsNetProbeRunning = false;
+        }
+    }
+
+    private void ApplyIpLocation(IpLocationResult? info)
+    {
+        _ipLocation = info;
+
+        if (info is null || string.IsNullOrEmpty(info.Ip))
+        {
+            IpAddressDisplay = "获取失败";
+            IpLocationDisplay = string.Empty;
+            IpCountryDisplay = string.Empty;
+            IpFlagUri = null;
+            return;
+        }
+
+        IpAddressDisplay = info.Ip;
+        IpLocationDisplay = NetProbeService.FormatLocation(info);
+        IpCountryDisplay = info.CountryDisplay;
+        // 素材里没有这个国家时返回 null，界面据此隐藏图片而不是显示破图。
+        IpFlagUri = info.FlagImageUri;
+
+        NetProbeUpdatedAt = $"更新于 {DateTime.Now:HH:mm:ss}";
+    }
+
+    /// <summary>
+    /// 把评分结果映射到界面字段。拿不到评分时整块隐藏，
+    /// 而不是把 0 分显示出来 —— 0 分会被读成"这个 IP 极差"，与"没查到"是两回事。
+    /// </summary>
+    private void ApplyIpScore(IpScoreResult? score)
+    {
+        _ipScore = score;
+
+        if (score is null)
+        {
+            HasIpScore = false;
+            IpScoreDisplay = "—";
+            IpScoreLevel = string.Empty;
+            IpTypeDisplay = string.Empty;
+            IpAsnDisplay = string.Empty;
+            IpRiskDisplay = string.Empty;
+            IpAiVerdictDisplay = string.Empty;
+            return;
+        }
+
+        HasIpScore = true;
+        IpScoreValue = score.TrustScore;
+        IpScoreDisplay = $"{score.TrustScore}";
+        IpScoreLevel = score.TrustLevel;
+        IpTypeDisplay = score.IpTypeText;
+
+        // ASN 与组织拼一行；组织名可能很长，界面负责截断
+        IpAsnDisplay = score.Asn.IsNullOrEmpty()
+            ? score.AsOrganization ?? string.Empty
+            : $"{score.Asn} {score.AsOrganization}".Trim();
+
+        IpRiskDisplay = score.RiskText;
+
+        IpAiVerdictDisplay = score.AiVerdictLabel.IsNullOrEmpty()
+            ? string.Empty
+            : $"{score.AiVerdictLabel} · {score.AiVerdictConfidence}%";
+    }
+
+    /// <summary>
+    /// 拉取订阅列表用于设置页展示（含上次更新时间），同时刷新节点页的分组下拉。
     /// </summary>
     public async Task LoadSubscriptionsAsync()
     {
         try
         {
-            var lst = await AppManager.Instance.SubItems();
-            Subscriptions = lst is null
-                ? []
-                : new BulkObservableCollection<SubItem>(lst);
+            var lst = await AppManager.Instance.SubItems() ?? [];
+
+            // 首页订阅列表只认真实订阅
+            Subscriptions = new BulkObservableCollection<SubItem>(lst);
+
+            // 节点页需要「所有」这一项，它的 Id 为空，代表不按订阅过滤。
+            // 用上游同一份副本，避免把虚拟项写回数据库。
+            var groups = new List<SubItem> { new() { Remarks = ResUI.AllGroupServers } };
+            groups.AddRange(lst);
+            NodeGroups = new BulkObservableCollection<SubItem>(groups);
+
+            // 选中项跟随当前过滤条件：SubIndexId 为空时对应「所有」
+            var current = _profiles.SelectedSub;
+            var target = current is not null && groups.Any(g => g.Id == current.Id)
+                ? groups.First(g => g.Id == current.Id)
+                : groups[0];
+
+            _suppressGroupSync = true;
+            try
+            {
+                SelectedNodeGroup = target;
+            }
+            finally
+            {
+                _suppressGroupSync = false;
+            }
         }
         catch (Exception ex)
         {
             Logging.SaveLog("DashboardViewModel.LoadSubscriptionsAsync", ex);
         }
     }
+
+    #region 网络位置与连通性
+
+    [Reactive]
+    public partial string IpAddressDisplay { get; set; } = "—";
+
+    [Reactive]
+    public partial string IpLocationDisplay { get; set; }
+
+    /// <summary>国旗图片地址（pack URI）。null 表示没有素材，界面应隐藏图片。</summary>
+    [Reactive]
+    public partial string IpFlagUri { get; set; }
+
+    /// <summary>国家中文名，单独暴露以便在旗帜旁显示文字。</summary>
+    [Reactive]
+    public partial string IpCountryDisplay { get; set; }
+
+    #region IP 评分
+
+    /// <summary>是否拿到了评分。false 时界面隐藏评分区，不显示 0 分。</summary>
+    [Reactive]
+    public partial bool HasIpScore { get; set; }
+
+    /// <summary>信任度数值，用于着色（越高越绿）。</summary>
+    [Reactive]
+    public partial int IpScoreValue { get; set; }
+
+    [Reactive]
+    public partial string IpScoreDisplay { get; set; } = "—";
+
+    /// <summary>信任度等级文案：优秀 / 良好 / 一般 / 较差 / 很差。</summary>
+    [Reactive]
+    public partial string IpScoreLevel { get; set; }
+
+    /// <summary>IP 类型：住宅 IP / 机房 IP / 移动网络 / Tor 出口。</summary>
+    [Reactive]
+    public partial string IpTypeDisplay { get; set; }
+
+    /// <summary>ASN 与归属组织，如 "AS979 NetLab Global"。</summary>
+    [Reactive]
+    public partial string IpAsnDisplay { get; set; }
+
+    /// <summary>风险标记汇总，如 "机房 · VPN"。无风险时为空。</summary>
+    [Reactive]
+    public partial string IpRiskDisplay { get; set; }
+
+    /// <summary>AI 判定，如 "Residential-like · 70%"。</summary>
+    [Reactive]
+    public partial string IpAiVerdictDisplay { get; set; }
+
+    private IpScoreResult? _ipScore;
+
+    #endregion
+
+    [Reactive]
+    public partial BulkObservableCollection<NetProbeResult> NetProbes { get; set; } = [];
+
+    [Reactive]
+    public partial bool IsNetProbeRunning { get; set; }
+
+    [Reactive]
+    public partial string NetProbeStatus { get; set; } = "尚未检测";
+
+    [Reactive]
+    public partial string NetProbeUpdatedAt { get; set; }
+
+    [Reactive]
+    public partial int NetProbeOkCount { get; set; }
+
+    [Reactive]
+    public partial int NetProbeTotalCount { get; set; }
+
+    /// <summary>本轮探测是否走代理。false 表示这些结果是直连测出来的。</summary>
+    [Reactive]
+    public partial bool NetProbeViaProxy { get; set; }
+
+    /// <summary>
+    /// 连通性汇总文本，如「7 / 10 可用」。
+    /// 直连测得的数字后面缀上「直连」，避免用户把"本地网络能上"误读成"代理已经工作"。
+    /// </summary>
+    public string NetProbeSummary => NetProbeTotalCount > 0
+        ? $"{NetProbeOkCount} / {NetProbeTotalCount} 可用" + (NetProbeViaProxy ? string.Empty : "（直连）")
+        : "—";
+
+    public ReactiveCommand<RxVoid, RxVoid> RefreshNetProbeCmd { get; }
+
+    private bool _netProbeRunning;
+    private IpLocationResult? _ipLocation;
+
+    /// <summary>
+    /// 按分组投影的探测结果，供界面分组显示（国际 / AI / 国内）。
+    ///
+    /// 为什么不直接在 XAML 用 CollectionViewSource 分组：
+    /// 这里要的不只是分组标题，还要每组自己的"x / y 可用"小计，
+    /// 而 CollectionView 的 GroupItem 拿不到组内聚合值。
+    /// </summary>
+    [Reactive]
+    public partial BulkObservableCollection<NetProbeGroup> NetProbeGroups { get; set; } = [];
+
+    /// <summary>
+    /// 把扁平的 NetProbes 按 Tag 组装成分组。
+    /// 顺序固定为 国际 → AI → 国内，不随结果变化跳来跳去。
+    /// </summary>
+    private void RebuildNetProbeGroups()
+    {
+        var order = new[] { "国际", "AI", "国内" };
+        var groups = new List<NetProbeGroup>(order.Length);
+
+        foreach (var tag in order)
+        {
+            var items = NetProbes.Where(r => r.Tag == tag).ToList();
+            if (items.Count == 0)
+            {
+                continue;
+            }
+
+            groups.Add(new NetProbeGroup
+            {
+                Tag = tag,
+                Items = new BulkObservableCollection<NetProbeResult>(items),
+                OkCount = items.Count(r => r.Ok),
+                TotalCount = items.Count,
+                // 只统计成功项的均值：失败项没有延迟可言，
+                // 按 0 计入会把平均值拉低，看起来像"线路很快"。
+                AverageMs = items.Where(r => r.Ok && r.LatencyMs > 0).Select(r => r.LatencyMs).DefaultIfEmpty(0).Average(),
+            });
+        }
+
+        NetProbeGroups = new BulkObservableCollection<NetProbeGroup>(groups);
+    }
+
+    #endregion
 
     #region 连接状态
 
@@ -316,6 +671,26 @@ public partial class DashboardViewModel : MyReactiveObject
     [Reactive]
     public partial BulkObservableCollection<SubItem> Subscriptions { get; set; }
 
+    /// <summary>
+    /// 节点页的分组切换项。
+    /// 第一项是上游的「所有」虚拟分组（Id 为空），其余是真实订阅。
+    /// Subscriptions 会被首页订阅列表复用，不能往里塞虚拟项，
+    /// 否则首页会多出一个点不动的"所有"条目，所以这里单独一份。
+    /// </summary>
+    [Reactive]
+    public partial BulkObservableCollection<SubItem> NodeGroups { get; set; }
+
+    /// <summary>
+    /// 节点页当前选中的分组。
+    /// 写入即切换：委托给 ProfilesViewModel.SelectedSub，
+    /// 由它走上游的 SubSelectedChangedAsync 重载节点列表。
+    /// </summary>
+    [Reactive]
+    public partial SubItem SelectedNodeGroup { get; set; }
+
+    /// <summary>防止 SelectedNodeGroup 与上游 SelectedSub 互相赋值形成回环。</summary>
+    private bool _suppressGroupSync;
+
     #endregion
 
     #region 路由模式
@@ -334,6 +709,97 @@ public partial class DashboardViewModel : MyReactiveObject
 
     /// <summary>防止 SelectedRoutingMode 与上游 SelectedRouting 互相赋值形成回环。</summary>
     private bool _suppressRoutingSync;
+
+    /// <summary>
+    /// 路由模式下面那行说明文案。
+    /// 放在 ViewModel 而不是视图里，是因为切换来源有两处（用户点选、启动时兜底选中），
+    /// 文案只能有一份，否则两处各写一套迟早写岔。
+    /// </summary>
+    [Reactive]
+    public partial string RoutingHintText { get; set; } = "决定哪些网站的流量经过代理。";
+
+    private void UpdateRoutingHintText(string? remarks)
+    {
+        var name = RoutingNameHelper.ToShortName(remarks);
+        RoutingHintText = name switch
+        {
+            "全局" => "全部网站都走代理。速度取决于线路，流量消耗也最大。",
+            "黑名单" => "只有列表内的网站走代理，其余直连。适合明确知道要访问哪些站点的场景。",
+            "规则" => "国内网站直连，境外网站走代理。日常使用推荐这一项。",
+            _ => "决定哪些网站的流量经过代理。",
+        };
+    }
+
+    #endregion
+
+    #region 自定义直连规则
+
+    /// <summary>用户自己添加的直连条目（只含本界面管理的那些）。</summary>
+    [Reactive]
+    public partial BulkObservableCollection<DirectRuleEntry> DirectRules { get; set; } = [];
+
+    /// <summary>输入框内容。填域名或 IP。</summary>
+    [Reactive]
+    public partial string DirectRuleInput { get; set; }
+
+    /// <summary>操作结果提示（成功或失败），空串表示不显示。</summary>
+    [Reactive]
+    public partial string DirectRuleStatus { get; set; }
+
+    /// <summary>让直连规则区展开/收起。默认收起，避免首页一上来就堆满设置项。</summary>
+    [Reactive]
+    public partial bool IsDirectRulePanelOpen { get; set; }
+
+    public ReactiveCommand<RxVoid, RxVoid> AddDirectRuleCmd { get; }
+
+    public ReactiveCommand<RxVoid, RxVoid> OpenDirectRulePanelCmd { get; }
+
+    private readonly DirectRuleService _directRuleService = new();
+
+    /// <summary>刷新直连规则列表。</summary>
+    public async Task LoadDirectRulesAsync()
+    {
+        try
+        {
+            var list = await _directRuleService.GetCustomRulesAsync();
+            DirectRules = new BulkObservableCollection<DirectRuleEntry>(list);
+        }
+        catch (Exception ex)
+        {
+            Logging.SaveLog("DashboardViewModel.LoadDirectRulesAsync", ex);
+        }
+    }
+
+    /// <summary>加一条规则。成功后清空输入框并刷新列表。</summary>
+    public async Task AddDirectRuleAsync()
+    {
+        var input = DirectRuleInput;
+        if (string.IsNullOrWhiteSpace(input))
+        {
+            DirectRuleStatus = "请填写域名或 IP";
+            return;
+        }
+
+        var error = await _directRuleService.AddAsync(input);
+        if (error is not null)
+        {
+            DirectRuleStatus = error;
+            return;
+        }
+
+        var value = input.Trim();
+        DirectRuleInput = string.Empty;
+        DirectRuleStatus = $"已添加直连：{value}";
+        await LoadDirectRulesAsync();
+    }
+
+    /// <summary>删掉一条规则。</summary>
+    public async Task RemoveDirectRuleAsync(string ruleId)
+    {
+        var error = await _directRuleService.RemoveAsync(ruleId);
+        DirectRuleStatus = error ?? "已移除";
+        await LoadDirectRulesAsync();
+    }
 
     #endregion
 

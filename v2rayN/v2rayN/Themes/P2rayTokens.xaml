@@ -657,4 +657,42 @@
         </Setter>
     </Style>
 
+    <!-- 分组切换用小圆角矩形，和首页分段控件同族但更矮更紧凑：
+         节点页分组会随订阅增多而变长，横向一行放不下时要能滚动，
+         因此不包在带底色的轨道里，而是各自独立的浅色片。 -->
+    <Style x:Key="P2rayGroupChip" TargetType="{x:Type RadioButton}">
+        <Setter Property="Height" Value="26" />
+        <Setter Property="Padding" Value="12,0" />
+        <Setter Property="FontSize" Value="{StaticResource P2rayFontCaption}" />
+        <Setter Property="Foreground" Value="{StaticResource P2rayTextSecondaryBrush}" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type RadioButton}">
+                    <Border
+                        x:Name="Bg"
+                        Padding="{TemplateBinding Padding}"
+                        Background="{StaticResource P2raySurfaceBrush}"
+                        BorderBrush="{StaticResource P2rayBorderBrush}"
+                        BorderThickness="1"
+                        CornerRadius="{StaticResource P2rayRadiusS}">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bg" Property="Background" Value="{StaticResource P2rayHoverBrush}" />
+                            <Setter Property="Foreground" Value="{StaticResource P2rayTextPrimaryBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="Bg" Property="Background" Value="{StaticResource P2rayAccentSoftBrush}" />
+                            <Setter TargetName="Bg" Property="BorderBrush" Value="{StaticResource P2rayAccentBrush}" />
+                            <Setter Property="Foreground" Value="{StaticResource P2rayAccentTextBrush}" />
+                            <Setter Property="FontWeight" Value="SemiBold" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
 </ResourceDictionary>

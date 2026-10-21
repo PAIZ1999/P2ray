@@ -1,7 +1,10 @@
+using System.Collections.Specialized;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using ReactiveUI;
+using ReactiveUI.Primitives.Signals;
+using ServiceLib.Models.Entities;
 using ServiceLib.ViewModels;
 
 namespace v2rayN.Views;
@@ -11,6 +14,9 @@ namespace v2rayN.Views;
 /// </summary>
 public partial class NodesView : ReactiveUserControl<DashboardViewModel>
 {
+    /// <summary>防止 RadioButton 的 Checked 与 ViewModel 赋值互相触发形成回环。</summary>
+    private bool _suppressGroupSync;
+
     public NodesView()
     {
         InitializeComponent();
@@ -19,6 +25,7 @@ public partial class NodesView : ReactiveUserControl<DashboardViewModel>
         {
             this.OneWayBind(ViewModel, vm => vm.Nodes, v => v.lstNodes.ItemsSource).DisposeWith(disposables);
             this.Bind(ViewModel, vm => vm.SelectedNode, v => v.lstNodes.SelectedItem).DisposeWith(disposables);
+            this.OneWayBind(ViewModel, vm => vm.NodeGroups, v => v.lstGroups.ItemsSource).DisposeWith(disposables);
 
             // 数量与空状态必须跟 NodeCount 走，不能用 Nodes：
             // Nodes 是上游集合的同一个实例，原地 ReplaceRange 不会改变属性值。
@@ -29,11 +36,96 @@ public partial class NodesView : ReactiveUserControl<DashboardViewModel>
             this.OneWayBind(ViewModel, vm => vm.NodeCount, v => v.txtEmpty.Visibility,
                     count => count > 0 ? Visibility.Collapsed : Visibility.Visible)
                 .DisposeWith(disposables);
+
+            // 分组选中态：ItemsControl 生成的容器是延迟的，
+            // 列表换了就必须等布局跑完再同步，否则找不到 RadioButton。
+            this.WhenAnyValue(x => x.ViewModel!.SelectedNodeGroup)
+                .ObserveOn(RxSchedulers.MainThreadScheduler)
+                .Subscribe(group =>
+                {
+                    // 延一帧：集合刚换过时容器还没生成
+                    Signal.Every(TimeSpan.FromMilliseconds(80))
+                        .Take(1)
+                        .ObserveOn(RxSchedulers.MainThreadScheduler)
+                        .Subscribe(_ => SyncGroupSelection(group))
+                        .DisposeWith(disposables);
+                })
+                .DisposeWith(disposables);
+
+            // 分组列表本身变化时也要重新同步一次选中态
+            if (ViewModel is not null)
+            {
+                ViewModel.WhenAnyValue(x => x.NodeGroups)
+                    .ObserveOn(RxSchedulers.MainThreadScheduler)
+                    .Subscribe(groups =>
+                    {
+                        if (groups is INotifyCollectionChanged incc)
+                        {
+                            incc.CollectionChanged += (_, _) => SyncGroupSelection(ViewModel.SelectedNodeGroup);
+                        }
+
+                        SyncGroupSelection(ViewModel.SelectedNodeGroup);
+                    })
+                    .DisposeWith(disposables);
+            }
         });
 
         // 双击 = 设为默认节点（等价于上游"设为默认服务器"）
         lstNodes.MouseDoubleClick += (_, _) => ApplyToDefault();
         lstNodes.KeyDown += OnListKeyDown;
+    }
+
+    /// <summary>
+    /// 把 ViewModel 的当前分组同步到按钮选中态。
+    /// 用 Tag 反查而不依赖索引位置 —— 容器可能延迟生成，顺序不保证。
+    /// </summary>
+    private void SyncGroupSelection(SubItem? selected)
+    {
+        _suppressGroupSync = true;
+        try
+        {
+            foreach (var btn in FindVisualChildren<RadioButton>(lstGroups))
+            {
+                btn.IsChecked = selected is not null
+                                && btn.Tag is SubItem item
+                                && item.Id == selected.Id;
+            }
+        }
+        finally
+        {
+            _suppressGroupSync = false;
+        }
+    }
+
+    private void Group_Checked(object sender, RoutedEventArgs e)
+    {
+        if (_suppressGroupSync || ViewModel is null)
+        {
+            return;
+        }
+
+        if (sender is RadioButton { Tag: SubItem group })
+        {
+            ViewModel.SelectedNodeGroup = group;
+        }
+    }
+
+    private static IEnumerable<T> FindVisualChildren<T>(DependencyObject root) where T : DependencyObject
+    {
+        var count = System.Windows.Media.VisualTreeHelper.GetChildrenCount(root);
+        for (var i = 0; i < count; i++)
+        {
+            var child = System.Windows.Media.VisualTreeHelper.GetChild(root, i);
+            if (child is T typed)
+            {
+                yield return typed;
+            }
+
+            foreach (var nested in FindVisualChildren<T>(child))
+            {
+                yield return nested;
+            }
+        }
     }
 
     /// <summary>

@@ -67,8 +67,18 @@ public class GrpcItem
 public class GUIItem
 {
     public bool AutoRun { get; set; }
-    public bool EnableStatistics { get; set; }
-    public bool DisplayRealTimeSpeed { get; set; }
+
+    /// <summary>
+    /// 是否统计每个节点的累计流量（写 ServerStatItem 表）。
+    /// 默认开启：首页的上下行速率和节点页的流量列都依赖它，
+    /// 关掉时这两处会一直显示 0 B/s 和空白，用户会以为软件坏了。
+    /// 统计走 Xray 的 /stats 接口，本身开销很小。
+    /// </summary>
+    public bool EnableStatistics { get; set; } = true;
+
+    /// <summary>是否实时显示上下行速率。同样默认开启，否则首页流量卡恒为 0。</summary>
+    public bool DisplayRealTimeSpeed { get; set; } = true;
+
     public bool KeepOlderDedupl { get; set; }
     public int AutoUpdateInterval { get; set; }
     public int TrayMenuServersLimit { get; set; } = 20;

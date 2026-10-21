@@ -217,6 +217,123 @@
                                     Margin="1,8,0,0"
                                     Style="{StaticResource P2rayCaption}"
                                     TextWrapping="Wrap" />
+
+                                <!-- 自定义直连：给用户一个"这个网站别走代理"的入口。
+                                     上游的路由设置界面列的是整张规则表（outboundTag / geosite / geoip），
+                                     对只想让某个站直连的人来说全是噪音，所以这里只收一个域名或 IP。 -->
+                                <Grid Margin="0,10,0,0">
+                                    <TextBlock
+                                        VerticalAlignment="Center"
+                                        Style="{StaticResource P2rayCaption}"
+                                        Text="自定义直连" />
+                                    <Button
+                                        x:Name="btnToggleDirectRule"
+                                        HorizontalAlignment="Right"
+                                        Padding="10,0"
+                                        Height="24"
+                                        Click="BtnToggleDirectRule_Click"
+                                        Content="配置"
+                                        Style="{StaticResource P2raySecondaryButton}" />
+                                </Grid>
+
+                                <StackPanel
+                                    x:Name="directRulePanel"
+                                    Margin="0,8,0,0"
+                                    Visibility="Collapsed">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <!-- 输入框与按钮同一行，符合"填一个、加一个"的心智。
+                                             文本不走 Binding：这张卡片不是通过 DataContext 拿 ViewModel 的，
+                                             Binding 在 ReactiveUserControl 的泛型基类上不保证能解析到，
+                                             点"添加"时会读到空值。改为按钮点击时直接读 TextBox.Text。 -->
+                                        <TextBox
+                                            x:Name="txtDirectRuleInput"
+                                            Grid.Column="0"
+                                            Height="30"
+                                            Padding="10,0"
+                                            VerticalContentAlignment="Center"
+                                            Background="{StaticResource P2raySurfaceBrush}"
+                                            BorderBrush="{StaticResource P2rayBorderBrush}"
+                                            BorderThickness="1"
+                                            CaretBrush="{StaticResource P2rayTextPrimaryBrush}"
+                                            FontSize="{StaticResource P2rayFontCaption}"
+                                            Foreground="{StaticResource P2rayTextPrimaryBrush}" />
+                                        <Button
+                                            Grid.Column="1"
+                                            Width="64"
+                                            Height="30"
+                                            Margin="8,0,0,0"
+                                            Click="BtnAddDirectRule_Click"
+                                            Content="添加"
+                                            Style="{StaticResource P2rayPrimaryButton}" />
+                                    </Grid>
+
+                                    <TextBlock
+                                        Margin="1,6,0,0"
+                                        Style="{StaticResource P2rayMicro}"
+                                        Text="填域名或 IP，例如 openai.com 或 192.168.1.10。加进去的站永远直连，不走代理。" />
+
+                                    <TextBlock
+                                        x:Name="txtDirectRuleStatus"
+                                        Margin="1,6,0,0"
+                                        Style="{StaticResource P2rayMicro}"
+                                        Foreground="{StaticResource P2rayAccentTextBrush}" />
+
+                                    <ItemsControl x:Name="lstDirectRules" Margin="0,8,0,0">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border
+                                                    Margin="0,0,0,4"
+                                                    Padding="10,7"
+                                                    Background="{StaticResource P2raySurfaceBrush}"
+                                                    CornerRadius="{StaticResource P2rayRadiusS}">
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="Auto" />
+                                                            <ColumnDefinition Width="*" />
+                                                            <ColumnDefinition Width="Auto" />
+                                                        </Grid.ColumnDefinitions>
+
+                                                        <Border
+                                                            Grid.Column="0"
+                                                            Padding="6,1"
+                                                            VerticalAlignment="Center"
+                                                            Background="{StaticResource P2rayAccentSoftBrush}"
+                                                            CornerRadius="4">
+                                                            <TextBlock
+                                                                FontSize="10"
+                                                                Foreground="{StaticResource P2rayAccentTextBrush}"
+                                                                Text="{Binding KindText}" />
+                                                        </Border>
+
+                                                        <TextBlock
+                                                            Grid.Column="1"
+                                                            Margin="8,0,8,0"
+                                                            VerticalAlignment="Center"
+                                                            FontFamily="Consolas, Cascadia Mono, monospace"
+                                                            FontSize="{StaticResource P2rayFontCaption}"
+                                                            Foreground="{StaticResource P2rayTextPrimaryBrush}"
+                                                            Text="{Binding Value}"
+                                                            TextTrimming="CharacterEllipsis" />
+
+                                                        <Button
+                                                            Grid.Column="2"
+                                                            Width="48"
+                                                            Height="22"
+                                                            Click="BtnRemoveDirectRule_Click"
+                                                            Content="移除"
+                                                            Style="{StaticResource P2raySecondaryButton}"
+                                                            Tag="{Binding Id}" />
+                                                    </Grid>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
                             </StackPanel>
                         </Grid>
                     </Border>
@@ -656,6 +773,279 @@
                         </StackPanel>
                     </Grid>
                 </Border>
+            </Border>
+
+            <!-- ═══ 分组：网络位置 ═══ -->
+            <!-- 回答两个问题：外面看到我是谁（出口 IP + 归属地），以及常用站点能不能通。
+                 布局参考 ip.net.coffee：左侧 IP 大字号，右侧连通性小卡网格。 -->
+            <Grid Margin="0,0,0,6">
+                <TextBlock Style="{StaticResource P2raySectionLabel}" Text="网络位置" />
+                <Button
+                    x:Name="btnRefreshNetProbe"
+                    HorizontalAlignment="Right"
+                    Margin="0,0,6,0"
+                    Padding="10,0"
+                    Height="22"
+                    Click="BtnRefreshNetProbe_Click"
+                    Content="重新检测"
+                    Style="{StaticResource P2raySecondaryButton}" />
+            </Grid>
+
+            <Border Margin="0,0,0,16" Style="{StaticResource P2rayCard}">
+                <Grid Margin="14,12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="240" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <!-- 左：出口 IP、归属地、IP 评分 -->
+                    <StackPanel Grid.Column="0" Margin="0,0,16,0">
+                        <!-- P2ray logo，与侧栏同一路径，放在这里作为"这条数据属于谁"的标识 -->
+                        <StackPanel Orientation="Horizontal">
+                            <Border
+                                Width="22"
+                                Height="22"
+                                Margin="0,0,10,0"
+                                Background="#111111"
+                                CornerRadius="6">
+                                <Path
+                                    Width="13"
+                                    Height="13"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Data="F0 M 25.33,12.20 L 70.69,12.20 L 58.53,57.56 L 28.29,57.56 L 20.19,87.80 L 5.07,87.80 Z M 36.40,27.32 L 51.52,27.32 L 47.47,42.44 L 32.35,42.44 Z M 51.52,27.32 L 96.88,27.32 L 92.83,42.44 L 62.59,42.44 L 58.53,57.56 L 73.65,57.56 L 69.60,72.68 L 54.48,72.68 L 50.43,87.80 L 35.31,87.80 Z"
+                                    Fill="White"
+                                    Stretch="Uniform" />
+                            </Border>
+                            <TextBlock
+                                VerticalAlignment="Center"
+                                Style="{StaticResource P2rayMicro}"
+                                Text="出口 IP" />
+                        </StackPanel>
+
+                        <StackPanel Margin="0,8,0,0" Orientation="Horizontal">
+                            <!-- 国旗：Windows 不渲染旗帜 emoji，用素材位图。
+                                 没有素材时 IpFlagUri 为 null，图片自然不占位。 -->
+                            <Image
+                                x:Name="imgIpFlag"
+                                Width="20"
+                                Height="20"
+                                Margin="0,0,8,0"
+                                VerticalAlignment="Center"
+                                RenderOptions.BitmapScalingMode="HighQuality" />
+                            <TextBlock
+                                x:Name="txtIpAddress"
+                                VerticalAlignment="Center"
+                                FontFamily="Consolas, Cascadia Mono, monospace"
+                                FontSize="{StaticResource P2rayFontH1}"
+                                FontWeight="SemiBold"
+                                Foreground="{StaticResource P2rayTextPrimaryBrush}"
+                                Text="—"
+                                TextTrimming="CharacterEllipsis" />
+                        </StackPanel>
+
+                        <TextBlock
+                            x:Name="txtIpLocation"
+                            Margin="0,6,0,0"
+                            Style="{StaticResource P2rayCaption}"
+                            TextWrapping="Wrap" />
+
+                        <!-- IP 评分：连通性只说"通不通"，这里补"干不干净"。
+                             拿不到评分时整块折叠，而不是显示 0 分 —— 0 分会被读成"极差"。 -->
+                        <Border
+                            x:Name="scorePanel"
+                            Margin="0,10,0,0"
+                            Padding="10,9"
+                            Background="{StaticResource P2rayElevatedBrush}"
+                            CornerRadius="{StaticResource P2rayRadiusS}"
+                            Visibility="Collapsed">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock
+                                        VerticalAlignment="Center"
+                                        Style="{StaticResource P2rayMicro}"
+                                        Text="IP 评分" />
+                                    <TextBlock
+                                        x:Name="txtIpScore"
+                                        Margin="8,0,0,0"
+                                        VerticalAlignment="Center"
+                                        FontFamily="Consolas, Cascadia Mono, monospace"
+                                        FontSize="{StaticResource P2rayFontH2}"
+                                        FontWeight="SemiBold"
+                                        Text="—" />
+                                    <TextBlock
+                                        x:Name="txtIpScoreLevel"
+                                        Margin="6,0,0,0"
+                                        VerticalAlignment="Center"
+                                        Style="{StaticResource P2rayMicro}" />
+                                </StackPanel>
+
+                                <!-- 类型 + ASN 一行，风险标记一行；都用微字号，避免抢走 IP 的视觉重心 -->
+                                <TextBlock
+                                    x:Name="txtIpType"
+                                    Margin="0,5,0,0"
+                                    Style="{StaticResource P2rayMicro}"
+                                    TextTrimming="CharacterEllipsis" />
+                                <TextBlock
+                                    x:Name="txtIpAsn"
+                                    Margin="0,2,0,0"
+                                    Style="{StaticResource P2rayMicro}"
+                                    TextTrimming="CharacterEllipsis" />
+                                <TextBlock
+                                    x:Name="txtIpRisk"
+                                    Margin="0,2,0,0"
+                                    Style="{StaticResource P2rayMicro}"
+                                    TextTrimming="CharacterEllipsis" />
+                                <TextBlock
+                                    x:Name="txtIpAiVerdict"
+                                    Margin="0,2,0,0"
+                                    Style="{StaticResource P2rayMicro}"
+                                    TextTrimming="CharacterEllipsis" />
+                            </StackPanel>
+                        </Border>
+
+                        <TextBlock
+                            x:Name="txtNetProbeStatus"
+                            Margin="0,8,0,0"
+                            Style="{StaticResource P2rayMicro}"
+                            Text="尚未检测" />
+                    </StackPanel>
+
+                    <!-- 右：连通性，按国际 / AI / 国内分组 -->
+                    <StackPanel Grid.Column="1">
+                        <Grid Margin="0,0,0,8">
+                            <TextBlock
+                                VerticalAlignment="Center"
+                                Style="{StaticResource P2rayMicro}"
+                                Text="站点连通性" />
+                            <TextBlock
+                                x:Name="txtNetProbeSummary"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Center"
+                                Style="{StaticResource P2rayMicro}" />
+                        </Grid>
+
+                        <!-- 分组列表：每组一个小标题（含本组小计）+ 站点网格。
+                             图标是内置资源，断网也能显示 —— 这个面板恰恰是断网时最需要看的。 -->
+                        <ItemsControl x:Name="lstNetProbeGroups">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel Margin="0,0,0,10">
+                                        <Grid Margin="0,0,0,6">
+                                            <TextBlock
+                                                VerticalAlignment="Center"
+                                                FontSize="{StaticResource P2rayFontMicro}"
+                                                FontWeight="SemiBold"
+                                                Foreground="{StaticResource P2rayTextSecondaryBrush}"
+                                                Text="{Binding Tag}" />
+                                            <TextBlock
+                                                HorizontalAlignment="Right"
+                                                VerticalAlignment="Center"
+                                                Style="{StaticResource P2rayMicro}"
+                                                Text="{Binding SummaryText}" />
+                                        </Grid>
+
+                                        <ItemsControl ItemsSource="{Binding Items}">
+                                            <ItemsControl.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <UniformGrid Columns="4" />
+                                                </ItemsPanelTemplate>
+                                            </ItemsControl.ItemsPanel>
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Border
+                                                        Margin="0,0,6,6"
+                                                        Padding="8,6"
+                                                        Background="{StaticResource P2raySurfaceBrush}"
+                                                        CornerRadius="{StaticResource P2rayRadiusS}">
+                                                        <Grid>
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="Auto" />
+                                                                <ColumnDefinition Width="*" />
+                                                                <ColumnDefinition Width="Auto" />
+                                                            </Grid.ColumnDefinitions>
+
+                                                            <Image
+                                                                Width="16"
+                                                                Height="16"
+                                                                Margin="0,0,7,0"
+                                                                VerticalAlignment="Center"
+                                                                RenderOptions.BitmapScalingMode="HighQuality"
+                                                                Source="{Binding IconUri, Converter={x:Static conv:ImageUriConverter.Instance}}" />
+
+                                                            <TextBlock
+                                                                Grid.Column="1"
+                                                                VerticalAlignment="Center"
+                                                                Style="{StaticResource P2rayMicro}"
+                                                                Text="{Binding Name}"
+                                                                TextTrimming="CharacterEllipsis" />
+
+                                                            <TextBlock
+                                                                Grid.Column="2"
+                                                                Margin="6,0,0,0"
+                                                                VerticalAlignment="Center"
+                                                                FontFamily="Consolas, Cascadia Mono, monospace"
+                                                                FontSize="{StaticResource P2rayFontCaption}"
+                                                                Foreground="{Binding State, Converter={x:Static conv:ProbeStateBrushConverter.Instance}}"
+                                                                Text="{Binding LatencyText}" />
+                                                        </Grid>
+                                                    </Border>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <!-- 探测进行中：占位列表（还没分组），让用户先看到要测哪些站点 -->
+                        <ItemsControl x:Name="lstNetProbes">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <UniformGrid Columns="4" />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border
+                                        Margin="0,0,6,6"
+                                        Padding="8,6"
+                                        Background="{StaticResource P2raySurfaceBrush}"
+                                        CornerRadius="{StaticResource P2rayRadiusS}">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <Image
+                                                Width="16"
+                                                Height="16"
+                                                Margin="0,0,7,0"
+                                                VerticalAlignment="Center"
+                                                RenderOptions.BitmapScalingMode="HighQuality"
+                                                Source="{Binding IconUri, Converter={x:Static conv:ImageUriConverter.Instance}}" />
+                                            <TextBlock
+                                                Grid.Column="1"
+                                                VerticalAlignment="Center"
+                                                Style="{StaticResource P2rayMicro}"
+                                                Text="{Binding Name}"
+                                                TextTrimming="CharacterEllipsis" />
+                                            <TextBlock
+                                                Grid.Column="2"
+                                                Margin="6,0,0,0"
+                                                VerticalAlignment="Center"
+                                                FontFamily="Consolas, Cascadia Mono, monospace"
+                                                FontSize="{StaticResource P2rayFontCaption}"
+                                                Foreground="{Binding State, Converter={x:Static conv:ProbeStateBrushConverter.Instance}}"
+                                                Text="{Binding LatencyText}" />
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Grid>
             </Border>
 
             <!-- ═══ 运行日志（折叠） ═══ -->

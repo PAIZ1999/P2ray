@@ -36,5 +36,12 @@ public class Config
     public SimpleDNSItem SimpleDNSItem { get; set; }
     public HappyEyeballs4RayItem HappyEyeballs4RayItem { get; set; }
 
+    /// <summary>
+    /// 已经跑过的一次性配置迁移的名字，逗号分隔。
+    /// 修改默认值无法影响老用户的配置 —— 字段早就以 false 落盘了，
+    /// 所以这类"改了默认值还要对老用户生效"的改动必须靠迁移补一次。
+    /// </summary>
+    public string AppliedMigrations { get; set; }
+
     #endregion other entities
 }

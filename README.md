@@ -172,6 +172,7 @@ v2rayN/
 | [Xray-core](https://github.com/XTLS/Xray-core) | MPL-2.0 |
 | [sing-box](https://github.com/SagerNet/sing-box) | GPL-3.0 |
 | [MaterialDesignInXamlToolkit](https://github.com/MaterialDesignInXAML/MaterialDesignInXamlToolkit) | MIT |
+| [Twemoji](https://github.com/twitter/twemoji) 国旗位图 | CC-BY 4.0 |
 
 完整声明见 [NOTICE.md](NOTICE.md)。
 
