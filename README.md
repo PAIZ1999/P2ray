@@ -60,6 +60,16 @@ P2ray 是 [v2rayN](https://github.com/2dust/v2rayN) 的二次开发版本。协�
 Get-FileHash .\P2ray-windows-64.zip -Algorithm SHA256
 ```
 
+## 更新
+
+P2ray 自带更新检查，两条路径都能用：
+
+**就地更新（推荐）** — 点击侧栏底部「检查更新」，或在设置页「关于」里点「检查」。有新版本时会下载新包，关闭程序并自动替换，配置与订阅都保留，不用重新登录订阅。
+
+**手动覆盖** — 从 [Releases](https://github.com/PAIZ1999/P2ray/releases) 下载新版 zip，解压后覆盖到原目录即可。**不要删除 `guiConfigs` 目录**，配置和订阅数据都在那里；如果把程序装在 `Program Files` 下（无写权限），数据实际存放在 `%LOCALAPPDATA%\P2ray`，覆盖程序目录不会碰它。
+
+更新源固定为本仓库的 Releases，不指向 v2rayN 上游 —— 上游的版本号与本项目无关，混用会永远提示「有新版本」。
+
 ## 功能
 
 **协议** — VLESS / VMess / Shadowsocks / Trojan / Hysteria2 / TUIC / AnyTLS / WireGuard / SOCKS / HTTP
