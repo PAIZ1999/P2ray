@@ -318,8 +318,9 @@ public partial class DashboardViewModel : MyReactiveObject
             var location = await service.GetIpLocationAsync();
             ApplyIpLocation(location);
 
-            // 评分要等 IP 出来后才能查，和连通性并行跑：
-            // 评分接口单次约 300ms-1.5s，串在站点探测前面会白等一轮。
+            // 国内出口与站点探测并行：它走直连，与代理那条路径互不影响，
+            // 串行执行会让面板多等一秒以上。
+            var domesticTask = service.GetDomesticIpAsync();
             var scoreTask = location?.Ip is { Length: > 0 } ip
                 ? service.GetIpScoreAsync(ip)
                 : Task.FromResult<IpScoreResult?>(null);
@@ -331,6 +332,7 @@ public partial class DashboardViewModel : MyReactiveObject
             NetProbeTotalCount = results.Count;
             RebuildNetProbeGroups();
 
+            ApplyDomesticIpLocation(await domesticTask);
             ApplyIpScore(await scoreTask);
 
             NetProbeStatus = NetProbeUpdatedAt;
@@ -357,6 +359,7 @@ public partial class DashboardViewModel : MyReactiveObject
             IpLocationDisplay = string.Empty;
             IpCountryDisplay = string.Empty;
             IpFlagUri = null;
+            ExitCountryCode = null;
             return;
         }
 
@@ -365,8 +368,33 @@ public partial class DashboardViewModel : MyReactiveObject
         IpCountryDisplay = info.CountryDisplay;
         // 素材里没有这个国家时返回 null，界面据此隐藏图片而不是显示破图。
         IpFlagUri = info.FlagImageUri;
+        ExitCountryCode = info.CountryCode?.ToLowerInvariant();
 
         NetProbeUpdatedAt = $"更新于 {DateTime.Now:HH:mm:ss}";
+    }
+
+    /// <summary>
+    /// 套用国内出口。null 有两种含义，都应当收起这一行：
+    /// 1. 当前就是直连 —— 国内出口与主出口是同一个地址，重复显示无意义；
+    /// 2. 直连查询失败 —— 宁可只显示一条，也不要显示"获取失败"占着位置。
+    /// </summary>
+    private void ApplyDomesticIpLocation(IpLocationResult? info)
+    {
+        if (info is null || string.IsNullOrEmpty(info.Ip))
+        {
+            HasDomesticExit = false;
+            DomesticIpAddressDisplay = "—";
+            DomesticIpLocationDisplay = string.Empty;
+            DomesticIpCountryDisplay = string.Empty;
+            DomesticIpFlagUri = null;
+            return;
+        }
+
+        HasDomesticExit = true;
+        DomesticIpAddressDisplay = info.Ip;
+        DomesticIpLocationDisplay = NetProbeService.FormatLocation(info);
+        DomesticIpCountryDisplay = info.CountryDisplay;
+        DomesticIpFlagUri = info.FlagImageUri;
     }
 
     /// <summary>
@@ -449,6 +477,10 @@ public partial class DashboardViewModel : MyReactiveObject
 
     #region 网络位置与连通性
 
+    /// <summary>
+    /// 出口 IP —— 跟随当前路径。连了代理时这里是境外出口，
+    /// 没连接时与 DomesticIpAddressDisplay 相同。
+    /// </summary>
     [Reactive]
     public partial string IpAddressDisplay { get; set; } = "—";
 
@@ -462,6 +494,31 @@ public partial class DashboardViewModel : MyReactiveObject
     /// <summary>国家中文名，单独暴露以便在旗帜旁显示文字。</summary>
     [Reactive]
     public partial string IpCountryDisplay { get; set; }
+
+    /// <summary>当前出口的国家代码（小写），用于判断是否需要拆成"境外 + 国内"两行。</summary>
+    [Reactive]
+    public partial string ExitCountryCode { get; set; }
+
+    #region 国内出口（不走代理时的真实出口）
+
+    /// <summary>不走代理时的出口 IP。走代理时它才是"我的真实地址"。</summary>
+    [Reactive]
+    public partial string DomesticIpAddressDisplay { get; set; } = "—";
+
+    [Reactive]
+    public partial string DomesticIpLocationDisplay { get; set; }
+
+    [Reactive]
+    public partial string DomesticIpFlagUri { get; set; }
+
+    [Reactive]
+    public partial string DomesticIpCountryDisplay { get; set; }
+
+    /// <summary>是否显示国内出口这一行。直连状态下它与主出口重复，不必显示。</summary>
+    [Reactive]
+    public partial bool HasDomesticExit { get; set; }
+
+    #endregion
 
     #region IP 评分
 

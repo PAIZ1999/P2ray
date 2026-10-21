@@ -47,6 +47,19 @@ public partial class DashboardView : ReactiveUserControl<DashboardViewModel>
             this.OneWayBind(ViewModel, vm => vm.IpLocationDisplay, v => v.txtIpLocation.Text).DisposeWith(disposables);
             this.OneWayBind(ViewModel, vm => vm.IpFlagUri, v => v.imgIpFlag.Source,
                     uri => ToImageSource(uri)).DisposeWith(disposables);
+
+            // 国内出口：走代理时才有第二条，直连时它与上面是同一条数据
+            this.OneWayBind(ViewModel, vm => vm.HasDomesticExit, v => v.domesticExitPanel.Visibility,
+                    has => has ? Visibility.Visible : Visibility.Collapsed).DisposeWith(disposables);
+            this.OneWayBind(ViewModel, vm => vm.DomesticIpAddressDisplay, v => v.txtDomesticIpAddress.Text).DisposeWith(disposables);
+            this.OneWayBind(ViewModel, vm => vm.DomesticIpLocationDisplay, v => v.txtDomesticIpLocation.Text).DisposeWith(disposables);
+            this.OneWayBind(ViewModel, vm => vm.DomesticIpFlagUri, v => v.imgDomesticFlag.Source,
+                    uri => ToImageSource(uri)).DisposeWith(disposables);
+
+            // 标签随路径变化：走代理时上面那条确实是"境外出口"，
+            // 直连时它就是本机地址，再叫"境外"会误导。
+            this.OneWayBind(ViewModel, vm => vm.HasDomesticExit, v => v.txtExitLabel.Text,
+                    has => has ? "境外出口 IP" : "当前出口 IP").DisposeWith(disposables);
             this.OneWayBind(ViewModel, vm => vm.NetProbeStatus, v => v.txtNetProbeStatus.Text).DisposeWith(disposables);
             this.OneWayBind(ViewModel, vm => vm.NetProbeSummary, v => v.txtNetProbeSummary.Text).DisposeWith(disposables);
             this.OneWayBind(ViewModel, vm => vm.IsNetProbeRunning, v => v.btnRefreshNetProbe.IsEnabled,

@@ -78,7 +78,12 @@
     <sys:Double x:Key="P2rayFontMicro">11</sys:Double>
 
     <sys:Double x:Key="P2raySidebarWidth">208</sys:Double>
-    <sys:Double x:Key="P2rayNavItemHeight">32</sys:Double>
+    <sys:Double x:Key="P2rayNavItemHeight">40</sys:Double>
+    <!-- 侧栏导航图标。原来 16 太小，与 13pt 文字挤在一起显得轻；
+         放大到 18 后与 P2rayFontH2 的字高更接近。 -->
+    <sys:Double x:Key="P2rayNavIconSize">18</sys:Double>
+    <!-- 侧栏导航文字。独立于 P2rayFontH2，便于单独调大而不影响正文。 -->
+    <sys:Double x:Key="P2rayNavFontSize">14</sys:Double>
 
     <!-- 卡片 10px、图标底 6px、控件 6px -->
     <CornerRadius x:Key="P2rayRadiusS">6</CornerRadius>
@@ -284,13 +289,16 @@
     </Style>
 
     <!-- ===================== 侧栏导航 ===================== -->
-    <!-- macOS 侧栏：选中项是蓝色圆角块，文字变白 -->
+    <!-- macOS 侧栏：选中项是蓝色圆角块，文字变白。
+         Focusable=False：键盘焦点框会在选中块内侧再画一圈虚线，
+         与 macOS 的观感冲突。侧栏本身用鼠标操作，不需要焦点框。 -->
     <Style x:Key="P2rayNavItem" TargetType="{x:Type RadioButton}">
         <Setter Property="Height" Value="{StaticResource P2rayNavItemHeight}" />
         <Setter Property="Margin" Value="10,1" />
-        <Setter Property="FontSize" Value="{StaticResource P2rayFontH2}" />
+        <Setter Property="FontSize" Value="{StaticResource P2rayNavFontSize}" />
         <Setter Property="Foreground" Value="{StaticResource P2rayTextPrimaryBrush}" />
         <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Focusable" Value="False" />
         <Setter Property="HorizontalContentAlignment" Value="Left" />
         <Setter Property="Template">
             <Setter.Value>
@@ -299,7 +307,7 @@
                         x:Name="Bg"
                         Background="Transparent"
                         CornerRadius="{StaticResource P2rayRadiusS}">
-                        <ContentPresenter Margin="10,0" VerticalAlignment="Center" />
+                        <ContentPresenter Margin="12,0" VerticalAlignment="Center" />
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">

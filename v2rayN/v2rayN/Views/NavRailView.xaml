@@ -14,9 +14,9 @@
 
     <UserControl.Resources>
         <Style x:Key="NavText" TargetType="{x:Type TextBlock}">
-            <Setter Property="Margin" Value="10,0,0,0" />
+            <Setter Property="Margin" Value="12,0,0,0" />
             <Setter Property="VerticalAlignment" Value="Center" />
-            <Setter Property="FontSize" Value="{StaticResource P2rayFontH2}" />
+            <Setter Property="FontSize" Value="{StaticResource P2rayNavFontSize}" />
         </Style>
     </UserControl.Resources>
 
@@ -109,8 +109,8 @@
                     Style="{StaticResource NavGhostButton}">
                     <StackPanel Orientation="Horizontal">
                         <materialDesign:PackIcon
-                            Width="16"
-                            Height="16"
+                            Width="{StaticResource P2rayNavIconSize}"
+                            Height="{StaticResource P2rayNavIconSize}"
                             VerticalAlignment="Center"
                             Foreground="{StaticResource P2rayTextSecondaryBrush}"
                             Kind="ContentPaste" />
@@ -131,8 +131,8 @@
                     Style="{StaticResource NavGhostButton}">
                     <StackPanel Orientation="Horizontal">
                         <materialDesign:PackIcon
-                            Width="16"
-                            Height="16"
+                            Width="{StaticResource P2rayNavIconSize}"
+                            Height="{StaticResource P2rayNavIconSize}"
                             VerticalAlignment="Center"
                             Foreground="{StaticResource P2rayTextSecondaryBrush}"
                             Kind="Update" />
@@ -153,8 +153,8 @@
                     Style="{StaticResource P2rayNavItem}">
                     <StackPanel Orientation="Horizontal">
                         <materialDesign:PackIcon
-                            Width="16"
-                            Height="16"
+                            Width="{StaticResource P2rayNavIconSize}"
+                            Height="{StaticResource P2rayNavIconSize}"
                             VerticalAlignment="Center"
                             Kind="HomeOutline" />
                         <TextBlock Style="{StaticResource NavText}" Text="首页" />
@@ -167,8 +167,8 @@
                     Style="{StaticResource P2rayNavItem}">
                     <StackPanel Orientation="Horizontal">
                         <materialDesign:PackIcon
-                            Width="16"
-                            Height="16"
+                            Width="{StaticResource P2rayNavIconSize}"
+                            Height="{StaticResource P2rayNavIconSize}"
                             VerticalAlignment="Center"
                             Kind="ServerNetwork" />
                         <TextBlock Style="{StaticResource NavText}" Text="线路" />
@@ -181,8 +181,8 @@
                     Style="{StaticResource P2rayNavItem}">
                     <StackPanel Orientation="Horizontal">
                         <materialDesign:PackIcon
-                            Width="16"
-                            Height="16"
+                            Width="{StaticResource P2rayNavIconSize}"
+                            Height="{StaticResource P2rayNavIconSize}"
                             VerticalAlignment="Center"
                             Kind="CogOutline" />
                         <TextBlock Style="{StaticResource NavText}" Text="设置" />

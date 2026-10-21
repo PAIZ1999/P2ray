@@ -30,11 +30,21 @@ public class NetProbeService
     private readonly int _port;
     private readonly HttpClient _client;
 
+    /// <summary>
+    /// 固定直连的客户端，用于查"不经过代理时，外面看到我是谁"。
+    ///
+    /// 为什么不复用 _client：_client 跟随本轮路径，走代理时它测出来的还是同一个
+    /// 境外出口 IP，国内出口就永远查不到。两条数据必须用两个不同路径的 client
+    /// 才可能同时拿到。
+    /// </summary>
+    private readonly HttpClient _directClient;
+
     public NetProbeService()
     {
         _useProxy = IsCoreRunning();
         _port = AppManager.Instance.GetLocalPort(EInboundProtocol.socks);
         _client = CreateClient(_port, _useProxy);
+        _directClient = CreateClient(_port, false);
     }
 
     /// <summary>
@@ -84,7 +94,12 @@ public class NetProbeService
     /// 踩过的坑：
     /// - GitHub 的 /generate_204 不存在（404），必须用 api.github.com/zen；
     /// - ChatGPT / Claude 的 favicon 对非浏览器指纹返回 403，改用 cdn-cgi/trace；
-    /// - Gemini 的 generate_204 常超时，改用 googleapis 的 favicon。
+    /// - Gemini 的 gemini.google.com/favicon.ico 返回 404，而 gstatic 上的 favicon
+    ///   直连就能 200 —— 拿它探测等于没测。改用 /app 页面本身：直连超时、走代理 200，
+    ///   这才是"能不能用 Gemini"的真实答案。
+    ///   代价是会拉到 796KB 的正文，但探测只看响应头就断开（ResponseHeadersRead），
+    ///   正文不会下载完，实测 1.4s 出结果。
+    /// - Gemini 的 generate_204 常超时，也不能拿它当探针。
     /// </summary>
     private static readonly ProbeTarget[] Targets =
     [
@@ -97,6 +112,7 @@ public class NetProbeService
         // AI —— 单独风控，通外网不代表能上
         new("ChatGPT", "https://chatgpt.com/cdn-cgi/trace", "AI", "openai"),
         new("Claude", "https://claude.ai/cdn-cgi/trace", "AI", "claude"),
+        new("Gemini", "https://gemini.google.com/app", "AI", "gemini"),
 
         // 国内 —— 作对照，也能看出分流规则是否生效
         new("百度", "https://www.baidu.com/favicon.ico", "国内", "baidu"),
@@ -126,32 +142,56 @@ public class NetProbeService
 
     /// <summary>
     /// 探测出口 IP 与归属地。任一步失败返回 null，由调用方决定显示占位符还是保留旧值。
+    /// 路径跟随本轮：走代理时这条就是"境外出口"，直连时就是"国内出口"。
     /// </summary>
     public async Task<IpLocationResult?> GetIpLocationAsync(CancellationToken cancellationToken = default)
     {
+        return await GetIpLocationCoreAsync(_client, cancellationToken);
+    }
+
+    /// <summary>
+    /// 查不经过代理时的出口 IP —— 也就是用户本地宽带对外的地址。
+    ///
+    /// 即便当前在代理模式，这条也要能查出来：用户需要同时看到
+    /// "我的真实出口" 和 "代理把我伪装成的出口"，两者一对比就知道代理是否在起作用。
+    /// 所以这里固定用 _directClient，不走 _client。
+    /// </summary>
+    public async Task<IpLocationResult?> GetDomesticIpAsync(CancellationToken cancellationToken = default)
+    {
+        // 已经在直连状态时两条路径相同，不必再发一遍请求
+        if (!_useProxy)
+        {
+            return null;
+        }
+
+        return await GetIpLocationCoreAsync(_directClient, cancellationToken);
+    }
+
+    private static async Task<IpLocationResult?> GetIpLocationCoreAsync(HttpClient client, CancellationToken cancellationToken)
+    {
         // 首选：一次请求拿到 IP + 中文归属地
-        var quick = await GetFromIpApiAsync(cancellationToken);
+        var quick = await GetFromIpApiAsync(client, cancellationToken);
         if (quick is not null)
         {
             return quick;
         }
 
         // 回退：先查 IP，再用 ip.net.coffee 查归属地
-        var ip = await GetSelfIpAsync(cancellationToken);
+        var ip = await GetSelfIpAsync(client, cancellationToken);
         if (ip.IsNullOrEmpty())
         {
             return null;
         }
 
-        var location = await GetGeoAsync(ip, cancellationToken);
+        var location = await GetGeoAsync(client, ip, cancellationToken);
         location.Ip = ip;
         return location;
     }
 
     /// <summary>ip-api 一次返回全部字段。status 不是 success 视为失败（含限流）。</summary>
-    private async Task<IpLocationResult?> GetFromIpApiAsync(CancellationToken cancellationToken)
+    private static async Task<IpLocationResult?> GetFromIpApiAsync(HttpClient client, CancellationToken cancellationToken)
     {
-        var raw = await RequestAsync(IpApiUrl, cancellationToken);
+        var raw = await RequestAsync(client, IpApiUrl, cancellationToken);
         if (raw.IsNullOrEmpty())
         {
             return null;
@@ -205,7 +245,7 @@ public class NetProbeService
             return null;
         }
 
-        var raw = await RequestAsync($"{IpLookupUrl}{Uri.EscapeDataString(ip)}", cancellationToken);
+        var raw = await RequestAsync(_client, $"{IpLookupUrl}{Uri.EscapeDataString(ip)}", cancellationToken);
         if (raw.IsNullOrEmpty())
         {
             return null;
@@ -274,7 +314,7 @@ public class NetProbeService
     private static bool GetBool(JsonElement root, string name)
         => root.TryGetProperty(name, out var v) && v.ValueKind == JsonValueKind.True;
 
-    private async Task<string?> GetSelfIpAsync(CancellationToken cancellationToken)
+    private static async Task<string?> GetSelfIpAsync(HttpClient client, CancellationToken cancellationToken)
     {
         foreach (var url in SelfIpUrls)
         {
@@ -283,7 +323,7 @@ public class NetProbeService
                 return null;
             }
 
-            var raw = await RequestAsync(url, cancellationToken);
+            var raw = await RequestAsync(client, url, cancellationToken);
             if (raw.IsNullOrEmpty())
             {
                 continue;
@@ -325,11 +365,11 @@ public class NetProbeService
         return null;
     }
 
-    private async Task<IpLocationResult> GetGeoAsync(string ip, CancellationToken cancellationToken)
+    private static async Task<IpLocationResult> GetGeoAsync(HttpClient client, string ip, CancellationToken cancellationToken)
     {
         var result = new IpLocationResult { Ip = ip };
 
-        var raw = await RequestAsync($"{GeoIpUrl}{Uri.EscapeDataString(ip)}", cancellationToken);
+        var raw = await RequestAsync(client, $"{GeoIpUrl}{Uri.EscapeDataString(ip)}", cancellationToken);
         if (raw.IsNullOrEmpty())
         {
             return result;
@@ -422,7 +462,7 @@ public class NetProbeService
         return result;
     }
 
-    private async Task<string?> RequestAsync(string url, CancellationToken cancellationToken)
+    private static async Task<string?> RequestAsync(HttpClient client, string url, CancellationToken cancellationToken)
     {
         try
         {
@@ -433,7 +473,7 @@ public class NetProbeService
             request.Headers.TryAddWithoutValidation("User-Agent", UserAgent);
             request.Headers.TryAddWithoutValidation("Accept", "application/json");
 
-            using var response = await _client.SendAsync(request, timeoutCts.Token);
+            using var response = await client.SendAsync(request, timeoutCts.Token);
             if (!response.IsSuccessStatusCode)
             {
                 return null;

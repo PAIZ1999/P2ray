@@ -794,7 +794,7 @@
             <Border Margin="0,0,0,16" Style="{StaticResource P2rayCard}">
                 <Grid Margin="14,12">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="240" />
+                        <ColumnDefinition Width="260" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
 
@@ -818,9 +818,10 @@
                                     Stretch="Uniform" />
                             </Border>
                             <TextBlock
+                                x:Name="txtExitLabel"
                                 VerticalAlignment="Center"
                                 Style="{StaticResource P2rayMicro}"
-                                Text="出口 IP" />
+                                Text="境外出口 IP" />
                         </StackPanel>
 
                         <StackPanel Margin="0,8,0,0" Orientation="Horizontal">
@@ -849,6 +850,44 @@
                             Margin="0,6,0,0"
                             Style="{StaticResource P2rayCaption}"
                             TextWrapping="Wrap" />
+
+                        <!-- 国内出口：只在连了代理时出现。
+                             用户需要同时看到"我的真实地址"和"代理伪装成的地址"，
+                             两者一对比就知道代理到底生效没有。
+                             直连状态下它与上一行是同一个 IP，重复显示反而费解。 -->
+                        <Border
+                            x:Name="domesticExitPanel"
+                            Margin="0,10,0,0"
+                            Padding="0,9,0,0"
+                            BorderBrush="{StaticResource P2rayDividerBrush}"
+                            BorderThickness="0,1,0,0"
+                            Visibility="Collapsed">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource P2rayMicro}" Text="国内出口 IP" />
+                                <StackPanel Margin="0,6,0,0" Orientation="Horizontal">
+                                    <Image
+                                        x:Name="imgDomesticFlag"
+                                        Width="16"
+                                        Height="16"
+                                        Margin="0,0,7,0"
+                                        VerticalAlignment="Center"
+                                        RenderOptions.BitmapScalingMode="HighQuality" />
+                                    <TextBlock
+                                        x:Name="txtDomesticIpAddress"
+                                        VerticalAlignment="Center"
+                                        FontFamily="Consolas, Cascadia Mono, monospace"
+                                        FontSize="{StaticResource P2rayFontH2}"
+                                        Foreground="{StaticResource P2rayTextPrimaryBrush}"
+                                        Text="—"
+                                        TextTrimming="CharacterEllipsis" />
+                                </StackPanel>
+                                <TextBlock
+                                    x:Name="txtDomesticIpLocation"
+                                    Margin="0,4,0,0"
+                                    Style="{StaticResource P2rayMicro}"
+                                    TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Border>
 
                         <!-- IP 评分：连通性只说"通不通"，这里补"干不干净"。
                              拿不到评分时整块折叠，而不是显示 0 分 —— 0 分会被读成"极差"。 -->
