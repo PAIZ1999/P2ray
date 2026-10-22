@@ -62,6 +62,10 @@ public partial class DashboardViewModel : MyReactiveObject
         this.WhenAnyValue(x => x.IsConnected)
             .Subscribe(connected =>
             {
+                // 状态一变小，端口就绪与否立刻回到"未知"，
+                // 否则重连后会短暂沿用上一次的结论。
+                CorePortReady = null;
+
                 if (!connected)
                 {
                     RefreshConnectionHint(false);
@@ -278,6 +282,17 @@ public partial class DashboardViewModel : MyReactiveObject
         // 否则界面上的「x / y 可用」不会刷新。
         this.WhenAnyValue(x => x.NetProbeOkCount, x => x.NetProbeTotalCount, x => x.NetProbeViaProxy)
             .Subscribe(_ => this.RaisePropertyChanged(nameof(NetProbeSummary)));
+
+        // 连接状态的两个派生文案同理：依赖 IsConnected 与 CorePortReady 两个来源，
+        // 任一变化都要通知，否则"连接异常"永远不会显示出来。
+        this.WhenAnyValue(x => x.IsConnected, x => x.CorePortReady)
+            .Subscribe(_ =>
+            {
+                this.RaisePropertyChanged(nameof(ConnectionStatusText));
+                this.RaisePropertyChanged(nameof(ConnectionHintText));
+                // 节点名下面那句提示同样受端口就绪与否影响，一并刷新。
+                RefreshConnectionHint(IsConnected);
+            });
 
         #endregion
 
@@ -615,6 +630,30 @@ public partial class DashboardViewModel : MyReactiveObject
         : "站点连通性　—";
 
     public ReactiveCommand<RxVoid, RxVoid> RefreshNetProbeCmd { get; }
+
+    /// <summary>
+    /// 内核端口是否已就绪。null 表示"尚未确认"（刚连上、还在等内核起来）。
+    ///
+    /// 为什么需要这个：界面上的"已连接"由系统代理开关驱动，与内核是否真的
+    /// 在跑无关。内核启动失败（端口被占、缺文件、TUN 没权限）时，
+    /// Windows 的系统代理已经指向那个端口，而端口上没人监听 ——
+    /// 浏览器全部报错，界面却写着"已连接 / 可以正常上网"。
+    /// 用户此时无从下手，因为界面在骗他。
+    /// </summary>
+    [Reactive]
+    public partial bool? CorePortReady { get; set; }
+
+    /// <summary>状态标题。内核没起来时不能说"已连接"。</summary>
+    public string ConnectionStatusText => !IsConnected
+        ? "未连接"
+        : CorePortReady == false ? "连接异常" : "已连接";
+
+    /// <summary>状态说明。区分"正常代理"和"代理没生效"。</summary>
+    public string ConnectionHintText => !IsConnected
+        ? "无法访问境外网站"
+        : CorePortReady == false
+            ? "内核未启动，代理不会生效 —— 请检查本地端口是否被占用"
+            : "可以正常上网";
 
     private bool _netProbeRunning;
     private IpLocationResult? _ipLocation;
@@ -1090,11 +1129,14 @@ public partial class DashboardViewModel : MyReactiveObject
         if (!connected)
         {
             ConnectionHint = HasServer ? "点下面的按钮开始使用" : "先去「线路」页挑一个，或从剪贴板导入订阅";
+            return;
         }
-        else
-        {
-            ConnectionHint = "已为你打开全局代理，现在可以正常上网了";
-        }
+
+        // 系统代理开了 ≠ 代理生效。内核没起来时还写"现在可以正常上网了"，
+        // 用户会拿着这句去排查浏览器为什么全线报错。
+        ConnectionHint = CorePortReady == false
+            ? "系统代理已开启，但内核没有启动 —— 代理不会生效"
+            : "已为你打开全局代理，现在可以正常上网了";
     }
 
     #endregion

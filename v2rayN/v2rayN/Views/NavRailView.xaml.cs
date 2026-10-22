@@ -1,5 +1,6 @@
 using System.Windows;
 using ReactiveUI;
+using ReactiveUI.Primitives.Signals;
 using ServiceLib.Manager;
 using ServiceLib.ViewModels;
 
@@ -25,12 +26,20 @@ public partial class NavRailView : ReactiveUserControl<DashboardViewModel>
 
         this.WhenActivated(disposables =>
         {
-            this.OneWayBind(ViewModel, vm => vm.IsConnected, v => v.txtStatus.Text,
-                connected => connected ? "已连接" : "未连接").DisposeWith(disposables);
-            this.OneWayBind(ViewModel, vm => vm.IsConnected, v => v.ellStatus.Fill,
-                connected => connected
-                    ? (System.Windows.Media.Brush)FindResource("P2raySuccessBrush")
-                    : (System.Windows.Media.Brush)FindResource("P2rayIdleBrush")).DisposeWith(disposables);
+            // 用 VM 的三态文案，而不是自己再判一次 IsConnected：
+            // 首页已经会显示"连接异常"，侧栏若还说"已连接"，两处自相矛盾。
+            this.OneWayBind(ViewModel, vm => vm.ConnectionStatusText, v => v.txtStatus.Text).DisposeWith(disposables);
+
+            // 状态点同样三态。两条 OneWayBind 都写 Fill 会互相覆盖，改成一个订阅。
+            this.WhenAnyValue(
+                    x => x.ViewModel!.IsConnected,
+                    x => x.ViewModel!.CorePortReady,
+                    (connected, ready) => !connected
+                        ? "P2rayIdleBrush"
+                        : ready == false ? "P2rayWarningBrush" : "P2raySuccessBrush")
+                .ObserveOn(RxSchedulers.MainThreadScheduler)
+                .Subscribe(key => ellStatus.Fill = (System.Windows.Media.Brush)FindResource(key))
+                .DisposeWith(disposables);
         });
     }
 

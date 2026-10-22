@@ -139,12 +139,21 @@ public partial class DashboardView : ReactiveUserControl<DashboardViewModel>
                     x => x ? Visibility.Collapsed : Visibility.Visible).DisposeWith(disposables);
             this.OneWayBind(ViewModel, vm => vm.IsConnected, v => v.btnDisconnect.Visibility,
                     x => x ? Visibility.Visible : Visibility.Collapsed).DisposeWith(disposables);
-            this.OneWayBind(ViewModel, vm => vm.IsConnected, v => v.txtStatus.Text,
-                    x => x ? "已连接" : "未连接").DisposeWith(disposables);
-            this.OneWayBind(ViewModel, vm => vm.IsConnected, v => v.txtInternet.Text,
-                    x => x ? "可以正常上网" : "无法访问境外网站").DisposeWith(disposables);
-            this.OneWayBind(ViewModel, vm => vm.IsConnected, v => v.ellStatus.Fill,
-                    x => Brush(x ? "P2raySuccessBrush" : "P2rayIdleBrush")).DisposeWith(disposables);
+            this.OneWayBind(ViewModel, vm => vm.ConnectionStatusText, v => v.txtStatus.Text).DisposeWith(disposables);
+            this.OneWayBind(ViewModel, vm => vm.ConnectionHintText, v => v.txtInternet.Text).DisposeWith(disposables);
+
+            // 状态点三态：未连接灰、连接异常橙、正常绿。
+            // 不能用两条 OneWayBind 都写 ellStatus.Fill —— 后注册的那条会赢，
+            // 与顺序耦合。这里用一个订阅同时看两个来源，语义明确。
+            this.WhenAnyValue(
+                    x => x.ViewModel!.IsConnected,
+                    x => x.ViewModel!.CorePortReady,
+                    (connected, ready) => !connected
+                        ? "P2rayIdleBrush"
+                        : ready == false ? "P2rayWarningBrush" : "P2raySuccessBrush")
+                .ObserveOn(RxSchedulers.MainThreadScheduler)
+                .Subscribe(key => ellStatus.Fill = Brush(key))
+                .DisposeWith(disposables);
 
             // 订阅有无决定引导区与列表的可见性
             this.OneWayBind(ViewModel, vm => vm.Subscriptions, v => v.guidePanel.Visibility,
@@ -159,6 +168,22 @@ public partial class DashboardView : ReactiveUserControl<DashboardViewModel>
                 .Throttle(TimeSpan.FromSeconds(2), RxSchedulers.MainThreadScheduler)
                 .ObserveOn(RxSchedulers.MainThreadScheduler)
                 .Subscribe(_ => ViewModel?.RefreshNetProbeCmd.Execute().Subscribe())
+                .DisposeWith(disposables);
+
+            // 连上之后确认内核端口真的起来了。
+            // "已连接"只代表系统代理被改写，不代表端口上真有进程在监听；
+            // 内核启动失败时浏览器会全线报错，界面必须说出来。
+            this.WhenAnyValue(x => x.ViewModel!.IsConnected)
+                .ObserveOn(RxSchedulers.MainThreadScheduler)
+                .Subscribe(connected =>
+                {
+                    if (!connected || ViewModel is null)
+                    {
+                        return;
+                    }
+
+                    WaitForCorePort(ready => ViewModel.CorePortReady = ready, d => d.DisposeWith(disposables));
+                })
                 .DisposeWith(disposables);
         });
     }
@@ -201,6 +226,42 @@ public partial class DashboardView : ReactiveUserControl<DashboardViewModel>
                 {
                     fired = true;
                     ViewModel?.RefreshNetProbeCmd.Execute().Subscribe();
+                }
+            });
+
+        disposeWith(sub);
+    }
+
+    /// <summary>
+    /// 轮询本地端口，直到有人监听或超时，然后把结论交给回调。
+    ///
+    /// 只用来回答一个问题：系统代理已经指向这个端口了，端口上到底有没有人在听？
+    /// 8 秒上限与 WaitForCoreThenProbe 一致 —— 内核冷启动实测在 1~2 秒内就绪，
+    /// 超过 8 秒基本可以判定启动失败（端口被占、缺文件、TUN 没权限）。
+    /// </summary>
+    private void WaitForCorePort(Action<bool> onResult, Action<IDisposable> disposeWith)
+    {
+        var port = AppManager.Instance.GetLocalPort(ServiceLib.Enums.EInboundProtocol.socks);
+
+        const int maxTries = 32;
+        var tries = 0;
+        var fired = false;
+
+        var sub = Signal.Every(TimeSpan.FromMilliseconds(250))
+            .ObserveOn(RxSchedulers.MainThreadScheduler)
+            .Subscribe(_ =>
+            {
+                if (fired)
+                {
+                    return;
+                }
+
+                tries++;
+                var ok = IsPortListening(port);
+                if (ok || tries >= maxTries)
+                {
+                    fired = true;
+                    onResult(ok);
                 }
             });
 
