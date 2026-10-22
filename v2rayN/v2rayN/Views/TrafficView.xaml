@@ -129,27 +129,41 @@
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
 
-                    <!-- Y 轴刻度：等分对齐绘图区四档 -->
-                    <Grid Grid.Row="0" Grid.Column="0" Height="170">
-                        <ItemsControl x:Name="lstYAxis">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <UniformGrid Columns="1" Rows="4" />
-                                </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <TextBlock
-                                        HorizontalAlignment="Right"
-                                        VerticalAlignment="Top"
-                                        Margin="0,-6,8,0"
-                                        FontSize="10"
-                                        Foreground="{StaticResource P2rayTextTertiaryBrush}"
-                                        Text="{Binding}" />
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </Grid>
+                    <!-- Y 轴刻度：与网格线共用同一组绝对 y 值，避免等分容器带来的 1-2px 偏移 -->
+                    <Canvas Grid.Row="0" Grid.Column="0" Height="170" ClipToBounds="False">
+                        <TextBlock
+                            x:Name="txtY0"
+                            Canvas.Left="0"
+                            Canvas.Top="-7"
+                            Width="48"
+                            FontSize="10"
+                            TextAlignment="Right"
+                            Foreground="{StaticResource P2rayTextTertiaryBrush}" />
+                        <TextBlock
+                            x:Name="txtY1"
+                            Canvas.Left="0"
+                            Canvas.Top="49"
+                            Width="48"
+                            FontSize="10"
+                            TextAlignment="Right"
+                            Foreground="{StaticResource P2rayTextTertiaryBrush}" />
+                        <TextBlock
+                            x:Name="txtY2"
+                            Canvas.Left="0"
+                            Canvas.Top="106"
+                            Width="48"
+                            FontSize="10"
+                            TextAlignment="Right"
+                            Foreground="{StaticResource P2rayTextTertiaryBrush}" />
+                        <TextBlock
+                            x:Name="txtY3"
+                            Canvas.Left="0"
+                            Canvas.Top="163"
+                            Width="48"
+                            FontSize="10"
+                            TextAlignment="Right"
+                            Foreground="{StaticResource P2rayTextTertiaryBrush}" />
+                    </Canvas>
 
                     <!-- 绘图区 -->
                     <Viewbox
@@ -160,31 +174,21 @@
                         <Grid
                             Width="1000"
                             Height="170">
-                            <!-- 水平网格线 -->
-                            <ItemsControl x:Name="lstGridLines" Height="170">
-                                <ItemsControl.ItemsPanel>
-                                    <ItemsPanelTemplate>
-                                        <UniformGrid Columns="1" Rows="4" />
-                                    </ItemsPanelTemplate>
-                                </ItemsControl.ItemsPanel>
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <Border
-                                            Height="1"
-                                            VerticalAlignment="Top"
-                                            Background="{StaticResource P2rayDividerBrush}"
-                                            Opacity="0.6" />
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
+                            <!-- 水平网格线：与 Y 轴刻度同一组 y 值 -->
+                            <Canvas Height="170" IsHitTestVisible="False">
+                                <Border Canvas.Top="0" Width="1000" Height="1" Background="{StaticResource P2rayDividerBrush}" Opacity="0.55" />
+                                <Border Canvas.Top="56" Width="1000" Height="1" Background="{StaticResource P2rayDividerBrush}" Opacity="0.35" />
+                                <Border Canvas.Top="113" Width="1000" Height="1" Background="{StaticResource P2rayDividerBrush}" Opacity="0.35" />
+                                <Border Canvas.Top="169" Width="1000" Height="1" Background="{StaticResource P2rayDividerBrush}" Opacity="0.55" />
+                            </Canvas>
 
                             <!-- 下行面积：渐变到底部，避免一大块纯色显得闷 -->
                             <Path x:Name="pathDownArea" Stretch="None">
                                 <Path.Fill>
                                     <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                        <GradientStop Offset="0" Color="#5C0A84FF" />
-                                        <GradientStop Offset="0.55" Color="#240A84FF" />
-                                        <GradientStop Offset="1" Color="#000A84FF" />
+                                        <GradientStop Offset="0" Color="#7A3B9BFF" />
+                                        <GradientStop Offset="0.55" Color="#2E3B9BFF" />
+                                        <GradientStop Offset="1" Color="#003B9BFF" />
                                     </LinearGradientBrush>
                                 </Path.Fill>
                             </Path>
@@ -357,8 +361,8 @@
                     <ItemsControl x:Name="lstDays">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Border Style="{StaticResource P2rayRow}">
-                                    <Grid Margin="0,1">
+                                <Border Padding="12,4" Style="{StaticResource P2rayRow}">
+                            <Grid Margin="0,1">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="96" />
                                             <ColumnDefinition Width="*" />

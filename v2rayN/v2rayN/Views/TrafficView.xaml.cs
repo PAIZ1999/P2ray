@@ -20,7 +20,15 @@ public partial class TrafficView : ReactiveUserControl<TrafficViewModel>
         {
             this.OneWayBind(ViewModel, vm => vm.Ranges, v => v.lstRanges.ItemsSource).DisposeWith(disposables);
             this.OneWayBind(ViewModel, vm => vm.Days, v => v.lstDays.ItemsSource).DisposeWith(disposables);
-            this.OneWayBind(ViewModel, vm => vm.YAxisLabels, v => v.lstYAxis.ItemsSource).DisposeWith(disposables);
+            // Y 轴四档刻度：写进四个固定 TextBlock，与网格线共用 0/56/113/170 的 y 值
+            this.OneWayBind(ViewModel, vm => vm.YAxisLabels, v => v.txtY0.Text,
+                    labels => labels is { Count: > 0 } ? labels[0] : string.Empty).DisposeWith(disposables);
+            this.OneWayBind(ViewModel, vm => vm.YAxisLabels, v => v.txtY1.Text,
+                    labels => labels is { Count: > 1 } ? labels[1] : string.Empty).DisposeWith(disposables);
+            this.OneWayBind(ViewModel, vm => vm.YAxisLabels, v => v.txtY2.Text,
+                    labels => labels is { Count: > 2 } ? labels[2] : string.Empty).DisposeWith(disposables);
+            this.OneWayBind(ViewModel, vm => vm.YAxisLabels, v => v.txtY3.Text,
+                    labels => labels is { Count: > 3 } ? labels[3] : string.Empty).DisposeWith(disposables);
             this.OneWayBind(ViewModel, vm => vm.XAxisLabels, v => v.lstXAxis.ItemsSource).DisposeWith(disposables);
             this.OneWayBind(ViewModel, vm => vm.DownPoints, v => v.lstHotspots.ItemsSource).DisposeWith(disposables);
             // 圆点与热区共用同一批点：坐标一致，悬停位置才对得上

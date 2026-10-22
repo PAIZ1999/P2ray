@@ -14,6 +14,9 @@ public partial class TrafficViewModel : ReactiveObject
     /// <summary>折线图绘图区宽度（px）。逻辑宽度固定，实际按容器拉伸。</summary>
     private const double ChartWidth = 1000;
 
+    /// <summary>上次选择的区间天数，进程内记忆。</summary>
+    private static int LastSelectedDays = 7;
+
     /// <summary>可选的时间区间（天）。</summary>
     public IReadOnlyList<TrafficRange> Ranges { get; } =
     [
@@ -84,12 +87,21 @@ public partial class TrafficViewModel : ReactiveObject
             await LoadAsync();
         });
 
-        SelectedRange = Ranges[1];
+        // 记住上次选的区间：反复进出页面时不必每次重新点。
+        // 进程内静态即可满足，跨进程持久化需要新增配置项，暂不做。
+        SelectedRange = Ranges.FirstOrDefault(r => r.Days == LastSelectedDays) ?? Ranges[1];
 
         // 切区间即重算，不做数据缓存：一次查询最多 30 行，成本可以忽略。
         this.WhenAnyValue(x => x.SelectedRange)
+            .Subscribe(range =>
+            {
+                if (range is not null)
+                {
+                    LastSelectedDays = range.Days;
+                }
 
-            .Subscribe(_ => RefreshCmd.Execute().Subscribe());
+                RefreshCmd.Execute().Subscribe();
+            });
 
         _ = LoadAsync();
     }
@@ -110,7 +122,7 @@ public partial class TrafficViewModel : ReactiveObject
             HasData = maxValue > 0;
 
             // 顶部固定留 15% 空白，峰值不会顶到边框
-            var scaleMax = maxValue > 0 ? maxValue * 1.15 : 1;
+            var scaleMax = maxValue > 0 ? maxValue * 1.08 : 1;
 
             BuildChart(rows, scaleMax, days);
             BuildDetails(rows);
