@@ -41,10 +41,11 @@ public partial class DashboardViewModel : MyReactiveObject
                 InboundDisplay = v ?? string.Empty;
                 InboundPortDisplay = FriendlyInboundPort(v);
 
-                // 两个代理地址由端口派生，端口一变必须通知，否则界面上
-                // 显示的仍是旧端口 —— 复制出去的东西就是错的。
+                // 两个代理地址与端口输入框都由端口派生，端口一变必须通知，
+                // 否则界面上显示的仍是旧端口 —— 复制出去的东西就是错的。
                 this.RaisePropertyChanged(nameof(Socks5Address));
                 this.RaisePropertyChanged(nameof(HttpAddress));
+                this.RaisePropertyChanged(nameof(MainPortForEdit));
             });
         this.WhenAnyValue(x => x._statusBar.InboundLanDisplay)
             .Subscribe(v => InboundLanDisplay = v ?? string.Empty);
@@ -763,14 +764,6 @@ public partial class DashboardViewModel : MyReactiveObject
     /// </summary>
     [Reactive]
     public partial bool IsProxyPanelOpen { get; set; }
-
-    /// <summary>改端口的输入框是否展开。</summary>
-    [Reactive]
-    public partial bool IsPortEditorOpen { get; set; }
-
-    /// <summary>输入框里的端口文本。</summary>
-    [Reactive]
-    public partial string PortInput { get; set; }
 
     /// <summary>改端口后的提示（成功或失败原因）。</summary>
     [Reactive]

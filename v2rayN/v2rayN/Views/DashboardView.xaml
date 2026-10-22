@@ -1006,20 +1006,19 @@
                 </StackPanel>
             </Border>
 
-            <!-- ═══ 分组：本地代理地址（默认收起，需要的人才展开） ═══ -->
+            <!-- ═══ 分组：本地代理地址（端口常显可改，地址默认收起） ═══ -->
             <Border Margin="0,0,0,16" Style="{StaticResource P2rayCard}">
                 <StackPanel>
-                    <!-- 标题行：整行可点，展开/收起下面的地址 -->
-                    <Border
-                        x:Name="proxyHeader"
-                        Background="Transparent"
-                        Cursor="Hand"
-                        MouseLeftButtonUp="ProxyHeader_Click"
-                        Style="{StaticResource P2rayRow}">
+                    <!-- 标题行：左侧标题可点开合，右侧端口常显且可直接编辑。
+                         端口放在这里而不是藏进「改端口」按钮 —— 它是用户最常要的东西，
+                         多一层点击只是多一道门槛。 -->
+                    <Border Style="{StaticResource P2rayRow}">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
@@ -1037,36 +1036,80 @@
                                     Kind="LanConnect" />
                             </Border>
 
-                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                <TextBlock Style="{StaticResource P2rayBody}" Text="本地代理地址" />
-                                <TextBlock
-                                    x:Name="txtProxySubtitle"
-                                    Margin="0,2,0,0"
-                                    Style="{StaticResource P2rayMicro}"
-                                    Text="其他软件要手动填代理时，展开查看地址" />
-                            </StackPanel>
+                            <!-- 只有标题区域响应展开/收起，端口控件在它之外，
+                                 否则点输入框会被当成点标题，抽屉莫名其妙地开合。 -->
+                            <Border
+                                Grid.Column="1"
+                                Background="Transparent"
+                                Cursor="Hand"
+                                MouseLeftButtonUp="ProxyHeader_Click">
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock Style="{StaticResource P2rayBody}" Text="本地代理地址" />
+                                    <TextBlock
+                                        x:Name="txtProxySubtitle"
+                                        Margin="0,2,0,0"
+                                        Style="{StaticResource P2rayMicro}"
+                                        Text="其他软件要手动填代理时，展开查看地址" />
+                                </StackPanel>
+                            </Border>
 
-                            <!-- 改端口：只改这一个数字，其他端口按固定偏移跟着变 -->
-                            <Button
-                                x:Name="btnEditPort"
+                            <TextBlock
                                 Grid.Column="2"
                                 Margin="0,0,8,0"
+                                VerticalAlignment="Center"
+                                Style="{StaticResource P2rayMicro}"
+                                Text="端口" />
+
+                            <TextBox
+                                x:Name="txtPortInline"
+                                Grid.Column="3"
+                                Width="76"
+                                Height="28"
+                                Padding="8,0"
+                                VerticalContentAlignment="Center"
+                                Background="{StaticResource P2raySurfaceBrush}"
+                                BorderBrush="{StaticResource P2rayBorderBrush}"
+                                BorderThickness="1"
+                                CaretBrush="{StaticResource P2rayTextPrimaryBrush}"
+                                FontFamily="Consolas, Cascadia Mono, monospace"
+                                FontSize="{StaticResource P2rayFontBody}"
+                                Foreground="{StaticResource P2rayTextPrimaryBrush}"
+                                KeyDown="TxtPortInline_KeyDown"
+                                TextAlignment="Center" />
+
+                            <Button
+                                x:Name="btnApplyPort"
+                                Grid.Column="4"
+                                Margin="8,0,10,0"
                                 Padding="10,0"
-                                Click="BtnEditPort_Click"
-                                Content="改端口"
-                                Height="24"
+                                Click="BtnApplyPort_Click"
+                                Content="应用"
+                                Height="26"
                                 Style="{StaticResource P2raySecondaryButton}" />
 
-                            <materialDesign:PackIcon
-                                x:Name="icoProxyChevron"
-                                Grid.Column="3"
-                                Width="18"
-                                Height="18"
-                                VerticalAlignment="Center"
-                                Foreground="{StaticResource P2rayTextTertiaryBrush}"
-                                Kind="ChevronDown" />
+                            <Border
+                                Grid.Column="5"
+                                Background="Transparent"
+                                Cursor="Hand"
+                                MouseLeftButtonUp="ProxyHeader_Click">
+                                <materialDesign:PackIcon
+                                    x:Name="icoProxyChevron"
+                                    Width="18"
+                                    Height="18"
+                                    VerticalAlignment="Center"
+                                    Foreground="{StaticResource P2rayTextTertiaryBrush}"
+                                    Kind="ChevronDown" />
+                            </Border>
                         </Grid>
                     </Border>
+
+                    <!-- 改端口的校验结果。只在有内容时占位，不占常驻高度。 -->
+                    <TextBlock
+                        x:Name="txtPortStatus"
+                        Margin="32,0,12,8"
+                        Style="{StaticResource P2rayMicro}"
+                        TextTrimming="CharacterEllipsis"
+                        Visibility="Collapsed" />
 
                     <!-- 抽屉：地址 + 复制 -->
                     <StackPanel x:Name="proxyPanel" Visibility="Collapsed">
@@ -1147,65 +1190,6 @@
                         </Border>
                     </StackPanel>
 
-                    <!-- 改端口的行内编辑器 -->
-                    <Border x:Name="portEditor" Style="{StaticResource P2rayRowLast}" Visibility="Collapsed">
-                        <Grid Margin="32,0,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-
-                            <TextBlock
-                                Grid.Column="0"
-                                MinWidth="64"
-                                VerticalAlignment="Center"
-                                Style="{StaticResource P2rayMicro}"
-                                Text="端口" />
-
-                            <TextBox
-                                x:Name="txtPortInput"
-                                Grid.Column="1"
-                                Width="90"
-                                Height="28"
-                                Padding="8,0"
-                                VerticalContentAlignment="Center"
-                                Background="{StaticResource P2raySurfaceBrush}"
-                                BorderBrush="{StaticResource P2rayBorderBrush}"
-                                BorderThickness="1"
-                                CaretBrush="{StaticResource P2rayTextPrimaryBrush}"
-                                FontFamily="Consolas, Cascadia Mono, monospace"
-                                FontSize="{StaticResource P2rayFontBody}"
-                                Foreground="{StaticResource P2rayTextPrimaryBrush}" />
-
-                            <TextBlock
-                                x:Name="txtPortStatus"
-                                Grid.Column="2"
-                                Margin="10,0,10,0"
-                                VerticalAlignment="Center"
-                                Style="{StaticResource P2rayMicro}"
-                                TextTrimming="CharacterEllipsis" />
-
-                            <Button
-                                Grid.Column="3"
-                                Margin="0,0,8,0"
-                                Padding="10,0"
-                                Click="BtnSavePort_Click"
-                                Content="保存"
-                                Height="26"
-                                Style="{StaticResource P2rayPrimaryButton}" />
-
-                            <Button
-                                Grid.Column="4"
-                                Padding="10,0"
-                                Click="BtnCancelPort_Click"
-                                Content="取消"
-                                Height="26"
-                                Style="{StaticResource P2raySecondaryButton}" />
-                        </Grid>
-                    </Border>
                 </StackPanel>
             </Border>
 

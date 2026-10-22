@@ -59,18 +59,16 @@ public partial class DashboardView : ReactiveUserControl<DashboardViewModel>
                         ? "其他软件要手动填代理时，用下面任一地址"
                         : "其他软件要手动填代理时，展开查看地址").DisposeWith(disposables);
 
-            // 改端口：编辑器可见性 + 提示文本
-            this.OneWayBind(ViewModel, vm => vm.IsPortEditorOpen, v => v.portEditor.Visibility,
-                    open => open ? Visibility.Visible : Visibility.Collapsed).DisposeWith(disposables);
+            // 改端口：端口框常显并预填当前端口，改完由 OneWayBind 自动刷新。
+            this.OneWayBind(ViewModel, vm => vm.MainPortForEdit, v => v.txtPortInline.Text).DisposeWith(disposables);
             this.OneWayBind(ViewModel, vm => vm.PortStatus, v => v.txtPortStatus.Text).DisposeWith(disposables);
-
-            // HTTP 行是否画底部细线取决于编辑器在不在：它是卡片最后一行时不该有分隔线。
-            this.WhenAnyValue(x => x.ViewModel!.IsPortEditorOpen)
-                .ObserveOn(RxSchedulers.MainThreadScheduler)
-                .Subscribe(open => httpRow.BorderThickness = open
-                    ? new Thickness(0, 0, 0, 1)
-                    : new Thickness(0))
-                .DisposeWith(disposables);
+            // 提示只在有内容时占位，避免空白行把卡片撑高
+            this.OneWayBind(ViewModel, vm => vm.PortStatus, v => v.txtPortStatus.Visibility,
+                    s => string.IsNullOrEmpty(s) ? Visibility.Collapsed : Visibility.Visible).DisposeWith(disposables);
+            this.OneWayBind(ViewModel, vm => vm.PortStatus, v => v.txtPortStatus.Foreground,
+                    s => Brush(s is not null && s.Contains("已应用", StringComparison.Ordinal)
+                        ? "P2raySuccessBrush"
+                        : "P2rayWarningBrush")).DisposeWith(disposables);
 
             // 路由模式：分段按钮，数量与名称都来自上游 RoutingItems。
             this.OneWayBind(ViewModel, vm => vm.RoutingModes, v => v.lstRoutingModes.ItemsSource).DisposeWith(disposables);
@@ -454,7 +452,7 @@ public partial class DashboardView : ReactiveUserControl<DashboardViewModel>
         ViewModel!.SelectedRoutingMode = item;
     }
 
-    /// <summary>点标题行展开/收起地址抽屉。</summary>
+    /// <summary>点标题或箭头展开/收起地址抽屉。</summary>
     private void ProxyHeader_Click(object sender, MouseButtonEventArgs e)
     {
         if (ViewModel is null)
@@ -465,54 +463,36 @@ public partial class DashboardView : ReactiveUserControl<DashboardViewModel>
         ViewModel.IsProxyPanelOpen = !ViewModel.IsProxyPanelOpen;
     }
 
-    /// <summary>
-    /// 打开改端口。顺手把抽屉展开 —— 端口改了以后用户多半想看新地址，
-    /// 藏在收起的抽屉里等于让他再点一次。
-    /// </summary>
-    private void BtnEditPort_Click(object sender, RoutedEventArgs e)
+    /// <summary>端点框里按回车等同点「应用」，省一次鼠标。</summary>
+    private void TxtPortInline_KeyDown(object sender, KeyEventArgs e)
     {
-        if (ViewModel is null)
+        if (e.Key is not (Key.Enter or Key.Return))
         {
             return;
         }
 
-        ViewModel.IsProxyPanelOpen = true;
-        ViewModel.IsPortEditorOpen = true;
-        ViewModel.PortStatus = string.Empty;
-        ViewModel.PortInput = ViewModel.MainPortForEdit;
-
-        txtPortInput.Text = ViewModel.PortInput;
-        txtPortInput.Focus();
-        txtPortInput.SelectAll();
+        e.Handled = true;
+        BtnApplyPort_Click(sender, e);
     }
 
-    private async void BtnSavePort_Click(object sender, RoutedEventArgs e)
+    private async void BtnApplyPort_Click(object sender, object e)
     {
         if (ViewModel is null)
         {
             return;
         }
 
-        // 直接读控件文本，不走 Binding：与直连规则输入框同样的原因
-        // （ReactiveUserControl 泛型基类上 Binding 不保证解析得到）。
-        var error = await ViewModel.ApplyLocalPortAsync(txtPortInput.Text);
-        ViewModel.PortStatus = error ?? "已保存，正在重启内核…";
+        // 直接读控件文本：ReactiveUserControl 是泛型基类，XAML 里的
+        // Text="{Binding ...}" 在这里不保证解析得到（直连规则输入框踩过）。
+        var error = await ViewModel.ApplyLocalPortAsync(txtPortInline.Text);
+        ViewModel.PortStatus = error ?? "已应用，内核正在重启…";
 
-        if (error is null)
+        // 输入框回填实际生效的端口：校验失败时用户看到的仍是自己刚敲的值，
+        // 成功时则由 OneWayBind 自动刷新成新端口。
+        if (error is not null)
         {
-            ViewModel.IsPortEditorOpen = false;
+            txtPortInline.Text = ViewModel.MainPortForEdit;
         }
-    }
-
-    private void BtnCancelPort_Click(object sender, RoutedEventArgs e)
-    {
-        if (ViewModel is null)
-        {
-            return;
-        }
-
-        ViewModel.IsPortEditorOpen = false;
-        ViewModel.PortStatus = string.Empty;
     }
 
     /// <summary>
