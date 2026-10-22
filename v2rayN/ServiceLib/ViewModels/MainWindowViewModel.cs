@@ -269,6 +269,13 @@ public partial class MainWindowViewModel : MyReactiveObject
             .ObserveOn(RxSchedulers.MainThreadScheduler)
             .Subscribe(bl => BlNewUpdate = bl);
 
+        // 首页改本地端口后要求重载内核。端口只在生成配置时被读取，
+        // 不重启的话新端口不会生效，界面却已经显示新端口了。
+        AppEvents.ReloadCoreRequested
+            .AsObservable()
+            .ObserveOn(RxSchedulers.MainThreadScheduler)
+            .SubscribeAsync(async _ => await Reload());
+
         #endregion AppEvents
 
         ProfilesViewModel.RefreshServersRequested

@@ -35,7 +35,42 @@ public partial class DashboardView : ReactiveUserControl<DashboardViewModel>
             this.OneWayBind(ViewModel, vm => vm.Subscriptions, v => v.lstSubscriptions.ItemsSource).DisposeWith(disposables);
             this.OneWayBind(ViewModel, vm => vm.NodeCount, v => v.txtNodeCount.Text,
                     count => $"{count} 条").DisposeWith(disposables);
-            this.OneWayBind(ViewModel, vm => vm.InboundPortDisplay, v => v.txtLocalPort.Text).DisposeWith(disposables);
+            // 本地代理地址：两种协议同一个端口（mixed 入站），各自可一键复制。
+            this.OneWayBind(ViewModel, vm => vm.Socks5Address, v => v.txtSocks5Address.Text,
+                    s => string.IsNullOrEmpty(s) ? "—" : s).DisposeWith(disposables);
+            this.OneWayBind(ViewModel, vm => vm.HttpAddress, v => v.txtHttpAddress.Text,
+                    s => string.IsNullOrEmpty(s) ? "—" : s).DisposeWith(disposables);
+            // 端口拿不到（内核没起来、尚未生成入站）时禁用复制，避免复制出空字符串
+            this.OneWayBind(ViewModel, vm => vm.Socks5Address, v => v.btnCopySocks5.IsEnabled,
+                    s => !string.IsNullOrEmpty(s)).DisposeWith(disposables);
+            this.OneWayBind(ViewModel, vm => vm.HttpAddress, v => v.btnCopyHttp.IsEnabled,
+                    s => !string.IsNullOrEmpty(s)).DisposeWith(disposables);
+
+            // 抽屉开合：地址面板、箭头方向、副标题三处联动，
+            // 否则会出现"箭头朝下但已经展开了"这种自相矛盾的状态。
+            this.OneWayBind(ViewModel, vm => vm.IsProxyPanelOpen, v => v.proxyPanel.Visibility,
+                    open => open ? Visibility.Visible : Visibility.Collapsed).DisposeWith(disposables);
+            this.OneWayBind(ViewModel, vm => vm.IsProxyPanelOpen, v => v.icoProxyChevron.Kind,
+                    open => open
+                        ? MaterialDesignThemes.Wpf.PackIconKind.ChevronUp
+                        : MaterialDesignThemes.Wpf.PackIconKind.ChevronDown).DisposeWith(disposables);
+            this.OneWayBind(ViewModel, vm => vm.IsProxyPanelOpen, v => v.txtProxySubtitle.Text,
+                    open => open
+                        ? "其他软件要手动填代理时，用下面任一地址"
+                        : "其他软件要手动填代理时，展开查看地址").DisposeWith(disposables);
+
+            // 改端口：编辑器可见性 + 提示文本
+            this.OneWayBind(ViewModel, vm => vm.IsPortEditorOpen, v => v.portEditor.Visibility,
+                    open => open ? Visibility.Visible : Visibility.Collapsed).DisposeWith(disposables);
+            this.OneWayBind(ViewModel, vm => vm.PortStatus, v => v.txtPortStatus.Text).DisposeWith(disposables);
+
+            // HTTP 行是否画底部细线取决于编辑器在不在：它是卡片最后一行时不该有分隔线。
+            this.WhenAnyValue(x => x.ViewModel!.IsPortEditorOpen)
+                .ObserveOn(RxSchedulers.MainThreadScheduler)
+                .Subscribe(open => httpRow.BorderThickness = open
+                    ? new Thickness(0, 0, 0, 1)
+                    : new Thickness(0))
+                .DisposeWith(disposables);
 
             // 路由模式：分段按钮，数量与名称都来自上游 RoutingItems。
             this.OneWayBind(ViewModel, vm => vm.RoutingModes, v => v.lstRoutingModes.ItemsSource).DisposeWith(disposables);
@@ -419,17 +454,89 @@ public partial class DashboardView : ReactiveUserControl<DashboardViewModel>
         ViewModel!.SelectedRoutingMode = item;
     }
 
-    private void BtnCopyPort_Click(object sender, RoutedEventArgs e)
+    /// <summary>点标题行展开/收起地址抽屉。</summary>
+    private void ProxyHeader_Click(object sender, MouseButtonEventArgs e)
     {
-        var port = ViewModel?.InboundPortDisplay;
-        if (port.IsNullOrEmpty() || port == "—")
+        if (ViewModel is null)
         {
             return;
         }
 
-        // 多端口时上游会给 "10808 / 10809"，复制时只取主端口。
-        var first = port.Split('/')[0].Trim();
-        WindowsUtils.SetClipboardData(first);
+        ViewModel.IsProxyPanelOpen = !ViewModel.IsProxyPanelOpen;
+    }
+
+    /// <summary>
+    /// 打开改端口。顺手把抽屉展开 —— 端口改了以后用户多半想看新地址，
+    /// 藏在收起的抽屉里等于让他再点一次。
+    /// </summary>
+    private void BtnEditPort_Click(object sender, RoutedEventArgs e)
+    {
+        if (ViewModel is null)
+        {
+            return;
+        }
+
+        ViewModel.IsProxyPanelOpen = true;
+        ViewModel.IsPortEditorOpen = true;
+        ViewModel.PortStatus = string.Empty;
+        ViewModel.PortInput = ViewModel.MainPortForEdit;
+
+        txtPortInput.Text = ViewModel.PortInput;
+        txtPortInput.Focus();
+        txtPortInput.SelectAll();
+    }
+
+    private async void BtnSavePort_Click(object sender, RoutedEventArgs e)
+    {
+        if (ViewModel is null)
+        {
+            return;
+        }
+
+        // 直接读控件文本，不走 Binding：与直连规则输入框同样的原因
+        // （ReactiveUserControl 泛型基类上 Binding 不保证解析得到）。
+        var error = await ViewModel.ApplyLocalPortAsync(txtPortInput.Text);
+        ViewModel.PortStatus = error ?? "已保存，正在重启内核…";
+
+        if (error is null)
+        {
+            ViewModel.IsPortEditorOpen = false;
+        }
+    }
+
+    private void BtnCancelPort_Click(object sender, RoutedEventArgs e)
+    {
+        if (ViewModel is null)
+        {
+            return;
+        }
+
+        ViewModel.IsPortEditorOpen = false;
+        ViewModel.PortStatus = string.Empty;
+    }
+
+    /// <summary>
+    /// 复制 SOCKS5 地址。
+    ///
+    /// 复制的是完整地址而不是端口号：用户拿到 "10808" 还得自己拼前缀、自己判断
+    /// 是 socks 还是 http，多一步就多一次出错机会。
+    /// </summary>
+    private void BtnCopySocks5_Click(object sender, RoutedEventArgs e)
+        => CopyAddress(ViewModel?.Socks5Address);
+
+    /// <summary>复制 HTTP 代理地址。</summary>
+    private void BtnCopyHttp_Click(object sender, RoutedEventArgs e)
+        => CopyAddress(ViewModel?.HttpAddress);
+
+    private static void CopyAddress(string? address)
+    {
+        if (string.IsNullOrWhiteSpace(address))
+        {
+            return;
+        }
+
+        WindowsUtils.SetClipboardData(address);
+        NoticeManager.Instance.Enqueue($"已复制 {address}");
     }
 
     private void BtnDisconnect_Click(object sender, RoutedEventArgs e)

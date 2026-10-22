@@ -40,6 +40,11 @@ public partial class DashboardViewModel : MyReactiveObject
             {
                 InboundDisplay = v ?? string.Empty;
                 InboundPortDisplay = FriendlyInboundPort(v);
+
+                // 两个代理地址由端口派生，端口一变必须通知，否则界面上
+                // 显示的仍是旧端口 —— 复制出去的东西就是错的。
+                this.RaisePropertyChanged(nameof(Socks5Address));
+                this.RaisePropertyChanged(nameof(HttpAddress));
             });
         this.WhenAnyValue(x => x._statusBar.InboundLanDisplay)
             .Subscribe(v => InboundLanDisplay = v ?? string.Empty);
@@ -719,6 +724,119 @@ public partial class DashboardViewModel : MyReactiveObject
     /// </summary>
     [Reactive]
     public partial string InboundPortDisplay { get; set; } = "—";
+
+    /// <summary>
+    /// 给其他软件填的 SOCKS5 地址。端口不可用时返回空串，界面据此隐藏整行。
+    ///
+    /// 为什么两种协议同一个端口：入站是 mixed，xray 在同一条监听上同时说
+    /// SOCKS 和 HTTP（见 V2rayInboundService.BuildInbound 里 protocol 固定为 mixed），
+    /// 所以 socks5:// 和 http:// 后面跟的端口号相同 —— 这不是笔误。
+    /// </summary>
+    public string Socks5Address => MainPort is { Length: > 0 } p ? $"socks5://{Global.Loopback}:{p}" : string.Empty;
+
+    /// <summary>给其他软件填的 HTTP 代理地址。</summary>
+    public string HttpAddress => MainPort is { Length: > 0 } p ? $"http://{Global.Loopback}:{p}" : string.Empty;
+
+    /// <summary>主端口号。InboundPortDisplay 在多端口时会给出 "10808 / 10809"，只取第一个。</summary>
+    private string? MainPort
+    {
+        get
+        {
+            var raw = InboundPortDisplay;
+            if (string.IsNullOrEmpty(raw) || raw == "—")
+            {
+                return null;
+            }
+
+            var first = raw.Split('/')[0].Trim();
+            return first.Length > 0 && first.All(char.IsAsciiDigit) ? first : null;
+        }
+    }
+
+    /// <summary>当前主端口文本，供改端口输入框预填。</summary>
+    public string MainPortForEdit => MainPort ?? string.Empty;
+
+    /// <summary>
+    /// 代理地址抽屉是否展开。默认收起：
+    /// 绝大多数用户在首页只是"连上/断开"，一串 socks5:// 地址对他们只是噪音，
+    /// 只有确实要往别的软件里填的人才会展开。
+    /// </summary>
+    [Reactive]
+    public partial bool IsProxyPanelOpen { get; set; }
+
+    /// <summary>改端口的输入框是否展开。</summary>
+    [Reactive]
+    public partial bool IsPortEditorOpen { get; set; }
+
+    /// <summary>输入框里的端口文本。</summary>
+    [Reactive]
+    public partial string PortInput { get; set; }
+
+    /// <summary>改端口后的提示（成功或失败原因）。</summary>
+    [Reactive]
+    public partial string PortStatus { get; set; }
+
+    /// <summary>
+    /// 把端口写回配置并重启内核。返回给用户看的提示，null 表示成功。
+    ///
+    /// 校验放在前面：端口被占用时直接改配置会让内核起不来，
+    /// 而用户只会看到"连接异常"，还得自己猜到是端口冲突。
+    /// </summary>
+    public async Task<string?> ApplyLocalPortAsync(string? input)
+    {
+        var raw = (input ?? string.Empty).Trim();
+        if (!int.TryParse(raw, out var port) || port < 1 || port > 65535)
+        {
+            return "端口需为 1–65535 之间的整数";
+        }
+
+        var inbound = AppManager.Instance.Config.Inbound.FirstOrDefault();
+        if (inbound is null)
+        {
+            return "找不到本地入站配置";
+        }
+
+        if (inbound.LocalPort == port)
+        {
+            return $"当前已经是 {port}";
+        }
+
+        // 目标端口被别的程序占着就别写配置：写了内核也起不来。
+        if (IsPortInUse(port))
+        {
+            return $"端口 {port} 已被其他程序占用，请换一个";
+        }
+
+        inbound.LocalPort = port;
+        var ret = await ConfigHandler.SaveConfig(AppManager.Instance.Config);
+        if (ret != 0)
+        {
+            return "保存配置失败";
+        }
+
+        // 必须让状态栏重建入站摘要：界面上的 socks5:// / http:// 两个地址都是从
+        // InboundDisplay 解析出来的。不刷新的话配置和内核都已经是新端口，
+        // 界面却还显示旧端口 —— 用户复制出去的就是错的。
+        await _statusBar.InboundDisplayStatus();
+
+        // 端口在生成内核配置时才被读取，必须重启内核才生效。
+        AppEvents.ReloadCoreRequested.Publish(RxVoid.Default);
+        return null;
+    }
+
+    private static bool IsPortInUse(int port)
+    {
+        try
+        {
+            using var client = new System.Net.Sockets.TcpClient();
+            return client.ConnectAsync(Global.Loopback, port).Wait(TimeSpan.FromMilliseconds(200))
+                   && client.Connected;
+        }
+        catch
+        {
+            return false;
+        }
+    }
 
     [Reactive]
     public partial string InboundLanDisplay { get; set; }
