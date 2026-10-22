@@ -163,6 +163,9 @@ public partial class TrafficViewModel : ReactiveObject
                 Tooltip = $"{row.Date:MM-dd ddd}\n下行 {FormatBytes(row.Down)}\n上行 {FormatBytes(row.Up)}",
                 ShowLabel = count <= 10 || i % Math.Max(1, count / 7) == 0,
                 Label = $"{row.Date:M/d}",
+                DotX = x - 3,
+                DotY = yDown - 3,
+                IsDotVisible = count <= 10,
             });
 
             downSegments.Add($"{(i == 0 ? "M" : "L")} {x:F1},{yDown:F1}");
@@ -298,8 +301,20 @@ public class TrafficPoint
 
     public double HotWidth { get; set; }
 
+    /// <summary>圆点左上角坐标（中心坐标减去半径）。</summary>
+    public double DotX { get; set; }
+
+    /// <summary>圆点距顶距离。</summary>
+    public double DotY { get; set; }
+
+    /// <summary>点数过多时隐藏圆点，避免糊成一片。
+    /// ServiceLib 不引用 WPF，所以这里只给布尔值，由视图转成 Visibility。</summary>
+    public bool IsDotVisible { get; set; } = true;
+
+    /// <summary>悬停提示文本。</summary>
     public string Tooltip { get; set; } = string.Empty;
 
+    /// <summary>X 轴标签文本。</summary>
     public string Label { get; set; } = string.Empty;
 
     public bool ShowLabel { get; set; }

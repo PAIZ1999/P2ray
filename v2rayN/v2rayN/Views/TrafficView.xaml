@@ -13,6 +13,10 @@
     x:TypeArguments="vms:TrafficViewModel"
     mc:Ignorable="d">
 
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+    </UserControl.Resources>
+
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel Margin="20,18,20,28">
 
@@ -174,24 +178,55 @@
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
 
-                            <!-- 下行面积 -->
-                            <Path
-                                x:Name="pathDownArea"
-                                Fill="{StaticResource P2rayAccentSoftBrush}"
-                                Stretch="None" />
+                            <!-- 下行面积：渐变到底部，避免一大块纯色显得闷 -->
+                            <Path x:Name="pathDownArea" Stretch="None">
+                                <Path.Fill>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                        <GradientStop Offset="0" Color="#5C0A84FF" />
+                                        <GradientStop Offset="0.55" Color="#240A84FF" />
+                                        <GradientStop Offset="1" Color="#000A84FF" />
+                                    </LinearGradientBrush>
+                                </Path.Fill>
+                            </Path>
                             <!-- 下行折线 -->
                             <Path
                                 x:Name="pathDownLine"
                                 Stroke="{StaticResource P2rayAccentBrush}"
-                                StrokeThickness="2"
+                                StrokeThickness="2.4"
+                                StrokeLineJoin="Round"
                                 Stretch="None" />
-                            <!-- 上行折线 -->
+                            <!-- 上行折线（虚线，避免和下行抢视觉） -->
                             <Path
                                 x:Name="pathUpLine"
                                 Stroke="{StaticResource P2raySuccessBrush}"
-                                StrokeDashArray="4 3"
-                                StrokeThickness="1.6"
+                                StrokeDashArray="3 3"
+                                StrokeThickness="1.4"
+                                Opacity="0.85"
                                 Stretch="None" />
+
+                            <!-- 数据点：点数少时才画圆，30 天时会糊成一片 -->
+                            <ItemsControl x:Name="lstDots">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <Canvas />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemContainerStyle>
+                                    <Style TargetType="ContentPresenter">
+                                        <Setter Property="Canvas.Left" Value="{Binding DotX}" />
+                                        <Setter Property="Canvas.Top" Value="{Binding DotY}" />
+                                    </Style>
+                                </ItemsControl.ItemContainerStyle>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Ellipse
+                                            Width="6"
+                                            Height="6"
+                                            Fill="{StaticResource P2rayAccentBrush}"
+                                            Visibility="{Binding IsDotVisible, Converter={StaticResource BoolToVis}}" />
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
 
                             <!-- 悬停热区：每个点一块透明区域，提示框显示当日数值 -->
                             <ItemsControl x:Name="lstHotspots">
@@ -338,21 +373,36 @@
 
                                         <Grid
                                             Grid.Column="1"
-                                            Height="8"
-                                            Margin="0,0,16,0"
+                                            Height="16"
+                                            Margin="0,0,14,0"
                                             VerticalAlignment="Center">
-                                            <StackPanel HorizontalAlignment="Left" Orientation="Horizontal">
+                                            <!-- 底轨：没有它时，占比很小的那一天只会剩一个小点，
+                                                 看不出"占了多少"这层含义 -->
+                                            <Border
+                                                Height="8"
+                                                VerticalAlignment="Center"
+                                                Background="{StaticResource P2rayElevatedBrush}"
+                                                CornerRadius="4" />
+                                            <StackPanel
+                                                Height="8"
+                                                VerticalAlignment="Center"
+                                                HorizontalAlignment="Left"
+                                                Orientation="Horizontal">
                                                 <Border
                                                     Width="{Binding DownBarWidth}"
-                                                    Height="8"
                                                     Background="{StaticResource P2rayAccentBrush}"
                                                     CornerRadius="4,0,0,4" />
                                                 <Border
                                                     Width="{Binding UpBarWidth}"
-                                                    Height="8"
                                                     Background="{StaticResource P2raySuccessBrush}"
                                                     CornerRadius="0,4,4,0" />
                                             </StackPanel>
+                                            <TextBlock
+                                                HorizontalAlignment="Right"
+                                                VerticalAlignment="Center"
+                                                FontSize="10"
+                                                Foreground="{StaticResource P2rayTextTertiaryBrush}"
+                                                Text="{Binding ShareText}" />
                                         </Grid>
 
                                         <StackPanel Grid.Column="2" Orientation="Horizontal">

@@ -23,6 +23,8 @@ public partial class TrafficView : ReactiveUserControl<TrafficViewModel>
             this.OneWayBind(ViewModel, vm => vm.YAxisLabels, v => v.lstYAxis.ItemsSource).DisposeWith(disposables);
             this.OneWayBind(ViewModel, vm => vm.XAxisLabels, v => v.lstXAxis.ItemsSource).DisposeWith(disposables);
             this.OneWayBind(ViewModel, vm => vm.DownPoints, v => v.lstHotspots.ItemsSource).DisposeWith(disposables);
+            // 圆点与热区共用同一批点：坐标一致，悬停位置才对得上
+            this.OneWayBind(ViewModel, vm => vm.DownPoints, v => v.lstDots.ItemsSource).DisposeWith(disposables);
 
             this.OneWayBind(ViewModel, vm => vm.RangeTotalDownText, v => v.txtRangeDown.Text).DisposeWith(disposables);
             this.OneWayBind(ViewModel, vm => vm.RangeTotalUpText, v => v.txtRangeUp.Text).DisposeWith(disposables);
