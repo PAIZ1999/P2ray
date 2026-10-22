@@ -35,6 +35,9 @@ public class StatisticsManager
 
             // 按域名统计走 clash API，仅在 mihomo / sing-box 内核下有效
             DomainStatService.Instance.StartPolling();
+
+            // 按应用统计走 ETW，需管理员权限；非管理员时内部会直接跳过
+            AppStatService.Instance.Start();
         }
     }
 

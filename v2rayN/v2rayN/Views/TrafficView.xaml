@@ -54,6 +54,14 @@
                             GroupName="P2rayTrafficTab"
                             Style="{StaticResource P2raySegment}"
                             Tag="domain" />
+                        <RadioButton
+                            x:Name="tabApp"
+                            MinWidth="64"
+                            Checked="Tab_Checked"
+                            Content="按应用"
+                            GroupName="P2rayTrafficTab"
+                            Style="{StaticResource P2raySegment}"
+                            Tag="app" />
                     </StackPanel>
                 </Border>
 
@@ -613,6 +621,146 @@
                 </Border>
             </StackPanel>
 
+            <!-- ═══ 按应用（ETW，需管理员） ═══ -->
+            <StackPanel x:Name="appPanel" Visibility="Collapsed">
+                <TextBlock
+                    Margin="0,18,0,10"
+                    Style="{StaticResource P2rayMicro}"
+                    Foreground="{StaticResource P2rayWarningBrush}"
+                    TextWrapping="Wrap"
+                    Text="按应用统计来自 Windows ETW 内核网络事件，统计的是全机流量（含未走代理的直连），与「概览」页只算代理流量的口径不同。" />
+
+                <Border Padding="14,12" Style="{StaticResource P2rayCard}">
+                    <StackPanel>
+                        <Grid Margin="0,0,0,8">
+                            <TextBlock
+                                VerticalAlignment="Center"
+                                Style="{StaticResource P2rayMicro}"
+                                Text="区间内按应用下行合计（全机）" />
+                            <TextBlock
+                                x:Name="txtAppTotal"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Center"
+                                FontFamily="Consolas, Cascadia Mono, monospace"
+                                FontSize="{StaticResource P2rayFontH2}"
+                                Foreground="{StaticResource P2rayTextPrimaryBrush}"
+                                Text="—" />
+                        </Grid>
+                        <TextBlock
+                            x:Name="txtAppHint"
+                            Margin="0,4,0,0"
+                            Style="{StaticResource P2rayMicro}"
+                            TextWrapping="Wrap"
+                            Foreground="{StaticResource P2rayWarningBrush}"
+                            Visibility="Collapsed" />
+                    </StackPanel>
+                </Border>
+
+                <Border Margin="0,12,0,0" Style="{StaticResource P2rayCard}">
+                    <StackPanel>
+                        <Border Style="{StaticResource P2rayRow}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="240" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock
+                                    Grid.Column="0"
+                                    Style="{StaticResource P2rayMicro}"
+                                    Text="进程" />
+                                <TextBlock
+                                    Grid.Column="1"
+                                    Margin="0,0,16,0"
+                                    Style="{StaticResource P2rayMicro}"
+                                    Text="占比" />
+                                <StackPanel Grid.Column="2" Orientation="Horizontal">
+                                    <TextBlock
+                                        Width="90"
+                                        HorizontalAlignment="Right"
+                                        Style="{StaticResource P2rayMicro}"
+                                        Text="下行" />
+                                    <TextBlock
+                                        Width="80"
+                                        HorizontalAlignment="Right"
+                                        Style="{StaticResource P2rayMicro}"
+                                        Text="上行" />
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+
+                        <ItemsControl x:Name="lstApps">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Padding="12,4" Style="{StaticResource P2rayRow}">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="240" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock
+                                                Grid.Column="0"
+                                                Margin="0,0,12,0"
+                                                VerticalAlignment="Center"
+                                                Style="{StaticResource P2rayBody}"
+                                                Text="{Binding Host}"
+                                                TextTrimming="CharacterEllipsis" />
+                                            <Grid
+                                                Grid.Column="1"
+                                                Height="16"
+                                                Margin="0,0,16,0"
+                                                VerticalAlignment="Center">
+                                                <Border
+                                                    Height="8"
+                                                    VerticalAlignment="Center"
+                                                    Background="{StaticResource P2rayElevatedBrush}"
+                                                    CornerRadius="4" />
+                                                <StackPanel
+                                                    Height="8"
+                                                    VerticalAlignment="Center"
+                                                    HorizontalAlignment="Left"
+                                                    Orientation="Horizontal">
+                                                    <Border
+                                                        Width="{Binding DownBarWidth}"
+                                                        Background="{StaticResource P2rayAccentBrush}"
+                                                        CornerRadius="4,0,0,4" />
+                                                    <Border
+                                                        Width="{Binding UpBarWidth}"
+                                                        Background="{StaticResource P2raySuccessBrush}"
+                                                        CornerRadius="0,4,4,0" />
+                                                </StackPanel>
+                                                <TextBlock
+                                                    HorizontalAlignment="Right"
+                                                    VerticalAlignment="Center"
+                                                    FontSize="10"
+                                                    Foreground="{StaticResource P2rayTextTertiaryBrush}"
+                                                    Text="{Binding ShareText}" />
+                                            </Grid>
+                                            <StackPanel Grid.Column="2" Orientation="Horizontal">
+                                                <TextBlock
+                                                    Width="90"
+                                                    HorizontalAlignment="Right"
+                                                    FontFamily="Consolas, Cascadia Mono, monospace"
+                                                    FontSize="{StaticResource P2rayFontCaption}"
+                                                    Foreground="{StaticResource P2rayAccentTextBrush}"
+                                                    Text="{Binding DownText}" />
+                                                <TextBlock
+                                                    Width="80"
+                                                    HorizontalAlignment="Right"
+                                                    FontFamily="Consolas, Cascadia Mono, monospace"
+                                                    FontSize="{StaticResource P2rayFontCaption}"
+                                                    Foreground="{StaticResource P2raySuccessBrush}"
+                                                    Text="{Binding UpText}" />
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
             <Button
                 x:Name="btnClear"
                 Margin="2,14,0,0"

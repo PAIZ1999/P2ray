@@ -93,6 +93,8 @@ public sealed class AppManager
         SQLiteHelper.Instance.CreateTable<TrafficStatItem>();
         // 按域名统计：仅 mihomo / sing-box 内核下有数据
         SQLiteHelper.Instance.CreateTable<DomainStatItem>();
+        // 按应用统计：ETW 内核网络事件，需管理员权限
+        SQLiteHelper.Instance.CreateTable<AppStatItem>();
 #pragma warning disable CS0618
         SQLiteHelper.Instance.CreateTable<ProfileGroupItem>();
 #pragma warning restore CS0618

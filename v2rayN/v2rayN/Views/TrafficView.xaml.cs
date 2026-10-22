@@ -25,11 +25,29 @@ public partial class TrafficView : ReactiveUserControl<TrafficViewModel>
             this.OneWayBind(ViewModel, vm => vm.DomainHint, v => v.txtDomainHint.Text).DisposeWith(disposables);
             this.OneWayBind(ViewModel, vm => vm.DomainHint, v => v.txtDomainHint.Visibility,
                     s => string.IsNullOrEmpty(s) ? Visibility.Collapsed : Visibility.Visible).DisposeWith(disposables);
-            // 子标签切换：概览与按域名互斥显示
-            this.OneWayBind(ViewModel, vm => vm.IsDomainTab, v => v.summaryPanel.Visibility,
-                    domain => domain ? Visibility.Collapsed : Visibility.Visible).DisposeWith(disposables);
-            this.OneWayBind(ViewModel, vm => vm.IsDomainTab, v => v.domainPanel.Visibility,
-                    domain => domain ? Visibility.Visible : Visibility.Collapsed).DisposeWith(disposables);
+            this.OneWayBind(ViewModel, vm => vm.Apps, v => v.lstApps.ItemsSource).DisposeWith(disposables);
+            this.OneWayBind(ViewModel, vm => vm.AppTotalText, v => v.txtAppTotal.Text).DisposeWith(disposables);
+            this.OneWayBind(ViewModel, vm => vm.AppHint, v => v.txtAppHint.Text).DisposeWith(disposables);
+            this.OneWayBind(ViewModel, vm => vm.AppHint, v => v.txtAppHint.Visibility,
+                    s => string.IsNullOrEmpty(s) ? Visibility.Collapsed : Visibility.Visible).DisposeWith(disposables);
+            // 子标签切换：三个面板互斥。可见性同时依赖 IsDomainTab 与 IsAppTab，
+            // 用 OneWayBind 只会在其中一个变化时重算，必须合并订阅。
+            this.WhenAnyValue(x => x.ViewModel!.IsDomainTab, x => x.ViewModel!.IsAppTab)
+                .ObserveOn(RxSchedulers.MainThreadScheduler)
+                .Subscribe(_ =>
+                {
+                    if (ViewModel is null)
+                    {
+                        return;
+                    }
+
+                    var app = ViewModel.IsAppTab;
+                    var domain = ViewModel.IsDomainTab;
+                    summaryPanel.Visibility = !app && !domain ? Visibility.Visible : Visibility.Collapsed;
+                    domainPanel.Visibility = domain && !app ? Visibility.Visible : Visibility.Collapsed;
+                    appPanel.Visibility = app ? Visibility.Visible : Visibility.Collapsed;
+                })
+                .DisposeWith(disposables);
             // Y 轴四档刻度：写进四个固定 TextBlock，与网格线共用 0/56/113/170 的 y 值
             this.OneWayBind(ViewModel, vm => vm.YAxisLabels, v => v.txtY0.Text,
                     labels => labels is { Count: > 0 } ? labels[0] : string.Empty).DisposeWith(disposables);
@@ -162,6 +180,7 @@ public partial class TrafficView : ReactiveUserControl<TrafficViewModel>
         }
 
         ViewModel.IsDomainTab = tag == "domain";
+        ViewModel.IsAppTab = tag == "app";
         ViewModel.RefreshCmd.Execute().Subscribe();
     }
 

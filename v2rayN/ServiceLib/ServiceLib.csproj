@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<OutputType>Library</OutputType>
@@ -21,6 +21,7 @@
 		<PackageReference Include="YamlDotNet" />
 		<PackageReference Include="QRCoder" />
 		<PackageReference Include="CliWrap" />
+    <PackageReference Include="Microsoft.Diagnostics.Tracing.TraceEvent" />
 		<PackageReference Include="ZXing.Net.Bindings.SkiaSharp" />
 		<PackageReference Include="TaskScheduler" />
 	</ItemGroup>

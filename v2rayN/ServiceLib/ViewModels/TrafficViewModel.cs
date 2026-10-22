@@ -95,6 +95,23 @@ public partial class TrafficViewModel : ReactiveObject
     [Reactive]
     public partial string DomainTotalText { get; set; } = "—";
 
+    /// <summary>当前是否处于「按应用」子标签。</summary>
+    [Reactive]
+    public partial bool IsAppTab { get; set; }
+
+    /// <summary>按应用统计是否可用（需管理员）。</summary>
+    [Reactive]
+    public partial bool IsAppSupported { get; set; }
+
+    [Reactive]
+    public partial string AppHint { get; set; } = string.Empty;
+
+    [Reactive]
+    public partial BulkObservableCollection<DomainStatRow> Apps { get; set; } = [];
+
+    [Reactive]
+    public partial string AppTotalText { get; set; } = "—";
+
     public ReactiveCommand<RxVoid, RxVoid> RefreshCmd { get; }
     public ReactiveCommand<RxVoid, RxVoid> ClearCmd { get; }
 
@@ -148,6 +165,7 @@ public partial class TrafficViewModel : ReactiveObject
             BuildDetails(rows);
             BuildSummary(rows, days);
             await BuildDomainsAsync(days);
+            await BuildAppsAsync(days);
         }
         catch (Exception ex)
         {
@@ -311,7 +329,41 @@ public partial class TrafficViewModel : ReactiveObject
 
         Domains = new BulkObservableCollection<DomainStatRow>(rows);
     }
-    private static string WeekdayZh(DateTime dt) => dt.DayOfWeek switch
+
+    /// <summary>
+    /// 按应用聚合。口径与其它两页不同：这里统计全机流量（含直连），
+    /// 因为 ETW 的内核事件不区分连接是否经过代理。
+    /// </summary>
+    private async Task BuildAppsAsync(int days)
+    {
+        IsAppSupported = AppStatService.IsSupported;
+        AppHint = AppStatService.Instance.StatusHint;
+
+        if (!IsAppSupported)
+        {
+            Apps = [];
+            AppTotalText = "—";
+            return;
+        }
+
+        var list = await AppStatService.Instance.GetRangeAsync(days);
+        AppTotalText = FormatBytes(list.Sum(t => t.Down));
+
+        var max = list.Count > 0 ? list.Max(t => t.Down + t.Up) : 0;
+        Apps = new BulkObservableCollection<DomainStatRow>(list.Take(50).Select(t =>
+        {
+            var sum = t.Down + t.Up;
+            return new DomainStatRow
+            {
+                Host = t.Key,
+                DownText = FormatBytes(t.Down),
+                UpText = FormatBytes(t.Up),
+                ShareText = max > 0 ? $"{sum * 100.0 / max:F0}%" : "0%",
+                DownBarWidth = Math.Max(320.0 * t.Down / (max > 0 ? max : 1), t.Down > 0 ? 2 : 0),
+                UpBarWidth = Math.Max(320.0 * t.Up / (max > 0 ? max : 1), t.Up > 0 ? 2 : 0),
+            };
+        }).ToList());
+    }    private static string WeekdayZh(DateTime dt) => dt.DayOfWeek switch
     {
         DayOfWeek.Monday => "周一",
         DayOfWeek.Tuesday => "周二",
