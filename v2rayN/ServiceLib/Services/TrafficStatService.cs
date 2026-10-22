@@ -23,6 +23,140 @@ public class TrafficStatService
     private bool _dirty;
     private DateTime _lastFlush = DateTime.MinValue;
 
+    private CancellationTokenSource? _pollCts;
+    private long _lastUp;
+    private long _lastDown;
+
+    /// <summary>
+    /// 开始自行轮询 xray 的 /debug/vars。
+    ///
+    /// 为什么不复用统计服务算好的每秒增量：那条链路上游会因内核重启重置基线并
+    /// 直接丢弃当轮结果（ParseOutput 里 ProxyDown 变小就 return null），
+    /// 实测一整段 4 MB 的下载没能进入增量，页面长期只有几 KB。
+    /// 这里直接读累计值自己作差，逻辑简单、不依赖上游的重试与重置策略。
+    /// 间隔 5 秒：本机回环请求，开销可以忽略，且比分秒级更省 CPU。
+    /// </summary>
+    public void StartPolling()
+    {
+        Close();
+        _pollCts = new CancellationTokenSource();
+        var token = _pollCts.Token;
+
+        Task.Run(async () =>
+        {
+            using var timer = new PeriodicTimer(TimeSpan.FromSeconds(5));
+            while (!token.IsCancellationRequested && await timer.WaitForNextTickAsync(token).ConfigureAwait(false))
+            {
+                try
+                {
+                    var running = AppManager.Instance.RunningCoreType;
+                    if (running is not (ECoreType.Xray or ECoreType.v2fly or ECoreType.v2fly_v5))
+                    {
+                        continue;
+                    }
+
+                    var url = $"{Global.HttpProtocol}{Global.Loopback}:{AppManager.Instance.StatePort}/debug/vars";
+                    var raw = await HttpClientHelper.Instance.TryGetAsync(url, token).ConfigureAwait(false);
+                    if (raw.IsNullOrEmpty())
+                    {
+                        continue;
+                    }
+
+                    var (up, down) = ReadProxyTotals(raw);
+                    if (up < 0 || down < 0)
+                    {
+                        continue;
+                    }
+
+                    // 内核实例换了以后累计值会归零，此时不能把差额算成负数
+                    if (up < _lastUp || down < _lastDown)
+                    {
+                        _lastUp = up;
+                        _lastDown = down;
+                        continue;
+                    }
+
+                    var dUp = up - _lastUp;
+                    var dDown = down - _lastDown;
+                    _lastUp = up;
+                    _lastDown = down;
+                    Add(dUp, dDown);
+                }
+                catch (OperationCanceledException) when (token.IsCancellationRequested)
+                {
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    Logging.SaveLog($"{_tag}.Poll", ex);
+                }
+            }
+        }, token);
+    }
+
+    public void Close()
+    {
+        try
+        {
+            _pollCts?.Cancel();
+            _pollCts?.Dispose();
+            _pollCts = null;
+        }
+        catch
+        {
+            // 关闭失败不影响退出
+        }
+    }
+
+    /// <summary>
+    /// 从 /debug/vars 里取 proxy 出站的累计 uplink/downlink（字节）。
+    /// 返回 -1 表示没找到，调用方据此跳过本轮。
+    /// </summary>
+    private static (long up, long down) ReadProxyTotals(string raw)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(raw);
+            if (!doc.RootElement.TryGetProperty("stats", out var stats)
+                || !stats.TryGetProperty("outbound", out var outbound)
+                || outbound.ValueKind != JsonValueKind.Object)
+            {
+                return (-1, -1);
+            }
+
+            long up = 0;
+            long down = 0;
+            var found = false;
+            foreach (var prop in outbound.EnumerateObject())
+            {
+                if (!prop.Name.StartsWith(Global.ProxyTag, StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                found = true;
+                if (prop.Value.ValueKind == JsonValueKind.Object)
+                {
+                    if (prop.Value.TryGetProperty("uplink", out var u) && u.TryGetInt64(out var uv))
+                    {
+                        up += uv;
+                    }
+
+                    if (prop.Value.TryGetProperty("downlink", out var d) && d.TryGetInt64(out var dv))
+                    {
+                        down += dv;
+                    }
+                }
+            }
+
+            return found ? (up, down) : (-1, -1);
+        }
+        catch
+        {
+            return (-1, -1);
+        }
+    }
+
     /// <summary>
     /// 累加一次增量。由 StatisticsManager 每秒调用，必须够轻 —— 只做内存加法。
     /// </summary>
@@ -32,7 +166,6 @@ public class TrafficStatService
         {
             return;
         }
-
         lock (_lock)
         {
             var hour = CurrentHourTick();

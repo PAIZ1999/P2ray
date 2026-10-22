@@ -66,6 +66,37 @@ public class StatisticsXrayService
         }
     }
 
+    /// <summary>
+    /// 从 /debug/vars 的一项里读出 uplink/downlink。
+    ///
+    /// outbound 在 DTO 里声明为 Hashtable，System.Text.Json 会把值反序列化成
+    /// JsonElement 而不是字符串。上游原样 `value.ToString()` 再反序列化，
+    /// 遇到 JsonElement 时取到的是原始 JSON 文本 —— 虽然偶尔能凑巧解析成功，
+    /// 但键序或类型一变就静默变成 0。这里把三种可能形态显式处理掉。
+    /// </summary>
+    private static V2rayMetricsVarsLink? ReadLink(object? value)
+    {
+        switch (value)
+        {
+            case null:
+                return null;
+
+            case JsonElement el when el.ValueKind == JsonValueKind.Object:
+                var up = el.TryGetProperty("uplink", out var u) && u.TryGetInt64(out var uv) ? uv : 0;
+                var down = el.TryGetProperty("downlink", out var d) && d.TryGetInt64(out var dv) ? dv : 0;
+                return new V2rayMetricsVarsLink { uplink = up, downlink = down };
+
+            case JsonElement el when el.ValueKind == JsonValueKind.String:
+                return JsonUtils.Deserialize<V2rayMetricsVarsLink>(el.GetString() ?? string.Empty);
+
+            case string text when !string.IsNullOrWhiteSpace(text):
+                return JsonUtils.Deserialize<V2rayMetricsVarsLink>(text);
+
+            default:
+                return null;
+        }
+    }
+
     private ServerSpeedItem? ParseOutput(string result)
     {
         try
@@ -79,12 +110,11 @@ public class StatisticsXrayService
             ServerSpeedItem server = new();
             foreach (var key in source.stats.outbound.Keys.Cast<string>())
             {
-                var value = source.stats.outbound[key];
-                if (value == null)
+                var state = ReadLink(source.stats.outbound[key]);
+                if (state is null)
                 {
                     continue;
                 }
-                var state = JsonUtils.Deserialize<V2rayMetricsVarsLink>(value.ToString());
 
                 if (key.StartsWith(Global.ProxyTag))
                 {

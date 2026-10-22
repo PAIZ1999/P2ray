@@ -28,6 +28,10 @@ public class StatisticsManager
 
             // 把已经落库的当前小时累计读回内存，否则重启后本小时会从 0 覆盖重记。
             await TrafficStatService.Instance.LoadCurrentHourAsync();
+
+            // 时段统计自己轮询内核累计值，不依赖上游那份每秒增量
+            // （上游在计数器回退时会丢弃整轮，实测会丢掉整段下载）。
+            TrafficStatService.Instance.StartPolling();
         }
     }
 
@@ -122,10 +126,6 @@ public class StatisticsManager
             _serverStatItem.TodayDown += server.ProxyDown;
             _serverStatItem.TotalUp += server.ProxyUp;
             _serverStatItem.TotalDown += server.ProxyDown;
-
-            // 同一份增量同时喂给时段统计。放在这里而不是再开一路轮询：
-            // 两边读的是同一个 stats 接口，重开一路等于把网络请求翻倍。
-            TrafficStatService.Instance.Add(server.ProxyUp, server.ProxyDown);
         }
 
         server.IndexId = _config.IndexId;
