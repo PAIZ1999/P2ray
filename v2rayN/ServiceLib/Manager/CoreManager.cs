@@ -325,12 +325,63 @@ public class CoreManager
             && isNonWindows;
     }
 
+    /// <summary>
+    /// 检查内核启动所必需的资源文件。返回 null 表示齐全，否则返回给用户看的说明。
+    ///
+    /// 只查 Xray：它把 geosite/geoip 当作外部资源读，缺了就直接启动失败。
+    /// sing-box 的规则集缺失时只会让相关分流规则失效，不会起不来，
+    /// 那种情况不值得拦住启动。
+    /// </summary>
+    private static string? CheckCoreAssets(CoreInfo? coreInfo)
+    {
+        if (coreInfo?.CoreType != ECoreType.Xray)
+        {
+            return null;
+        }
+
+        var binPath = Utils.GetBinPath("");
+        var missing = new List<string>();
+        foreach (var name in (string[])["geosite.dat", "geoip.dat"])
+        {
+            var full = Path.Combine(binPath, name);
+            if (!File.Exists(full))
+            {
+                missing.Add(name);
+            }
+        }
+
+        if (missing.Count == 0)
+        {
+            return null;
+        }
+
+        // 开发场景和用户场景的补救方式不同，两种都写出来：
+        // 开发时输出目录是 gitignore 的 bin/，用户拿到的是解压出来的发布包。
+        return $"内核缺少 {string.Join("、", missing)}，无法启动。"
+               + "开发环境请运行 scripts/setup-debug.ps1 补齐；用户请重新解压完整发布包。";
+    }
+
     private async Task<ProcessService?> RunProcess(CoreInfo? coreInfo, string configPath, bool displayLog, bool mayNeedSudo, bool isTunLaunch = false)
     {
         var fileName = CoreInfoManager.Instance.GetCoreExecFile(coreInfo, out var msg);
         if (fileName.IsNullOrEmpty())
         {
             await UpdateFunc(false, msg);
+            return null;
+        }
+
+        // 启动前先确认内核运行必需的资源文件在不在。
+        //
+        // Xray 用 XRAY_LOCATION_ASSET 指向 bin/，从那里读 geosite.dat / geoip.dat。
+        // 这两个文件不在仓库里（bin/ 被 gitignore），全新 clone 直接调试时必然缺失，
+        // 而 Xray 只会把 "failed to open file: geosite.dat" 写进自己那行日志，
+        // 界面照旧显示"已连接"，用户看到一个连不上网却自称已连接的客户端。
+        // 与其让人去翻日志猜，不如在这里直接说清楚缺什么、怎么补。
+        var assetError = CheckCoreAssets(coreInfo);
+        if (assetError is not null)
+        {
+            Logging.SaveLog($"{_tag}: {assetError}");
+            await UpdateFunc(true, assetError);
             return null;
         }
 

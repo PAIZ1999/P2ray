@@ -121,9 +121,23 @@ pwsh ./scripts/build-release.ps1 -Runtime win-x64
 
 ### 开发构建
 
+全新 clone 之后先补一次内核与 Geo 文件。`bin/` 不进仓库，跳过这步的话内核起不来：
+
+```powershell
+pwsh ./scripts/setup-debug.ps1
+```
+
+然后正常构建：
+
 ```powershell
 dotnet build v2rayN/v2rayN.slnx -c Debug
-dotnet test v2rayN/ServiceLib.Tests/ServiceLib.Tests.csproj
+```
+
+跑测试（TUnit 项目本身就是测试宿主，直接运行 exe；.NET 10 已移除 `dotnet test` 的 VSTest 路径）：
+
+```powershell
+dotnet build v2rayN/ServiceLib.Tests/ServiceLib.Tests.csproj -c Debug
+./v2rayN/ServiceLib.Tests/bin/Debug/net10.0/ServiceLib.Tests.exe
 ```
 
 ## 项目结构
@@ -131,6 +145,7 @@ dotnet test v2rayN/ServiceLib.Tests/ServiceLib.Tests.csproj
 ```
 scripts/
   fetch-cores.ps1     拉取并钉扎 Xray-core / sing-box
+  setup-debug.ps1     为 Debug 构建补齐内核与 Geo 文件
   build-release.ps1   完整发布构建
   make-icons.py       由 SVG 生成多尺寸图标
   check-contrast.py   配色对比度审计
