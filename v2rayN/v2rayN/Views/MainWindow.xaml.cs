@@ -331,6 +331,7 @@ public partial class MainWindow
         // 顺序关键：先置可见再创建 View，确保 WhenActivated 能触发。
         contentHome.Visibility = page == NavPage.Home ? Visibility.Visible : Visibility.Collapsed;
         contentNodes.Visibility = page == NavPage.Nodes ? Visibility.Visible : Visibility.Collapsed;
+        contentTraffic.Visibility = page == NavPage.Traffic ? Visibility.Visible : Visibility.Collapsed;
         contentSettings.Visibility = page == NavPage.Settings ? Visibility.Visible : Visibility.Collapsed;
 
         EnsurePageLoaded(page);
@@ -340,6 +341,7 @@ public partial class MainWindow
     {
         Home,
         Nodes,
+        Traffic,
         Settings
     }
 
@@ -359,6 +361,14 @@ public partial class MainWindow
                 break;
             case NavPage.Nodes when contentNodes.Content == null:
                 contentNodes.Content = new NodesView { ViewModel = _dashboardViewModel };
+                break;
+            case NavPage.Traffic when contentTraffic.Content == null:
+                // 流量页有自己的 VM：它只是读库展示，和首页的实时数据无关
+                contentTraffic.Content = new TrafficView { ViewModel = new TrafficViewModel() };
+                break;
+            // 每次切回流量页都重新载入：用户很可能刚连过网，数据变了
+            case NavPage.Traffic:
+                (contentTraffic.Content as TrafficView)?.ViewModel?.RefreshCmd.Execute().Subscribe();
                 break;
             case NavPage.Settings when contentSettings.Content == null:
                 contentSettings.Content = new SettingsView { ViewModel = _dashboardViewModel };
@@ -382,6 +392,7 @@ public partial class MainWindow
 
         navRail.navHome.Checked += (_, _) => ShowPage(NavPage.Home);
         navRail.navNodes.Checked += (_, _) => ShowPage(NavPage.Nodes);
+        navRail.navTraffic.Checked += (_, _) => ShowPage(NavPage.Traffic);
         navRail.navSettings.Checked += (_, _) => ShowPage(NavPage.Settings);
 
         // 首页「去挑选」按钮触发的跨页导航

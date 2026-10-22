@@ -176,6 +176,20 @@
                 </RadioButton>
 
                 <RadioButton
+                    x:Name="navTraffic"
+                    GroupName="P2rayNav"
+                    Style="{StaticResource P2rayNavItem}">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon
+                            Width="{StaticResource P2rayNavIconSize}"
+                            Height="{StaticResource P2rayNavIconSize}"
+                            VerticalAlignment="Center"
+                            Kind="ChartTimelineVariant" />
+                        <TextBlock Style="{StaticResource NavText}" Text="流量" />
+                    </StackPanel>
+                </RadioButton>
+
+                <RadioButton
                     x:Name="navSettings"
                     GroupName="P2rayNav"
                     Style="{StaticResource P2rayNavItem}">

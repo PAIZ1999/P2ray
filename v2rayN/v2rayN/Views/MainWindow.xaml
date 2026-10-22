@@ -57,6 +57,7 @@
                             <ContentControl x:Name="contentHome" />
                             <ContentControl x:Name="contentNodes" />
                             <ContentControl x:Name="contentSettings" />
+<ContentControl x:Name="contentTraffic" />
                         </Grid>
                     </Border>
 
