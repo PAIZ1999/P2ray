@@ -2,9 +2,14 @@
 
     <!-- P2ray 独立版本线。与上游 v2rayN 的版本号解耦：
          自更新用 SemanticVersion 比对 Utils.GetVersionInfo()，沿用 7.25.6 会导致
-         Release tag 必须永远大于 7.25.6，语义上也不像独立产品。 -->
+         Release tag 必须永远大于 7.25.6，语义上也不像独立产品。
+
+         发版时必须同步改这里：Utils.GetVersionInfo() 读的是程序集版本，
+         而自更新拿它和 Release 的 tag 比较。两处不一致会导致
+         ——刚更新的用户被反复提示"有新版本"，因为程序始终自称旧版本。
+         CI 里有一个校验步骤会拦住这种不一致。 -->
     <PropertyGroup>
-        <Version>1.0.0</Version>
+        <Version>1.0.6</Version>
     </PropertyGroup>
 
     <PropertyGroup>

@@ -21,6 +21,37 @@ env:
   DOTNET_CLI_TELEMETRY_OPTOUT: true
 
 jobs:
+  # 打 tag 时先确认 tag 与程序集版本一致。
+  #
+  # 为什么必须有这一步：Utils.GetVersionInfo() 读的是程序集版本（Directory.Build.props
+  # 里的 <Version>），自更新拿它和 Release 的 tag 比较。两者不一致时，
+  # 已经更新到新版的用户会被反复提示"有新版本"—— 因为程序始终自称旧版本。
+  # 之前 v1.0.1–v1.0.5 全都没有改这个号，全被发成了自称 1.0.0 的包。
+  version-guard:
+    name: version guard
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check tag matches <Version>
+        shell: bash
+        run: |
+          # 只在 tag 推送时校验。分支推送没有版本语义，直接跳过；
+          # 这里不写 job 级 if，否则 build 会因依赖被跳过而一起跳过。
+          if [[ "$GITHUB_REF" != refs/tags/v* ]]; then
+            echo "not a tag push, skip"
+            exit 0
+          fi
+
+          tag="${GITHUB_REF_NAME#v}"
+          declared=$(grep -oP '(?<=<Version>)[^<]+' v2rayN/Directory.Build.props | head -1)
+          echo "tag      = $tag"
+          echo "declared = $declared"
+          if [ "$tag" != "$declared" ]; then
+            echo "::error::tag $GITHUB_REF_NAME 与 Directory.Build.props 的 <Version>$declared</Version> 不一致。发版前请先把版本号改成 $tag。"
+            exit 1
+          fi
+
   test:
     name: test
     runs-on: windows-latest
@@ -43,7 +74,7 @@ jobs:
 
   build:
     name: build ${{ matrix.rid }}
-    needs: test
+    needs: [test, version-guard]
     runs-on: windows-latest
     strategy:
       fail-fast: false
