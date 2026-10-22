@@ -315,7 +315,9 @@ public partial class DashboardViewModel : MyReactiveObject
             // 分组也要跟着清空，否则上一轮的分组小结会挂在下面
             NetProbeGroups = [];
 
-            var service = new NetProbeService();
+            // 走不走代理由界面状态决定，而不是让探测自己去猜内核在不在跑。
+            // 断开只关系统代理、不停内核，光看端口会被"内核仍在监听"骗过去。
+            var service = new NetProbeService(IsConnected);
 
             // 把本轮走的是代理还是直连记下来。未连接时境外站点当然可能全部"可用"，
             // 但那是本地网络直连的结果，不能和"代理已生效"混为一谈。

@@ -48,6 +48,25 @@ public class NetProbeService
     }
 
     /// <summary>
+    /// 由调用方显式指定本轮是否走代理。
+    ///
+    /// 为什么不能只靠内核状态判断：P2ray 启动时就会拉起内核（Reload 无条件
+    /// LoadCore），而"断开"只关系统代理、不停内核。于是出现
+    /// 「界面显示未连接，内核仍在 11808 监听」的状态 ——
+    /// 只看内核在不在跑，就会把用户的真实出口 IP 报成节点出口（美国 IP），
+    /// 这正是"我明明没连接，境外出口却显示美国"的原因。
+    ///
+    /// 界面知道自己是否已连接，就把这个事实传给探测，别让探测去猜。
+    /// </summary>
+    public NetProbeService(bool useProxy)
+    {
+        _useProxy = useProxy;
+        _port = AppManager.Instance.GetLocalPort(EInboundProtocol.socks);
+        _client = CreateClient(_port, _useProxy);
+        _directClient = CreateClient(_port, false);
+    }
+
+    /// <summary>
     /// 查询自身出口 IP 的候选源，按顺序尝试直到拿到合法 IP。
     ///
     /// 为什么要多个：实测直连时 api.ipify.org 会被 RST（WinError 10054），

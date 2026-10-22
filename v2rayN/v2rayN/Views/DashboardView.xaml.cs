@@ -57,9 +57,9 @@ public partial class DashboardView : ReactiveUserControl<DashboardViewModel>
                     uri => ToImageSource(uri)).DisposeWith(disposables);
 
             // 标签随路径变化：走代理时上面那条确实是"境外出口"，
-            // 直连时它就是本机地址，再叫"境外"会误导。
-            this.OneWayBind(ViewModel, vm => vm.HasDomesticExit, v => v.txtExitLabel.Text,
-                    has => has ? "境外出口 IP" : "当前出口 IP").DisposeWith(disposables);
+            // 未连接时它就是本机地址，再叫"境外"会误导。
+            this.OneWayBind(ViewModel, vm => vm.NetProbeViaProxy, v => v.txtExitLabel.Text,
+                    viaProxy => viaProxy ? "境外出口 IP" : "当前出口 IP").DisposeWith(disposables);
             this.OneWayBind(ViewModel, vm => vm.NetProbeStatus, v => v.txtNetProbeStatus.Text).DisposeWith(disposables);
             this.OneWayBind(ViewModel, vm => vm.NetProbeSummary, v => v.txtNetProbeSummary.Text).DisposeWith(disposables);
 
