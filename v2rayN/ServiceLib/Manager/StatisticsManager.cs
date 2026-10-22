@@ -32,6 +32,9 @@ public class StatisticsManager
             // 时段统计自己轮询内核累计值，不依赖上游那份每秒增量
             // （上游在计数器回退时会丢弃整轮，实测会丢掉整段下载）。
             TrafficStatService.Instance.StartPolling();
+
+            // 按域名统计走 clash API，仅在 mihomo / sing-box 内核下有效
+            DomainStatService.Instance.StartPolling();
         }
     }
 

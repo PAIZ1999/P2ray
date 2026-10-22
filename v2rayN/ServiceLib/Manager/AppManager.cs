@@ -91,6 +91,8 @@ public sealed class AppManager
         SQLiteHelper.Instance.CreateTable<FullConfigTemplateItem>();
         // 时段流量统计：按小时一行的独立表，与 ServerStatItem 的按节点累计互不影响
         SQLiteHelper.Instance.CreateTable<TrafficStatItem>();
+        // 按域名统计：仅 mihomo / sing-box 内核下有数据
+        SQLiteHelper.Instance.CreateTable<DomainStatItem>();
 #pragma warning disable CS0618
         SQLiteHelper.Instance.CreateTable<ProfileGroupItem>();
 #pragma warning restore CS0618

@@ -75,6 +75,26 @@ public partial class TrafficViewModel : ReactiveObject
     [Reactive]
     public partial bool HasData { get; set; }
 
+    /// <summary>当前是否处于「按域名」子标签。</summary>
+    [Reactive]
+    public partial bool IsDomainTab { get; set; }
+
+    /// <summary>当前内核是否支持按域名统计。</summary>
+    [Reactive]
+    public partial bool IsDomainSupported { get; set; }
+
+    /// <summary>不支持时给用户的说明。</summary>
+    [Reactive]
+    public partial string DomainHint { get; set; } = string.Empty;
+
+    /// <summary>按域名聚合的结果。</summary>
+    [Reactive]
+    public partial BulkObservableCollection<DomainStatRow> Domains { get; set; } = [];
+
+    /// <summary>按域名统计的合计下行，用于摘要文案。</summary>
+    [Reactive]
+    public partial string DomainTotalText { get; set; } = "—";
+
     public ReactiveCommand<RxVoid, RxVoid> RefreshCmd { get; }
     public ReactiveCommand<RxVoid, RxVoid> ClearCmd { get; }
 
@@ -127,6 +147,7 @@ public partial class TrafficViewModel : ReactiveObject
             BuildChart(rows, scaleMax, days);
             BuildDetails(rows);
             BuildSummary(rows, days);
+            await BuildDomainsAsync(days);
         }
         catch (Exception ex)
         {
@@ -253,6 +274,43 @@ public partial class TrafficViewModel : ReactiveObject
         RangePeakDownText = FormatBytes(peak.Down);
     }
 
+    /// <summary>
+    /// 按域名聚合。数据来自 clash API，仅 mihomo / sing-box 内核下有内容；
+    /// 其它内核如实显示原因，而不是给一个空列表让人以为坏了。
+    /// </summary>
+    private async Task BuildDomainsAsync(int days)
+    {
+        IsDomainSupported = DomainStatService.IsSupported;
+        DomainHint = DomainStatService.UnsupportedHint;
+
+        if (!IsDomainSupported)
+        {
+            Domains = [];
+            DomainTotalText = "—";
+            return;
+        }
+
+        var list = await DomainStatService.Instance.GetRangeAsync(days);
+        var total = list.Sum(t => t.Down);
+        DomainTotalText = FormatBytes(total);
+
+        var max = list.Count > 0 ? list.Max(t => t.Down + t.Up) : 0;
+        var rows = list.Take(50).Select(t =>
+        {
+            var sum = t.Down + t.Up;
+            return new DomainStatRow
+            {
+                Host = t.Key,
+                DownText = FormatBytes(t.Down),
+                UpText = FormatBytes(t.Up),
+                ShareText = max > 0 ? $"{sum * 100.0 / max:F0}%" : "0%",
+                DownBarWidth = Math.Max(320.0 * t.Down / (max > 0 ? max : 1), t.Down > 0 ? 2 : 0),
+                UpBarWidth = Math.Max(320.0 * t.Up / (max > 0 ? max : 1), t.Up > 0 ? 2 : 0),
+            };
+        }).ToList();
+
+        Domains = new BulkObservableCollection<DomainStatRow>(rows);
+    }
     private static string WeekdayZh(DateTime dt) => dt.DayOfWeek switch
     {
         DayOfWeek.Monday => "周一",
@@ -363,5 +421,21 @@ public class TrafficDayItem
     public double DownBarWidth { get; set; }
 
     /// <summary>上行条宽度（px）。</summary>
+    public double UpBarWidth { get; set; }
+}
+
+/// <summary>按域名统计的一行。</summary>
+public class DomainStatRow
+{
+    public string Host { get; set; } = string.Empty;
+
+    public string DownText { get; set; } = string.Empty;
+
+    public string UpText { get; set; } = string.Empty;
+
+    public string ShareText { get; set; } = string.Empty;
+
+    public double DownBarWidth { get; set; }
+
     public double UpBarWidth { get; set; }
 }

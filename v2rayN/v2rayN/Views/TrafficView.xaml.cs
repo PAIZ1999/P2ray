@@ -20,6 +20,16 @@ public partial class TrafficView : ReactiveUserControl<TrafficViewModel>
         {
             this.OneWayBind(ViewModel, vm => vm.Ranges, v => v.lstRanges.ItemsSource).DisposeWith(disposables);
             this.OneWayBind(ViewModel, vm => vm.Days, v => v.lstDays.ItemsSource).DisposeWith(disposables);
+            this.OneWayBind(ViewModel, vm => vm.Domains, v => v.lstDomains.ItemsSource).DisposeWith(disposables);
+            this.OneWayBind(ViewModel, vm => vm.DomainTotalText, v => v.txtDomainTotal.Text).DisposeWith(disposables);
+            this.OneWayBind(ViewModel, vm => vm.DomainHint, v => v.txtDomainHint.Text).DisposeWith(disposables);
+            this.OneWayBind(ViewModel, vm => vm.DomainHint, v => v.txtDomainHint.Visibility,
+                    s => string.IsNullOrEmpty(s) ? Visibility.Collapsed : Visibility.Visible).DisposeWith(disposables);
+            // 子标签切换：概览与按域名互斥显示
+            this.OneWayBind(ViewModel, vm => vm.IsDomainTab, v => v.summaryPanel.Visibility,
+                    domain => domain ? Visibility.Collapsed : Visibility.Visible).DisposeWith(disposables);
+            this.OneWayBind(ViewModel, vm => vm.IsDomainTab, v => v.domainPanel.Visibility,
+                    domain => domain ? Visibility.Visible : Visibility.Collapsed).DisposeWith(disposables);
             // Y 轴四档刻度：写进四个固定 TextBlock，与网格线共用 0/56/113/170 的 y 值
             this.OneWayBind(ViewModel, vm => vm.YAxisLabels, v => v.txtY0.Text,
                     labels => labels is { Count: > 0 } ? labels[0] : string.Empty).DisposeWith(disposables);
@@ -141,6 +151,18 @@ public partial class TrafficView : ReactiveUserControl<TrafficViewModel>
                 yield return nested;
             }
         }
+    }
+
+    /// <summary>子标签切换。按域名标签会触发一次数据刷新。</summary>
+    private void Tab_Checked(object sender, RoutedEventArgs e)
+    {
+        if (ViewModel is null || sender is not RadioButton { Tag: string tag })
+        {
+            return;
+        }
+
+        ViewModel.IsDomainTab = tag == "domain";
+        ViewModel.RefreshCmd.Execute().Subscribe();
     }
 
     private void BtnClear_Click(object sender, RoutedEventArgs e)
