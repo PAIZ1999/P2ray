@@ -10,7 +10,10 @@ namespace ServiceLib.ViewModels;
 public partial class TrafficViewModel : ReactiveObject
 {
     /// <summary>柱状图的最大高度（px）。数值按当窗口内的最大值等比缩放。</summary>
-    private const double BarMaxHeight = 76;
+    private const double BarMaxHeight = 120;
+
+    /// <summary>按天比例条的满格宽度（px）。</summary>
+    private const double DayBarMaxWidth = 360;
 
     [Reactive]
     public partial bool IsLoading { get; set; }
@@ -81,6 +84,7 @@ public partial class TrafficViewModel : ReactiveObject
                     IsCurrent = hour.Hour == DateTime.Now.Hour && hour.Date == DateTime.Today,
                     UpText = FormatBytes(row.Up),
                     DownText = FormatBytes(row.Down),
+                    Tooltip = $"{hour:HH:00}−{hour.AddHours(1):HH:00}　下行 {FormatBytes(row.Down)} · 上行 {FormatBytes(row.Up)}",
                     UpHeight = row.Up * scale,
                     DownHeight = row.Down * scale,
                     // 空桶也给 2px 底座，避免整排柱子看起来"断了"
@@ -99,8 +103,22 @@ public partial class TrafficViewModel : ReactiveObject
                     UpText = FormatBytes(row.Up),
                     DownText = FormatBytes(row.Down),
                     TotalText = FormatBytes(row.Up + row.Down),
+                    Up = row.Up,
+                    Down = row.Down,
                 })
                 .ToList());
+
+            // 按天也画比例条：纯数字看不出"哪天用得特别多"，加一条横向条
+            // 就能一眼比出来。以窗口内最大值为满格。
+            var dayMax = Days.Count > 0 ? Days.Max(t => t.Up + t.Down) : 0;
+            foreach (var day in Days)
+            {
+                day.DownRatio = dayMax > 0 ? (double)day.Down / dayMax : 0;
+                day.UpRatio = dayMax > 0 ? (double)day.Up / dayMax : 0;
+                // 条长按固定基准算：满格 360px，界面变宽时条也等比放大一点不影响阅读
+                day.DownBarWidth = Math.Max(day.DownRatio * DayBarMaxWidth, day.Down > 0 ? 2 : 0);
+                day.UpBarWidth = Math.Max(day.UpRatio * DayBarMaxWidth, day.Up > 0 ? 2 : 0);
+            }
 
             var today = daily.Count > 0 ? daily[^1] : new TrafficStatItem();
             var weekUp = daily.Sum(t => t.Up);
@@ -115,7 +133,7 @@ public partial class TrafficViewModel : ReactiveObject
 
             var peakRow = hourly.OrderByDescending(t => t.Up + t.Down).FirstOrDefault();
             PeakHourText = peak > 0 && peakRow is not null
-                ? $"峰值时段 {new DateTime(peakRow.HourTick):HH:00} · {FormatBytes(peak)}"
+                ? $"{new DateTime(peakRow.HourTick):HH:00} · {FormatBytes(peak)}"
                 : "还没有流量记录";
         }
         catch (Exception ex)
@@ -179,7 +197,10 @@ public class TrafficHourItem
     /// <summary>下行柱高（px）。</summary>
     public double DownHeight { get; set; }
 
-    /// <summary>整柱高度，用于给空桶留一个可见的底座。</summary>
+    /// <summary>悬停提示：这一小时的上/下行具体数值。</summary>
+    public string Tooltip { get; set; } = string.Empty;
+
+    /// <summary>整柱高度，空桶留一个可见的底座。</summary>
     public double TotalHeight { get; set; }
 }
 
@@ -193,4 +214,20 @@ public class TrafficDayItem
     public string DownText { get; set; } = string.Empty;
 
     public string TotalText { get; set; } = string.Empty;
+
+    public long Up { get; set; }
+
+    public long Down { get; set; }
+
+    /// <summary>下行占窗口内最大单日总量的比例（0..1），用于横向条长度。</summary>
+    public double DownRatio { get; set; }
+
+    /// <summary>上行占比（0..1）。</summary>
+    public double UpRatio { get; set; }
+
+    /// <summary>下行条宽度（px）。</summary>
+    public double DownBarWidth { get; set; }
+
+    /// <summary>上行条宽度（px）。</summary>
+    public double UpBarWidth { get; set; }
 }
