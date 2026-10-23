@@ -75,8 +75,8 @@ public class AppStatService
             _session = new TraceEventSession(SessionName) { StopOnDispose = true };
             _session.EnableKernelProvider(KernelTraceEventParser.Keywords.NetworkTCPIP);
 
-            _session.Source.Kernel.TcpIpRecv += data => Accumulate(data.ProcessID, 0, data.size);
-            _session.Source.Kernel.TcpIpSend += data => Accumulate(data.ProcessID, data.size, 0);
+            _session.Source.Kernel.TcpIpRecv += data => Accumulate(data.ProcessID, 0, data.size, data.saddr?.ToString(), data.sport);
+            _session.Source.Kernel.TcpIpSend += data => Accumulate(data.ProcessID, data.size, 0, data.daddr?.ToString(), data.dport);
 
             _running = true;
             _thread = new Thread(() =>
@@ -126,9 +126,43 @@ public class AppStatService
         }
     }
 
-    /// <summary>ETW 回调里不能做重活：只做内存加法。</summary>
-    private void Accumulate(int pid, long up, long down)
+    /// <summary>
+    /// 是否只统计走代理的流量。
+    ///
+    /// 判定依据很简单：走系统代理的程序，流量一定先发到本地代理端口
+    /// （应用 → 127.0.0.1:端口），回程同理。所以筛出「对端是回环地址且端口等于
+    /// 本地代理端口」的事件，就正好是经代理的那部分。
+    /// TUN 模式没有这段回环握手，此时该模式拿不到数据，需要提示用户。
+    /// </summary>
+    public bool ProxyOnly { get; set; } = true;
+
+    private static int ProxyPort()
     {
+        try
+        {
+            return AppManager.Instance.GetLocalPort(EInboundProtocol.socks);
+        }
+        catch
+        {
+            return 0;
+        }
+    }
+
+    private static bool IsLoopback(string? addr)
+        => addr is not null
+           && (addr == "127.0.0.1" || addr == "::1" || addr.StartsWith("127.", StringComparison.Ordinal));
+
+    /// <summary>ETW 回调里不能做重活：只做内存加法。</summary>
+    private void Accumulate(int pid, long up, long down, string? addr, int port)
+    {
+        if (ProxyOnly)
+        {
+            var proxyPort = ProxyPort();
+            if (proxyPort == 0 || port != proxyPort || !IsLoopback(addr))
+            {
+                return;
+            }
+        }
         if (pid <= 0 || (up <= 0 && down <= 0))
         {
             return;
@@ -140,7 +174,7 @@ public class AppStatService
             return;
         }
 
-        var key = $"{DateTime.Now:yyyyMMdd}|{name}";
+        var key = $"{(ProxyOnly ? "p" : "a")}|{DateTime.Now:yyyyMMdd}|{name}";
         var needFlush = false;
         lock (_lock)
         {
@@ -263,19 +297,23 @@ public class AppStatService
         try
         {
             var from = DateTime.Now.AddDays(-(days - 1)).ToString("yyyyMMdd");
+            var modePrefix = ProxyOnly ? "p|" : "a|";
             var table = SQLiteHelper.Instance.TableAsync<AppStatItem>();
             var rows = await table.Where(t => t.Key != null).ToListAsync();
 
             var map = new Dictionary<string, AppStatItem>();
             foreach (var row in rows)
             {
-                var sep = row.Key.IndexOf('|');
-                if (sep <= 0 || string.CompareOrdinal(row.Key[..sep], from) < 0)
+                // key 形如 "p|20261023|chrome"：第一段是口径，第二段是日期
+                var parts = row.Key.Split('|', 3);
+                if (parts.Length != 3
+                    || !string.Equals(parts[0], modePrefix[..1], StringComparison.Ordinal)
+                    || string.CompareOrdinal(parts[1], from) < 0)
                 {
                     continue;
                 }
 
-                var name = row.Key[(sep + 1)..];
+                var name = parts[2];
                 if (!map.TryGetValue(name, out var agg))
                 {
                     agg = new AppStatItem { Key = name };

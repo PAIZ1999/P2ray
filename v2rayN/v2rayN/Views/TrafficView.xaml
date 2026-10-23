@@ -546,12 +546,25 @@
 
             <!-- ═══ 按应用（ETW，需管理员） ═══ -->
             <StackPanel x:Name="appPanel" Visibility="Collapsed">
-                <TextBlock
-                    Margin="0,18,0,10"
-                    Style="{StaticResource P2rayMicro}"
-                    Foreground="{StaticResource P2rayWarningBrush}"
-                    TextWrapping="Wrap"
-                    Text="按应用统计来自 Windows ETW 内核网络事件，统计的是全机流量（含未走代理的直连），与「概览」页只算代理流量的口径不同。" />
+                <Grid Margin="0,18,0,10">
+                    <TextBlock
+                        x:Name="txtAppScope"
+                        MaxWidth="900"
+                        HorizontalAlignment="Left"
+                        Style="{StaticResource P2rayMicro}"
+                        TextWrapping="Wrap"
+                        Foreground="{StaticResource P2rayWarningBrush}" />
+                    <ToggleButton
+                        x:Name="togAppProxyOnly"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Top"
+                        Margin="16,0,0,0"
+                        Width="44"
+                        Height="20"
+                        Click="TogAppProxyOnly_Click"
+                        Style="{StaticResource P2rayToggle}"
+                        ToolTip="仅统计经本地代理端口的流量" />
+                </Grid>
 
                 <Border Padding="14,12" Style="{StaticResource P2rayCard}">
                     <StackPanel>
@@ -559,7 +572,8 @@
                             <TextBlock
                                 VerticalAlignment="Center"
                                 Style="{StaticResource P2rayMicro}"
-                                Text="区间内按应用下行合计（全机）" />
+                                x:Name="txtAppTotalLabel"
+                                Text="区间内按应用下行合计（仅代理）" />
                             <TextBlock
                                 x:Name="txtAppTotal"
                                 HorizontalAlignment="Right"

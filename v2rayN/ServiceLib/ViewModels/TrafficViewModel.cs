@@ -107,6 +107,9 @@ public partial class TrafficViewModel : ReactiveObject
     [Reactive]
     public partial string DomainTotalText { get; set; } = "—";
 
+    /// <summary>切换按应用口径后重新取数。</summary>
+    public ReactiveCommand<RxVoid, RxVoid> ToggleAppScopeCmd { get; }
+
     /// <summary>当前是否处于「按应用」子标签。</summary>
     [Reactive]
     public partial bool IsAppTab { get; set; }
@@ -121,6 +124,18 @@ public partial class TrafficViewModel : ReactiveObject
     [Reactive]
     public partial BulkObservableCollection<DomainStatRow> Apps { get; set; } = [];
 
+    /// <summary>按应用是否只统计走代理的流量（默认是）。</summary>
+    [Reactive]
+    public partial bool IsAppProxyOnly { get; set; } = true;
+
+    /// <summary>合计标题：随口径变化，避免"仅代理"时还写着"全机"。</summary>
+    [Reactive]
+    public partial string AppTotalLabel { get; set; } = "区间内按应用下行合计（仅代理）";
+
+    /// <summary>按应用口径说明文案。</summary>
+    [Reactive]
+    public partial string AppScopeHint { get; set; } = string.Empty;
+
     [Reactive]
     public partial string AppTotalText { get; set; } = "—";
 
@@ -130,6 +145,10 @@ public partial class TrafficViewModel : ReactiveObject
     public TrafficViewModel()
     {
         RefreshCmd = ReactiveCommand.CreateFromTask(LoadAsync);
+        ToggleAppScopeCmd = ReactiveCommand.CreateFromTask(async () =>
+        {
+            await LoadAsync();
+        });
         ClearCmd = ReactiveCommand.CreateFromTask(async () =>
         {
             await TrafficStatService.Instance.ClearAsync();
@@ -375,6 +394,15 @@ public partial class TrafficViewModel : ReactiveObject
     /// </summary>
     private async Task BuildAppsAsync(int days)
     {
+        // 把手动开关同步给服务：服务按当前口径决定记录与读取
+        AppStatService.Instance.ProxyOnly = IsAppProxyOnly;
+
+        AppTotalLabel = IsAppProxyOnly
+            ? "区间内按应用下行合计（仅代理）"
+            : "区间内按应用下行合计（全机）";
+        AppScopeHint = IsAppProxyOnly
+            ? "仅统计经本地代理端口的流量（应用 → 127.0.0.1:本地端口）。直连流量不计入；TUN 模式没有这段回环，切到全机统计才能看到数据。"
+            : "统计全机流量（含未经代理的直连），与「概览」页只算代理流量的口径不同。";
         IsAppSupported = AppStatService.IsSupported;
         AppHint = AppStatService.Instance.StatusHint;
 

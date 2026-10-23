@@ -70,6 +70,9 @@ public partial class TrafficView : ReactiveUserControl<TrafficViewModel>
                     s => string.IsNullOrEmpty(s) ? Visibility.Collapsed : Visibility.Visible).DisposeWith(disposables);
 
             this.OneWayBind(ViewModel, vm => vm.AppTotalText, v => v.txtAppTotal.Text).DisposeWith(disposables);
+            this.OneWayBind(ViewModel, vm => vm.AppScopeHint, v => v.txtAppScope.Text).DisposeWith(disposables);
+            this.OneWayBind(ViewModel, vm => vm.AppTotalLabel, v => v.txtAppTotalLabel.Text).DisposeWith(disposables);
+            this.OneWayBind(ViewModel, vm => vm.IsAppProxyOnly, v => v.togAppProxyOnly.IsChecked).DisposeWith(disposables);
             this.OneWayBind(ViewModel, vm => vm.AppHint, v => v.txtAppHint.Text).DisposeWith(disposables);
             this.OneWayBind(ViewModel, vm => vm.AppHint, v => v.txtAppHint.Visibility,
                     s => string.IsNullOrEmpty(s) ? Visibility.Collapsed : Visibility.Visible).DisposeWith(disposables);
@@ -112,12 +115,38 @@ public partial class TrafficView : ReactiveUserControl<TrafficViewModel>
         };
     }
 
+    /// <summary>防止标签选中态与 VM 互相触发。</summary>
+    private bool _suppressTabSync;
+
+    /// <summary>把 VM 的子标签状态同步回三个 RadioButton。</summary>
+    private void SyncTabSelection()
+    {
+        if (ViewModel is null)
+        {
+            return;
+        }
+
+        _suppressTabSync = true;
+        try
+        {
+            tabSummary.IsChecked = !ViewModel.IsDomainTab && !ViewModel.IsAppTab;
+            tabDomain.IsChecked = ViewModel.IsDomainTab;
+            tabApp.IsChecked = ViewModel.IsAppTab;
+        }
+        finally
+        {
+            _suppressTabSync = false;
+        }
+    }
+
     private void ApplyTabVisibility()
     {
         if (ViewModel is null)
         {
             return;
         }
+
+        SyncTabSelection();
 
         var app = ViewModel.IsAppTab;
         var domain = ViewModel.IsDomainTab;
@@ -479,9 +508,21 @@ public partial class TrafficView : ReactiveUserControl<TrafficViewModel>
         }
     }
 
+    /// <summary>切换「按应用」的统计口径，立即重新取数。</summary>
+    private void TogAppProxyOnly_Click(object sender, RoutedEventArgs e)
+    {
+        if (ViewModel is null)
+        {
+            return;
+        }
+
+        ViewModel.IsAppProxyOnly = togAppProxyOnly.IsChecked == true;
+        ViewModel.ToggleAppScopeCmd.Execute().Subscribe();
+    }
+
     private void Tab_Checked(object sender, RoutedEventArgs e)
     {
-        if (ViewModel is null || sender is not RadioButton { Tag: string tag })
+        if (_suppressTabSync || ViewModel is null || sender is not RadioButton { Tag: string tag })
         {
             return;
         }
