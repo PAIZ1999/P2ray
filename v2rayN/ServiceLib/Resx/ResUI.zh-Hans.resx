@@ -2056,4 +2056,124 @@
   <data name="P2HomeSiteStatusEmpty" xml:space="preserve">
     <value>站点连通性　—</value>
   </data>
+  <data name="P2NodesTitle" xml:space="preserve">
+    <value>节点</value>
+  </data>
+  <data name="P2NodesRefresh" xml:space="preserve">
+    <value>刷新</value>
+  </data>
+  <data name="P2NodesCustomConfig" xml:space="preserve">
+    <value>自定义配置</value>
+  </data>
+  <data name="P2NodesImportClipboard" xml:space="preserve">
+    <value>从剪贴板导入</value>
+  </data>
+  <data name="P2NodesProtocol" xml:space="preserve">
+    <value>协议</value>
+  </data>
+  <data name="P2NodesLatency" xml:space="preserve">
+    <value>延迟</value>
+  </data>
+  <data name="P2NodesTodayTraffic" xml:space="preserve">
+    <value>今日 ↑ / ↓</value>
+  </data>
+  <data name="P2NodesTotalTraffic" xml:space="preserve">
+    <value>累计 ↑ / ↓</value>
+  </data>
+  <data name="P2NodesSetDefault" xml:space="preserve">
+    <value>设为默认</value>
+  </data>
+  <data name="P2NodesTestLatency" xml:space="preserve">
+    <value>测试延迟</value>
+  </data>
+  <data name="P2NodesEdit" xml:space="preserve">
+    <value>编辑</value>
+  </data>
+  <data name="P2NodesDelete" xml:space="preserve">
+    <value>删除</value>
+  </data>
+  <data name="P2NodesDefaultBadge" xml:space="preserve">
+    <value>默认</value>
+  </data>
+  <data name="P2TrafficTitle" xml:space="preserve">
+    <value>流量</value>
+  </data>
+  <data name="P2TrafficSubtitle" xml:space="preserve">
+    <value>统计经过 P2ray 的代理流量，不含未走代理的直连。</value>
+  </data>
+  <data name="P2TrafficOverview" xml:space="preserve">
+    <value>概览</value>
+  </data>
+  <data name="P2TrafficByDomain" xml:space="preserve">
+    <value>按域名</value>
+  </data>
+  <data name="P2TrafficByApp" xml:space="preserve">
+    <value>按应用</value>
+  </data>
+  <data name="P2TrafficRangeDown" xml:space="preserve">
+    <value>区间下行</value>
+  </data>
+  <data name="P2TrafficRangeUp" xml:space="preserve">
+    <value>区间上行</value>
+  </data>
+  <data name="P2TrafficDailyAvg" xml:space="preserve">
+    <value>日均下行</value>
+  </data>
+  <data name="P2TrafficPeakDay" xml:space="preserve">
+    <value>峰值日</value>
+  </data>
+  <data name="P2TrafficTrend" xml:space="preserve">
+    <value>每日趋势</value>
+  </data>
+  <data name="P2TrafficDown" xml:space="preserve">
+    <value>下行</value>
+  </data>
+  <data name="P2TrafficUp" xml:space="preserve">
+    <value>上行</value>
+  </data>
+  <data name="P2TrafficDetail" xml:space="preserve">
+    <value>每日明细</value>
+  </data>
+  <data name="P2TrafficDate" xml:space="preserve">
+    <value>日期</value>
+  </data>
+  <data name="P2TrafficShare" xml:space="preserve">
+    <value>趋势</value>
+  </data>
+  <data name="P2TrafficTotal" xml:space="preserve">
+    <value>合计</value>
+  </data>
+  <data name="P2TrafficDomainHint" xml:space="preserve">
+    <value>按域名统计由 mihomo / sing-box 内核的 clash API 提供，每条连接的上下行字节按目标域名归并。</value>
+  </data>
+  <data name="P2TrafficDomainTotal" xml:space="preserve">
+    <value>区间内按域名下行合计</value>
+  </data>
+  <data name="P2TrafficDomain" xml:space="preserve">
+    <value>域名</value>
+  </data>
+  <data name="P2TrafficAppTotal" xml:space="preserve">
+    <value>区间内按应用下行合计（仅代理）</value>
+  </data>
+  <data name="P2TrafficProcess" xml:space="preserve">
+    <value>进程</value>
+  </data>
+  <data name="P2TrafficClear" xml:space="preserve">
+    <value>清空统计</value>
+  </data>
+  <data name="P2TrafficEmptyRange" xml:space="preserve">
+    <value>该区间还没有流量记录</value>
+  </data>
+  <data name="P2TrafficEmptyHint" xml:space="preserve">
+    <value>连上节点后产生流量就会显示在这里</value>
+  </data>
+  <data name="P2TrafficRange3" xml:space="preserve">
+    <value>3 天</value>
+  </data>
+  <data name="P2TrafficRange7" xml:space="preserve">
+    <value>7 天</value>
+  </data>
+  <data name="P2TrafficRange30" xml:space="preserve">
+    <value>30 天</value>
+  </data>
 </root>

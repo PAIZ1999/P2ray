@@ -1,0 +1,37 @@
+P2NodesTitle	节点	Nodes
+P2NodesRefresh	刷新	Refresh
+P2NodesCustomConfig	自定义配置	Custom config
+P2NodesImportClipboard	从剪贴板导入	Import from clipboard
+P2NodesProtocol	协议	Protocol
+P2NodesLatency	延迟	Latency
+P2NodesTodayTraffic	今日 ↑ / ↓	Today ↑ / ↓
+P2NodesTotalTraffic	累计 ↑ / ↓	Total ↑ / ↓
+P2NodesSetDefault	设为默认	Set as default
+P2NodesTestLatency	测试延迟	Test latency
+P2NodesEdit	编辑	Edit
+P2NodesDelete	删除	Delete
+P2NodesDefaultBadge	默认	Default
+P2TrafficTitle	流量	Traffic
+P2TrafficSubtitle	统计经过 P2ray 的代理流量，不含未走代理的直连。	Traffic proxied by P2ray. Direct connections are not counted.
+P2TrafficOverview	概览	Overview
+P2TrafficByDomain	按域名	By domain
+P2TrafficByApp	按应用	By app
+P2TrafficRangeDown	区间下行	Down (range)
+P2TrafficRangeUp	区间上行	Up (range)
+P2TrafficDailyAvg	日均下行	Daily average
+P2TrafficPeakDay	峰值日	Peak day
+P2TrafficTrend	每日趋势	Daily trend
+P2TrafficDown	下行	Down
+P2TrafficUp	上行	Up
+P2TrafficDetail	每日明细	Daily details
+P2TrafficDate	日期	Date
+P2TrafficShare	趋势	Trend
+P2TrafficTotal	合计	Total
+P2TrafficDomainHint	按域名统计由 mihomo / sing-box 内核的 clash API 提供，每条连接的上下行字节按目标域名归并。	Domain stats come from the clash API of the mihomo / sing-box core; bytes are grouped by destination host.
+P2TrafficDomainTotal	区间内按域名下行合计	Total down by domain
+P2TrafficDomain	域名	Domain
+P2TrafficAppTotal	区间内按应用下行合计（仅代理）	Total down by app (proxied only)
+P2TrafficProcess	进程	Process
+P2TrafficClear	清空统计	Clear stats
+P2TrafficEmptyRange	该区间还没有流量记录	No traffic recorded in this range
+P2TrafficEmptyHint	连上节点后产生流量就会显示在这里	Traffic appears here once you connect a node

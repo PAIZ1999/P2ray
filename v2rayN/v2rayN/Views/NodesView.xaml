@@ -8,6 +8,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:tr="clr-namespace:v2rayN.Markup"
     xmlns:reactiveui="http://reactiveui.net"
     xmlns:vms="clr-namespace:ServiceLib.ViewModels;assembly=ServiceLib"
     d:DesignHeight="800"
@@ -52,7 +53,7 @@
         <!-- ===== 顶部操作栏 ===== -->
         <Grid DockPanel.Dock="Top" Margin="0,0,0,14">
             <StackPanel>
-                <TextBlock Style="{StaticResource P2rayH1}" Text="节点" />
+                <TextBlock Style="{StaticResource P2rayH1}" Text="{tr:Tr P2NodesTitle}" />
                 <TextBlock
                     x:Name="txtCount"
                     Margin="0,3,0,0"
@@ -65,17 +66,17 @@
                 Orientation="Horizontal">
                 <Button
                     Click="BtnRefresh_Click"
-                    Content="刷新"
+                    Content="{tr:Tr P2NodesRefresh}"
                     Style="{StaticResource P2raySecondaryButton}" />
                 <Button
                     Margin="0,0,8,0"
                     Click="BtnCustomConfig_Click"
-                    Content="自定义配置"
+                    Content="{tr:Tr P2NodesCustomConfig}"
                     Style="{StaticResource P2raySecondaryButton}" />
                 <Button
                     Margin="8,0,0,0"
                     Click="BtnImport_Click"
-                    Content="从剪贴板导入"
+                    Content="{tr:Tr P2NodesImportClipboard}"
                     Style="{StaticResource P2rayPrimaryButton}" />
             </StackPanel>
         </Grid>
@@ -137,23 +138,23 @@
                         <TextBlock
                             Grid.Column="0"
                             Style="{StaticResource P2rayMicro}"
-                            Text="节点" />
+                            Text="{tr:Tr P2NodesTitle}" />
                         <TextBlock
                             Grid.Column="1"
                             Style="{StaticResource P2rayMicro}"
-                            Text="协议" />
+                            Text="{tr:Tr P2NodesProtocol}" />
                         <TextBlock
                             Grid.Column="2"
                             Style="{StaticResource P2rayMicro}"
-                            Text="延迟" />
+                            Text="{tr:Tr P2NodesLatency}" />
                         <TextBlock
                             Grid.Column="3"
                             Style="{StaticResource P2rayMicro}"
-                            Text="今日 ↑ / ↓" />
+                            Text="{tr:Tr P2NodesTodayTraffic}" />
                         <TextBlock
                             Grid.Column="4"
                             Style="{StaticResource P2rayMicro}"
-                            Text="累计 ↑ / ↓" />
+                            Text="{tr:Tr P2NodesTotalTraffic}" />
                     </Grid>
                 </Border>
 
@@ -167,11 +168,11 @@
                     SelectionMode="Extended">
                     <ListBox.ContextMenu>
                         <ContextMenu>
-                            <MenuItem Click="MenuSetDefault_Click" Header="设为默认" />
-                            <MenuItem Click="MenuTestDelay_Click" Header="测试延迟" />
-                            <MenuItem Click="MenuEdit_Click" Header="编辑" />
+                            <MenuItem Click="MenuSetDefault_Click" Header="{tr:Tr P2NodesSetDefault}" />
+                            <MenuItem Click="MenuTestDelay_Click" Header="{tr:Tr P2NodesTestLatency}" />
+                            <MenuItem Click="MenuEdit_Click" Header="{tr:Tr P2NodesEdit}" />
                             <Separator />
-                            <MenuItem Click="MenuDelete_Click" Header="删除" />
+                            <MenuItem Click="MenuDelete_Click" Header="{tr:Tr P2NodesDelete}" />
                         </ContextMenu>
                     </ListBox.ContextMenu>
                     <ListBox.ItemTemplate>
@@ -209,7 +210,7 @@
                                                 FontSize="10"
                                                 FontWeight="SemiBold"
                                                 Foreground="{StaticResource P2rayAccentTextBrush}"
-                                                Text="默认" />
+                                                Text="{tr:Tr P2NodesDefaultBadge}" />
                                         </Border>
                                         <TextBlock
                                             Style="{StaticResource P2rayBody}"

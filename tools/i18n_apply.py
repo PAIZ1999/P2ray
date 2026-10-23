@@ -72,7 +72,7 @@ def main():
         raw = path.read_text(encoding="utf-8-sig")
         count = 0
         for key, zh, _ in ordered:
-            for attr in ("Text", "Content", "Header"):
+            for attr in ("Text", "Content", "Header", "Title", "Hint", "ToolTip"):
                 needle = f'{attr}="{zh}"'
                 if needle in raw:
                     n = raw.count(needle)

@@ -2067,4 +2067,124 @@ The "Get Certificate" action may fail if a self-signed certificate is used or if
   <data name="P2HomeSiteStatusEmpty" xml:space="preserve">
     <value>Site reachability —</value>
   </data>
+  <data name="P2NodesTitle" xml:space="preserve">
+    <value>Nodes</value>
+  </data>
+  <data name="P2NodesRefresh" xml:space="preserve">
+    <value>Refresh</value>
+  </data>
+  <data name="P2NodesCustomConfig" xml:space="preserve">
+    <value>Custom config</value>
+  </data>
+  <data name="P2NodesImportClipboard" xml:space="preserve">
+    <value>Import from clipboard</value>
+  </data>
+  <data name="P2NodesProtocol" xml:space="preserve">
+    <value>Protocol</value>
+  </data>
+  <data name="P2NodesLatency" xml:space="preserve">
+    <value>Latency</value>
+  </data>
+  <data name="P2NodesTodayTraffic" xml:space="preserve">
+    <value>Today ↑ / ↓</value>
+  </data>
+  <data name="P2NodesTotalTraffic" xml:space="preserve">
+    <value>Total ↑ / ↓</value>
+  </data>
+  <data name="P2NodesSetDefault" xml:space="preserve">
+    <value>Set as default</value>
+  </data>
+  <data name="P2NodesTestLatency" xml:space="preserve">
+    <value>Test latency</value>
+  </data>
+  <data name="P2NodesEdit" xml:space="preserve">
+    <value>Edit</value>
+  </data>
+  <data name="P2NodesDelete" xml:space="preserve">
+    <value>Delete</value>
+  </data>
+  <data name="P2NodesDefaultBadge" xml:space="preserve">
+    <value>Default</value>
+  </data>
+  <data name="P2TrafficTitle" xml:space="preserve">
+    <value>Traffic</value>
+  </data>
+  <data name="P2TrafficSubtitle" xml:space="preserve">
+    <value>Traffic proxied by P2ray. Direct connections are not counted.</value>
+  </data>
+  <data name="P2TrafficOverview" xml:space="preserve">
+    <value>Overview</value>
+  </data>
+  <data name="P2TrafficByDomain" xml:space="preserve">
+    <value>By domain</value>
+  </data>
+  <data name="P2TrafficByApp" xml:space="preserve">
+    <value>By app</value>
+  </data>
+  <data name="P2TrafficRangeDown" xml:space="preserve">
+    <value>Down (range)</value>
+  </data>
+  <data name="P2TrafficRangeUp" xml:space="preserve">
+    <value>Up (range)</value>
+  </data>
+  <data name="P2TrafficDailyAvg" xml:space="preserve">
+    <value>Daily average</value>
+  </data>
+  <data name="P2TrafficPeakDay" xml:space="preserve">
+    <value>Peak day</value>
+  </data>
+  <data name="P2TrafficTrend" xml:space="preserve">
+    <value>Daily trend</value>
+  </data>
+  <data name="P2TrafficDown" xml:space="preserve">
+    <value>Down</value>
+  </data>
+  <data name="P2TrafficUp" xml:space="preserve">
+    <value>Up</value>
+  </data>
+  <data name="P2TrafficDetail" xml:space="preserve">
+    <value>Daily details</value>
+  </data>
+  <data name="P2TrafficDate" xml:space="preserve">
+    <value>Date</value>
+  </data>
+  <data name="P2TrafficShare" xml:space="preserve">
+    <value>Trend</value>
+  </data>
+  <data name="P2TrafficTotal" xml:space="preserve">
+    <value>Total</value>
+  </data>
+  <data name="P2TrafficDomainHint" xml:space="preserve">
+    <value>Domain stats come from the clash API of the mihomo / sing-box core; bytes are grouped by destination host.</value>
+  </data>
+  <data name="P2TrafficDomainTotal" xml:space="preserve">
+    <value>Total down by domain</value>
+  </data>
+  <data name="P2TrafficDomain" xml:space="preserve">
+    <value>Domain</value>
+  </data>
+  <data name="P2TrafficAppTotal" xml:space="preserve">
+    <value>Total down by app (proxied only)</value>
+  </data>
+  <data name="P2TrafficProcess" xml:space="preserve">
+    <value>Process</value>
+  </data>
+  <data name="P2TrafficClear" xml:space="preserve">
+    <value>Clear stats</value>
+  </data>
+  <data name="P2TrafficEmptyRange" xml:space="preserve">
+    <value>No traffic recorded in this range</value>
+  </data>
+  <data name="P2TrafficEmptyHint" xml:space="preserve">
+    <value>Traffic appears here once you connect a node</value>
+  </data>
+  <data name="P2TrafficRange3" xml:space="preserve">
+    <value>3 days</value>
+  </data>
+  <data name="P2TrafficRange7" xml:space="preserve">
+    <value>7 days</value>
+  </data>
+  <data name="P2TrafficRange30" xml:space="preserve">
+    <value>30 days</value>
+  </data>
 </root>

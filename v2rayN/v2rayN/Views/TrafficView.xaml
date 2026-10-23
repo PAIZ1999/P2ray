@@ -7,6 +7,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:tr="clr-namespace:v2rayN.Markup"
     xmlns:reactiveui="http://reactiveui.net"
     xmlns:vms="clr-namespace:ServiceLib.ViewModels;assembly=ServiceLib"
     d:DesignHeight="760"
@@ -24,11 +25,11 @@
             <!-- ═══ 标题 + 区间切换 ═══ -->
             <Grid>
                 <StackPanel>
-                    <TextBlock Style="{StaticResource P2rayH1}" Text="流量" />
+                    <TextBlock Style="{StaticResource P2rayH1}" Text="{tr:Tr P2TrafficTitle}" />
                     <TextBlock
                         Margin="0,4,0,0"
                         Style="{StaticResource P2rayMicro}"
-                        Text="统计经过 P2ray 的代理流量，不含未走代理的直连。" />
+                        Text="{tr:Tr P2TrafficSubtitle}" />
                 </StackPanel>
 
                 <StackPanel
@@ -44,7 +45,7 @@
                             x:Name="tabSummary"
                             MinWidth="64"
                             Checked="Tab_Checked"
-                            Content="概览"
+                            Content="{tr:Tr P2TrafficOverview}"
                             GroupName="P2rayTrafficTab"
                             IsChecked="True"
                             Style="{StaticResource P2raySegment}"
@@ -53,7 +54,7 @@
                             x:Name="tabDomain"
                             MinWidth="64"
                             Checked="Tab_Checked"
-                            Content="按域名"
+                            Content="{tr:Tr P2TrafficByDomain}"
                             GroupName="P2rayTrafficTab"
                             Style="{StaticResource P2raySegment}"
                             Tag="domain" />
@@ -61,7 +62,7 @@
                             x:Name="tabApp"
                             MinWidth="64"
                             Checked="Tab_Checked"
-                            Content="按应用"
+                            Content="{tr:Tr P2TrafficByApp}"
                             GroupName="P2rayTrafficTab"
                             Style="{StaticResource P2raySegment}"
                             Tag="app" />
@@ -97,7 +98,7 @@
             <UniformGrid Margin="0,18,0,18" Columns="4">
                 <Border Margin="0,0,8,0" Padding="15,13" Style="{StaticResource P2rayCard}">
                     <StackPanel>
-                        <TextBlock Style="{StaticResource P2rayMicro}" Text="区间下行" />
+                        <TextBlock Style="{StaticResource P2rayMicro}" Text="{tr:Tr P2TrafficRangeDown}" />
                         <TextBlock
                             x:Name="txtRangeDown"
                             Margin="0,7,0,0"
@@ -110,7 +111,7 @@
                 </Border>
                 <Border Margin="4,0" Padding="15,13" Style="{StaticResource P2rayCard}">
                     <StackPanel>
-                        <TextBlock Style="{StaticResource P2rayMicro}" Text="区间上行" />
+                        <TextBlock Style="{StaticResource P2rayMicro}" Text="{tr:Tr P2TrafficRangeUp}" />
                         <TextBlock
                             x:Name="txtRangeUp"
                             Margin="0,7,0,0"
@@ -123,7 +124,7 @@
                 </Border>
                 <Border Margin="4,0" Padding="15,13" Style="{StaticResource P2rayCard}">
                     <StackPanel>
-                        <TextBlock Style="{StaticResource P2rayMicro}" Text="日均下行" />
+                        <TextBlock Style="{StaticResource P2rayMicro}" Text="{tr:Tr P2TrafficDailyAvg}" />
                         <TextBlock
                             x:Name="txtAverageDown"
                             Margin="0,7,0,0"
@@ -136,7 +137,7 @@
                 </Border>
                 <Border Margin="8,0,0,0" Padding="15,13" Style="{StaticResource P2rayCard}">
                     <StackPanel>
-                        <TextBlock Style="{StaticResource P2rayMicro}" Text="峰值日" />
+                        <TextBlock Style="{StaticResource P2rayMicro}" Text="{tr:Tr P2TrafficPeakDay}" />
                         <TextBlock
                             x:Name="txtPeakDay"
                             Margin="0,7,0,0"
@@ -167,7 +168,7 @@
                         <TextBlock
                             VerticalAlignment="Center"
                             Style="{StaticResource P2rayMicro}"
-                            Text="每日趋势" />
+                            Text="{tr:Tr P2TrafficTrend}" />
                         <StackPanel
                             HorizontalAlignment="Right"
                             VerticalAlignment="Center"
@@ -182,7 +183,7 @@
                                 Margin="6,0,14,0"
                                 VerticalAlignment="Center"
                                 Style="{StaticResource P2rayMicro}"
-                                Text="下行" />
+                                Text="{tr:Tr P2TrafficDown}" />
                             <Border
                                 Width="12"
                                 Height="3"
@@ -193,7 +194,7 @@
                                 Margin="6,0,0,0"
                                 VerticalAlignment="Center"
                                 Style="{StaticResource P2rayMicro}"
-                                Text="上行" />
+                                Text="{tr:Tr P2TrafficUp}" />
                         </StackPanel>
                     </Grid>
 
@@ -232,9 +233,9 @@
                         Grid.Row="1"
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center"
-                        Hint="连上节点后产生流量就会显示在这里"
+                        Hint="{tr:Tr P2TrafficEmptyHint}"
                         Icon="ChartTimelineVariant"
-                        Title="该区间还没有流量记录"
+                        Title="{tr:Tr P2TrafficEmptyRange}"
                         Visibility="Collapsed" />
 
                     <!-- 悬停卡片：随鼠标水平位置滑动，垂直方向固定顶部，避免抖动 -->
@@ -288,7 +289,7 @@
             
 
             <!-- ═══ 明细 ═══ -->
-            <TextBlock Style="{StaticResource P2raySectionLabel}" Text="每日明细" />
+            <TextBlock Style="{StaticResource P2raySectionLabel}" Text="{tr:Tr P2TrafficDetail}" />
             <Border Style="{StaticResource P2rayCard}">
                 <StackPanel>
                     <Border Style="{StaticResource P2rayRow}">
@@ -301,28 +302,28 @@
                             <TextBlock
                                 Grid.Column="0"
                                 Style="{StaticResource P2rayMicro}"
-                                Text="日期" />
+                                Text="{tr:Tr P2TrafficDate}" />
                             <TextBlock
                                 Grid.Column="1"
                                 Margin="0,0,16,0"
                                 Style="{StaticResource P2rayMicro}"
-                                Text="趋势" />
+                                Text="{tr:Tr P2TrafficShare}" />
                             <StackPanel Grid.Column="3" Orientation="Horizontal">
                                 <TextBlock
                                     Width="84"
                                     HorizontalAlignment="Right"
                                     Style="{StaticResource P2rayMicro}"
-                                    Text="下行" />
+                                    Text="{tr:Tr P2TrafficDown}" />
                                 <TextBlock
                                     Width="80"
                                     HorizontalAlignment="Right"
                                     Style="{StaticResource P2rayMicro}"
-                                    Text="上行" />
+                                    Text="{tr:Tr P2TrafficUp}" />
                                 <TextBlock
                                     Width="80"
                                     HorizontalAlignment="Right"
                                     Style="{StaticResource P2rayMicro}"
-                                    Text="合计" />
+                                    Text="{tr:Tr P2TrafficTotal}" />
                             </StackPanel>
                         </Grid>
                     </Border>
@@ -412,7 +413,7 @@
                 <TextBlock
                     Margin="0,18,0,10"
                     Style="{StaticResource P2rayMicro}"
-                    Text="按域名统计由 mihomo / sing-box 内核的 clash API 提供，每条连接的上下行字节按目标域名归并。" />
+                    Text="{tr:Tr P2TrafficDomainHint}" />
 
                 <Border Padding="14,12" Style="{StaticResource P2rayCard}">
                     <StackPanel>
@@ -420,7 +421,7 @@
                             <TextBlock
                                 VerticalAlignment="Center"
                                 Style="{StaticResource P2rayMicro}"
-                                Text="区间内按域名下行合计" />
+                                Text="{tr:Tr P2TrafficDomainTotal}" />
                             <TextBlock
                                 x:Name="txtDomainTotal"
                                 HorizontalAlignment="Right"
@@ -454,23 +455,23 @@
                                 <TextBlock
                                     Grid.Column="0"
                                     Style="{StaticResource P2rayMicro}"
-                                    Text="域名" />
+                                    Text="{tr:Tr P2TrafficDomain}" />
                                 <TextBlock
                                     Grid.Column="1"
                                     Margin="0,0,16,0"
                                     Style="{StaticResource P2rayMicro}"
-                                    Text="趋势" />
+                                    Text="{tr:Tr P2TrafficShare}" />
                                 <StackPanel Grid.Column="3" Orientation="Horizontal">
                                     <TextBlock
                                         Width="90"
                                         HorizontalAlignment="Right"
                                         Style="{StaticResource P2rayMicro}"
-                                        Text="下行" />
+                                        Text="{tr:Tr P2TrafficDown}" />
                                     <TextBlock
                                         Width="80"
                                         HorizontalAlignment="Right"
                                         Style="{StaticResource P2rayMicro}"
-                                        Text="上行" />
+                                        Text="{tr:Tr P2TrafficUp}" />
                                 </StackPanel>
                             </Grid>
                         </Border>
@@ -574,7 +575,7 @@
                                 VerticalAlignment="Center"
                                 Style="{StaticResource P2rayMicro}"
                                 x:Name="txtAppTotalLabel"
-                                Text="区间内按应用下行合计（仅代理）" />
+                                Text="{tr:Tr P2TrafficAppTotal}" />
                             <TextBlock
                                 x:Name="txtAppTotal"
                                 HorizontalAlignment="Right"
@@ -606,23 +607,23 @@
                                 <TextBlock
                                     Grid.Column="0"
                                     Style="{StaticResource P2rayMicro}"
-                                    Text="进程" />
+                                    Text="{tr:Tr P2TrafficProcess}" />
                                 <TextBlock
                                     Grid.Column="1"
                                     Margin="0,0,16,0"
                                     Style="{StaticResource P2rayMicro}"
-                                    Text="趋势" />
+                                    Text="{tr:Tr P2TrafficShare}" />
                                 <StackPanel Grid.Column="3" Orientation="Horizontal">
                                     <TextBlock
                                         Width="90"
                                         HorizontalAlignment="Right"
                                         Style="{StaticResource P2rayMicro}"
-                                        Text="下行" />
+                                        Text="{tr:Tr P2TrafficDown}" />
                                     <TextBlock
                                         Width="80"
                                         HorizontalAlignment="Right"
                                         Style="{StaticResource P2rayMicro}"
-                                        Text="上行" />
+                                        Text="{tr:Tr P2TrafficUp}" />
                                 </StackPanel>
                             </Grid>
                         </Border>
@@ -700,7 +701,7 @@
                 HorizontalAlignment="Left"
                 Padding="12,0"
                 Click="BtnClear_Click"
-                Content="清空统计"
+                Content="{tr:Tr P2TrafficClear}"
                 Height="26"
                 Style="{StaticResource P2raySecondaryButton}" />
         </StackPanel>

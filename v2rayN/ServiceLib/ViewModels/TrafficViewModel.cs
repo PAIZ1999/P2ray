@@ -1,3 +1,5 @@
+using ServiceLib.Resx;
+using System.Globalization;
 namespace ServiceLib.ViewModels;
 
 /// <summary>
@@ -20,9 +22,9 @@ public partial class TrafficViewModel : ReactiveObject
     /// <summary>可选的时间区间（天）。</summary>
     public IReadOnlyList<TrafficRange> Ranges { get; } =
     [
-        new("3 天", 3),
-        new("7 天", 7),
-        new("30 天", 30),
+        new(ResUIHelper.Get("P2TrafficRange3"), 3),
+        new(ResUIHelper.Get("P2TrafficRange7"), 7),
+        new(ResUIHelper.Get("P2TrafficRange30"), 30),
     ];
 
     [Reactive]
@@ -312,7 +314,7 @@ public partial class TrafficViewModel : ReactiveObject
             var total = row.Down + row.Up;
             items.Add(new TrafficDayItem
             {
-                Label = row.Date.ToString("MM-dd ") + WeekdayZh(row.Date),
+                Label = row.Date.ToString("MM-dd ") + row.Date.ToString("ddd", CultureInfo.CurrentUICulture),
                 UpText = FormatBytes(row.Up),
                 DownText = FormatBytes(row.Down),
                 TotalText = FormatBytes(total),
@@ -430,16 +432,7 @@ public partial class TrafficViewModel : ReactiveObject
                 UpBarWidth = Math.Max(320.0 * t.Up / (max > 0 ? max : 1), t.Up > 0 ? 2 : 0),
             };
         }).ToList());
-    }    private static string WeekdayZh(DateTime dt) => dt.DayOfWeek switch
-    {
-        DayOfWeek.Monday => "周一",
-        DayOfWeek.Tuesday => "周二",
-        DayOfWeek.Wednesday => "周三",
-        DayOfWeek.Thursday => "周四",
-        DayOfWeek.Friday => "周五",
-        DayOfWeek.Saturday => "周六",
-        _ => "周日",
-    };
+    }
 
     /// <summary>字节转可读文本，1024 进制、最多一位小数。</summary>
     public static string FormatBytes(long bytes)
