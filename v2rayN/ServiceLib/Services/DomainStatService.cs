@@ -42,8 +42,8 @@ public class DomainStatService
         {
             ECoreType.mihomo or ECoreType.sing_box => string.Empty,
             ECoreType.Xray or ECoreType.v2fly or ECoreType.v2fly_v5 =>
-                "按域名统计依赖 clash API，当前 Xray 内核不提供。到「设置 → 高级功能 → 核心设置 → Core 类型设置」，把 VLESS 的内核改成 sing-box 或 mihomo，保存后重连节点即可。",
-            _ => "内核未运行。连接到 mihomo 或 sing-box 内核的节点后即可按域名统计（内核在「设置 → 高级功能 → 核心设置 → Core 类型设置」里指定）。",
+                "按域名统计依赖 clash API，当前 Xray 内核不提供。到「设置 → 高级功能 → 核心设置 → Core 类型设置」，把 VLESS 那一行的内核改成 sing_box（下拉里就叫 sing_box），保存后重连节点即可。",
+            _ => "内核未运行。改用 sing_box 内核连接节点后即可按域名统计（内核在「设置 → 高级功能 → 核心设置 → Core 类型设置」里指定）。",
         };
 
     public void StartPolling()
