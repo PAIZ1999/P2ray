@@ -176,6 +176,37 @@ public partial class TrafficViewModel : ReactiveObject
         _ = LoadAsync();
     }
 
+    /// <summary>
+    /// 生成当前标签页、当前区间的 CSV。返回文件名与内容。
+    ///
+    /// 导出「看到的这一屏」而不是三张表全倒出来：用户在域名页点导出，
+    /// 期望拿到的就是域名榜，不需要再到 Excel 里筛。
+    /// </summary>
+    public async Task<(string Name, string Csv)> BuildExportAsync()
+    {
+        var days = SelectedRange?.Days ?? 7;
+        var stamp = DateTime.Now.ToString("yyyyMMdd-HHmm");
+
+        if (IsDomainTab)
+        {
+            var list = await DomainStatService.Instance.GetRangeAsync(days);
+            return ($"p2ray-domain-{stamp}.csv",
+                TrafficCsvExporter.Build(list.Select(t => new TrafficCsvExporter.Row(t.Key, t.Up, t.Down)), "domain"));
+        }
+
+        if (IsAppTab)
+        {
+            var list = await AppStatService.Instance.GetRangeAsync(days);
+            return ($"p2ray-process-{stamp}.csv",
+                TrafficCsvExporter.Build(list.Select(t => new TrafficCsvExporter.Row(t.Key, t.Up, t.Down)), "process"));
+        }
+
+        var daily = await TrafficStatService.Instance.GetDailyAsync(days);
+        return ($"p2ray-daily-{stamp}.csv",
+            TrafficCsvExporter.Build(
+                daily.Select(r => new TrafficCsvExporter.Row(new DateTime(r.HourTick).ToString("yyyy-MM-dd"), r.Up, r.Down)),
+                "date"));
+    }
     public async Task LoadAsync()
     {
         try

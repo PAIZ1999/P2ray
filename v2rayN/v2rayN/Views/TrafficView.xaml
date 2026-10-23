@@ -243,7 +243,6 @@
                         x:Name="hoverCard"
                         Grid.Row="1"
                         Padding="10,7"
-                        HorizontalAlignment="Left"
                         VerticalAlignment="Top"
                         Background="{StaticResource P2rayElevatedBrush}"
                         CornerRadius="6"
@@ -360,7 +359,6 @@
                                             <StackPanel
                                                 Height="8"
                                                 VerticalAlignment="Center"
-                                                HorizontalAlignment="Left"
                                                 Orientation="Horizontal">
                                                 <Border
                                                     Width="{Binding DownBarWidth}"
@@ -508,7 +506,6 @@
                                                 <StackPanel
                                                     Height="8"
                                                     VerticalAlignment="Center"
-                                                    HorizontalAlignment="Left"
                                                     Orientation="Horizontal">
                                                     <Border
                                                         Width="{Binding DownBarWidth}"
@@ -552,7 +549,6 @@
                     <TextBlock
                         x:Name="txtAppScope"
                         MaxWidth="900"
-                        HorizontalAlignment="Left"
                         Style="{StaticResource P2rayMicro}"
                         TextWrapping="Wrap"
                         Foreground="{StaticResource P2rayWarningBrush}" />
@@ -658,7 +654,6 @@
                                                 <StackPanel
                                                     Height="8"
                                                     VerticalAlignment="Center"
-                                                    HorizontalAlignment="Left"
                                                     Orientation="Horizontal">
                                                     <Border
                                                         Width="{Binding DownBarWidth}"
@@ -695,15 +690,23 @@
                     </StackPanel>
                 </Border>
             </StackPanel>
-            <Button
-                x:Name="btnClear"
-                Margin="2,14,0,0"
-                HorizontalAlignment="Left"
-                Padding="12,0"
-                Click="BtnClear_Click"
-                Content="{tr:Tr P2TrafficClear}"
-                Height="26"
-                Style="{StaticResource P2raySecondaryButton}" />
+            <StackPanel Margin="2,14,0,0" Orientation="Horizontal">
+                <Button
+                    x:Name="btnExport"
+                    Padding="12,0"
+                    Click="BtnExport_Click"
+                    Content="导出 CSV"
+                    Height="26"
+                    Style="{StaticResource P2raySecondaryButton}" />
+                <Button
+                    Margin="8,0,0,0"
+                    x:Name="btnClear"
+                    Padding="12,0"
+                    Click="BtnClear_Click"
+                    Content="{tr:Tr P2TrafficClear}"
+                    Height="26"
+                    Style="{StaticResource P2raySecondaryButton}" />
+            </StackPanel>
         </StackPanel>
     </ScrollViewer>
 </reactiveui:ReactiveUserControl>

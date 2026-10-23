@@ -1,3 +1,4 @@
+using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -550,6 +551,39 @@ public partial class TrafficView : ReactiveUserControl<TrafficViewModel>
         }
     }
 
+    /// <summary>把当前标签页、当前区间的数据导出成 CSV（带 BOM，Excel 直接能开）。</summary>
+    private async void BtnExport_Click(object sender, RoutedEventArgs e)
+    {
+        if (ViewModel is null)
+        {
+            return;
+        }
+
+        var (name, csv) = await ViewModel.BuildExportAsync();
+
+        var dialog = new Microsoft.Win32.SaveFileDialog
+        {
+            FileName = name,
+            Filter = "CSV|*.csv",
+            DefaultExt = ".csv",
+        };
+
+        if (dialog.ShowDialog() != true)
+        {
+            return;
+        }
+
+        try
+        {
+            // UTF-8 带 BOM：不带的话 Excel 打开中文/特殊字符会乱码
+            await File.WriteAllTextAsync(dialog.FileName, csv, new UTF8Encoding(true));
+            MessageBox.Show($"已导出到\n{dialog.FileName}", "导出完成", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"导出失败：{ex.Message}", "导出失败", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
     private void BtnClear_Click(object sender, RoutedEventArgs e)
     {
         if (ViewModel is null)

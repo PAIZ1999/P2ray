@@ -164,6 +164,9 @@
                     Background="Transparent"
                     BorderThickness="0"
                     ItemContainerStyle="{StaticResource NodeRow}"
+                VirtualizingPanel.IsVirtualizing="True"
+                VirtualizingPanel.VirtualizationMode="Recycling"
+                VirtualizingPanel.ScrollUnit="Pixel"
                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                     SelectionMode="Extended">
                     <ListBox.ContextMenu>
