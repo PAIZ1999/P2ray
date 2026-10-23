@@ -248,6 +248,15 @@ public static class SubscriptionHandler
 
         await updateFunc?.Invoke(false, $"{hashCode}{ResUI.MsgStartParsingSubscription}");
 
+        // Clash 格式的订阅交给 mihomo 专用路径：普通解析器只认节点列表，
+        // 遇到 YAML 会解析出 0 条，用户会以为订阅坏了。
+        if (ClashSubscriptionHandler.LooksLikeClashYaml(result))
+        {
+            var subRemarks = (await AppManager.Instance.GetSubItem(id))?.Remarks ?? id;
+            var imported = await ClashSubscriptionHandler.ImportAsync(config, id, subRemarks, result, updateFunc);
+            return imported is not null;
+        }
+
         // Add servers to configuration
         var ret = await ConfigHandler.AddBatchServers(config, result, id, true);
         if (ret <= 0)
