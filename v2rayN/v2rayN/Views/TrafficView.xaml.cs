@@ -74,7 +74,7 @@ public partial class TrafficView : ReactiveUserControl<TrafficViewModel>
             this.OneWayBind(ViewModel, vm => vm.AppTotalText, v => v.txtAppTotal.Text).DisposeWith(disposables);
             this.OneWayBind(ViewModel, vm => vm.AppScopeHint, v => v.txtAppScope.Text).DisposeWith(disposables);
             this.OneWayBind(ViewModel, vm => vm.AppTotalLabel, v => v.txtAppTotalLabel.Text).DisposeWith(disposables);
-            this.OneWayBind(ViewModel, vm => vm.IsAppProxyOnly, v => v.togAppProxyOnly.IsChecked).DisposeWith(disposables);
+
             this.OneWayBind(ViewModel, vm => vm.AppHint, v => v.txtAppHint.Text).DisposeWith(disposables);
             this.OneWayBind(ViewModel, vm => vm.AppHint, v => v.txtAppHint.Visibility,
                     s => string.IsNullOrEmpty(s) ? Visibility.Collapsed : Visibility.Visible).DisposeWith(disposables);
@@ -539,16 +539,7 @@ public partial class TrafficView : ReactiveUserControl<TrafficViewModel>
     }
 
     /// <summary>切换「按应用」的统计口径，立即重新取数。</summary>
-    private void TogAppProxyOnly_Click(object sender, RoutedEventArgs e)
-    {
-        if (ViewModel is null)
-        {
-            return;
-        }
 
-        ViewModel.IsAppProxyOnly = togAppProxyOnly.IsChecked == true;
-        ViewModel.ToggleAppScopeCmd.Execute().Subscribe();
-    }
 
     private void Tab_Checked(object sender, RoutedEventArgs e)
     {

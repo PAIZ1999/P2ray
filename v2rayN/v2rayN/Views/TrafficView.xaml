@@ -543,7 +543,7 @@
                 </Border>
             </StackPanel>
 
-            <!-- ═══ 按应用（ETW，需管理员） ═══ -->
+            <!-- ═══ 按应用（clash API，与按域名同源） ═══ -->
             <StackPanel x:Name="appPanel" Visibility="Collapsed">
                 <Grid Margin="0,18,0,10">
                     <TextBlock
@@ -552,16 +552,6 @@
                         Style="{StaticResource P2rayMicro}"
                         TextWrapping="Wrap"
                         Foreground="{StaticResource P2rayWarningBrush}" />
-                    <ToggleButton
-                        x:Name="togAppProxyOnly"
-                        HorizontalAlignment="Right"
-                        VerticalAlignment="Top"
-                        Margin="16,0,0,0"
-                        Width="44"
-                        Height="20"
-                        Click="TogAppProxyOnly_Click"
-                        Style="{StaticResource P2rayToggle}"
-                        ToolTip="仅统计经本地代理端口的流量" />
                 </Grid>
 
                 <Border Padding="14,12" Style="{StaticResource P2rayCard}">

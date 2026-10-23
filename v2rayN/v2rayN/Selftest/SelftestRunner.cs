@@ -102,7 +102,7 @@ public static class SelftestRunner
             await GenerateTrafficAsync(port);
 
             // 统计服务每 20 秒才落盘一次，等不到就显式 flush，避免把"还没落盘"误判成"没统计"
-            await Task.Delay(8000);
+            await Task.Delay(25000);
             await ServiceLib.Services.TrafficStatService.Instance.FlushAsync();
 
             var after = await SumTrafficAsync();
@@ -112,9 +112,9 @@ public static class SelftestRunner
             result["trafficDownBefore"] = before.Down;
             result["trafficDownAfter"] = after.Down;
             result["trafficGrew"] = after.Down > before.Down;
-            result["etwSeen"] = ServiceLib.Services.AppStatService.Instance.DebugSeenEvents;
-            result["etwMatched"] = ServiceLib.Services.AppStatService.Instance.DebugMatchedEvents;
-            result["largestLoopback"] = ServiceLib.Services.AppStatService.Instance.DebugLargestEvents;
+            var appRows = await SQLiteHelper.Instance.TableAsync<ServiceLib.Models.Entities.AppStatItem>().ToListAsync();
+            result["appDownAfter"] = appRows.Sum(r => r.Down);
+            result["appNames"] = string.Join(",", appRows.Select(r => r.Key.Split('|').Last()));
             result["appRows"] = (await SQLiteHelper.Instance.TableAsync<ServiceLib.Models.Entities.AppStatItem>().ToListAsync()).Count;
             result["trafficRowsAfter"] = after.Rows;
 
@@ -171,7 +171,7 @@ public static class SelftestRunner
             var psi = new System.Diagnostics.ProcessStartInfo
             {
                 FileName = "curl.exe",
-                Arguments = $"-s -o NUL --socks5-hostname 127.0.0.1:{port} --max-time 30 https://speed.cloudflare.com/__down?bytes=4000000",
+                Arguments = $"-s -o NUL --socks5-hostname 127.0.0.1:{port} --limit-rate 250k --max-time 40 https://speed.cloudflare.com/__down?bytes=5000000",
                 UseShellExecute = false,
                 CreateNoWindow = true,
             };

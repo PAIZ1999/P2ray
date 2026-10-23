@@ -1,20 +1,20 @@
-using System.Diagnostics;
-using System.Security.Principal;
-using Microsoft.Diagnostics.Tracing.Parsers;
-using Microsoft.Diagnostics.Tracing.Session;
+using System.Text.Json;
 
 namespace ServiceLib.Services;
 
 /// <summary>
-/// 按进程统计流量，数据来自 ETW 的内核网络事件。
+/// 按进程统计**走代理**的流量。
 ///
-/// 为什么必须用 ETW：xray / sing-box 的统计都只有 inbound / outbound / 域名维度，
-/// 没有任何办法知道"是哪个程序"。Windows 也只有 ETW 的内核网络事件带 PID。
+/// 数据来源是 clash API 的 /connections：每条连接带 metadata.sourcePort 与
+/// 精确的 upload/download。把 sourcePort 映射到 PID（<see cref="PortProcessResolver"/>）
+/// 就得到"这个程序的这条连接用了多少字节"。
 ///
-/// 三条硬性约束，界面必须如实标注：
-/// 1. 需要管理员权限 —— 内核 provider 不是普通用户能订阅的；
-/// 2. 统计的是**全机流量**，含未经代理的直连，与「概览」页口径不同；
-/// 3. 只能拿到目标 IP 与端口，所以这里按**进程**聚合，不按域名。
+/// 为什么不用 ETW：实测 Windows 内核网络事件不上报回环连接的批量数据
+/// （4MB 传输时回环事件最大 52 字节），"按应用统计走代理流量"用 ETW 不成立。
+/// ETW 只能在"全机流量（含直连）"这个口径下工作，而那个口径回答不了
+/// "是谁在用代理"，所以这里整体换成 clash API。
+///
+/// 与「按域名」同源、同口径：仅代理，不含直连；内核为 xray 时无数据。
 /// </summary>
 public class AppStatService
 {
@@ -22,250 +22,193 @@ public class AppStatService
     private static readonly Lazy<AppStatService> _instance = new(() => new());
     public static AppStatService Instance => _instance.Value;
 
+    private static readonly TimeSpan PollInterval = TimeSpan.FromSeconds(1);
     private static readonly TimeSpan FlushInterval = TimeSpan.FromSeconds(5);
-    private const string SessionName = "P2ray-Kernel-Network";
 
     private readonly object _lock = new();
-    private readonly Dictionary<int, string> _pidNames = [];
+
+    /// <summary>连接 id → 上一轮读到的 (up, down)。</summary>
+    private readonly Dictionary<string, ConnState> _conns = [];
     private readonly Dictionary<string, (long Up, long Down)> _pending = [];
     private DateTime _lastFlush = DateTime.MinValue;
 
-    private TraceEventSession? _session;
-    private Thread? _thread;
-    private volatile bool _running;
-    private long _seenEvents;   // TEMPDBG
-    private long _matchedEvents;   // TEMPDBG
-    private readonly List<string> _largest = [];   // TEMPDBG
-    private string? _lastError;
+    private CancellationTokenSource? _cts;
 
-    /// <summary>是否具备运行条件（管理员）。</summary>
-    public static bool IsSupported
+    /// <summary>当前内核是否支持 clash API。</summary>
+    public static bool IsSupported => AppManager.Instance.RunningCoreType is ECoreType.mihomo or ECoreType.sing_box;
+
+    public static string UnsupportedHint => AppManager.Instance.RunningCoreType switch
     {
-        get
-        {
-            try
-            {
-                using var identity = WindowsIdentity.GetCurrent();
-                return new WindowsPrincipal(identity).IsInRole(WindowsBuiltInRole.Administrator);
-            }
-            catch
-            {
-                return false;
-            }
-        }
-    }
+        ECoreType.mihomo or ECoreType.sing_box => string.Empty,
+        ECoreType.Xray or ECoreType.v2fly or ECoreType.v2fly_v5 =>
+            "按应用统计与按域名同源，依赖 clash API；当前 Xray 内核不提供。切到 sing_box 或 mihomo 后可用。",
+        _ => "内核未运行。连接到 sing_box 或 mihomo 内核的节点后即可按应用统计。",
+    };
 
-    public static string UnsupportedHint => IsSupported
-        ? string.Empty
-        : "按应用统计需要管理员权限才能订阅内核网络事件。请以管理员身份重启 P2ray 后可用。";
-
-    /// <summary>启动 ETW 会话。重复调用是安全的。</summary>
     public void Start()
     {
-        if (_running)
+        Close();
+        _cts = new CancellationTokenSource();
+        var token = _cts.Token;
+
+        Task.Run(async () =>
         {
-            return;
-        }
-
-        if (!IsSupported)
-        {
-            _lastError = UnsupportedHint;
-            return;
-        }
-
-        try
-        {
-            // 清掉同名残留会话：进程被强杀时 ETW 会话会留在系统里（实测 Running），
-            // 之后新实例再订阅就收不到任何事件 —— 表现是按应用永远是空的。
-            StopStaleSession();
-
-            _session = new TraceEventSession(SessionName) { StopOnDispose = true };
-            _session.EnableKernelProvider(KernelTraceEventParser.Keywords.NetworkTCPIP);
-
-            _session.Source.Kernel.TcpIpRecv += data => Accumulate(data.ProcessID, 0, data.size, data.saddr?.ToString(), data.sport);
-            _session.Source.Kernel.TcpIpSend += data => Accumulate(data.ProcessID, data.size, 0, data.daddr?.ToString(), data.dport);
-
-            _running = true;
-            _thread = new Thread(() =>
+            using var timer = new PeriodicTimer(PollInterval);
+            while (!token.IsCancellationRequested && await timer.WaitForNextTickAsync(token).ConfigureAwait(false))
             {
                 try
                 {
-                    _session?.Source.Process();
+                    if (!IsSupported)
+                    {
+                        // 换内核后连接 id 全换了一批，旧快照留着会把"新连接"重复计入
+                        ResetSeen();
+                        continue;
+                    }
+
+                    var raw = await HttpClientHelper.Instance
+                        .TryGetAsync($"{Global.HttpProtocol}{Global.Loopback}:{AppManager.Instance.StatePort2}/connections", token)
+                        .ConfigureAwait(false);
+                    if (raw.IsNullOrEmpty())
+                    {
+                        continue;
+                    }
+
+                    Accumulate(raw!);
+                    MaybeFlush();
+                }
+                catch (OperationCanceledException) when (token.IsCancellationRequested)
+                {
+                    break;
                 }
                 catch (Exception ex)
                 {
-                    // 会话被系统回收（例如同名会话已存在）时这里会抛，
-                    // 记下来，界面据此说明而不是静默失效。
-                    _lastError = ex.Message;
-                    Logging.SaveLog($"{_tag}.Process", ex);
+                    Logging.SaveLog($"{_tag}.Poll", ex);
                 }
-                finally
-                {
-                    _running = false;
-                }
-            })
-            {
-                IsBackground = true,
-                Name = "P2ray-EtwNetwork",
-            };
-            _thread.Start();
-        }
-        catch (Exception ex)
-        {
-            _lastError = ex.Message;
-            Logging.SaveLog($"{_tag}.Start", ex);
-            _running = false;
-        }
+            }
+        }, token);
     }
 
     public void Close()
     {
         try
         {
-            _running = false;
-            _session?.Dispose();
-            _session = null;
-            Flush();
-        }
-        catch (Exception ex)
-        {
-            Logging.SaveLog($"{_tag}.Close", ex);
-        }
-    }
-
-    /// <summary>
-    /// 是否只统计走代理的流量。
-    ///
-    /// 判定依据很简单：走系统代理的程序，流量一定先发到本地代理端口
-    /// （应用 → 127.0.0.1:端口），回程同理。所以筛出「对端是回环地址且端口等于
-    /// 本地代理端口」的事件，就正好是经代理的那部分。
-    /// TUN 模式没有这段回环握手，此时该模式拿不到数据，需要提示用户。
-    /// </summary>
-    public bool ProxyOnly { get; set; } = true;
-
-    /// <summary>诊断用：ETW 收到的原始事件数（自检读取，不影响统计）。</summary>
-    public long DebugSeenEvents => _seenEvents;
-
-    /// <summary>诊断用：通过回环代理端口过滤后的事件数。</summary>
-    public long DebugMatchedEvents => _matchedEvents;
-
-    /// <summary>诊断：回环事件里最大的 5 条（addr/port/size），用于确认大流量走的是哪个端口。</summary>
-    public string DebugLargestEvents { get { lock (_lock) { return string.Join(" | ", _largest); } } }
-
-    private void TrackLargest(int pid, long size, string? addr, int port)   // TEMPDBG
-    {
-        if (!IsLoopback(addr) || size <= 0)
-        {
-            return;
-        }
-
-        lock (_lock)
-        {
-            if (_largest.Count >= 5)
-            {
-                return;
-            }
-
-            _largest.Add($"pid={pid} addr={addr} port={port} size={size}");
-        }
-    }
-
-    private static int ProxyPort()
-    {
-        try
-        {
-            return AppManager.Instance.GetLocalPort(EInboundProtocol.socks);
+            _cts?.Cancel();
+            _cts?.Dispose();
+            _cts = null;
         }
         catch
         {
-            return 0;
+            // 退出路径不该再抛
         }
     }
 
-    private static bool IsLoopback(string? addr)
-        => addr is not null
-           && (addr == "127.0.0.1" || addr == "::1" || addr.StartsWith("127.", StringComparison.Ordinal));
-
-    /// <summary>ETW 回调里不能做重活：只做内存加法。</summary>
-    private void Accumulate(int pid, long up, long down, string? addr, int port)
+    /// <summary>每条连接的追踪状态：端口、上次累计值、尚未归因到进程的字节。</summary>
+    private sealed class ConnState
     {
-        _seenEvents++;   // TEMPDBG
-        TrackLargest(pid, up + down, addr, port);   // TEMPDBG
-        if (ProxyOnly)
-        {
-            var proxyPort = ProxyPort();
-            if (proxyPort == 0 || port != proxyPort || !IsLoopback(addr))
-            {
-                return;
-            }
-        }
-        if (pid <= 0 || (up <= 0 && down <= 0))
+        public int Port;
+        public long LastUp;
+        public long LastDown;
+        public long PendingUp;
+        public long PendingDown;
+    }
+
+    private void Accumulate(string raw)
+    {
+        var list = ClashConnectionsParser.Parse(raw);
+        if (list.Count == 0)
         {
             return;
         }
 
-        var name = ResolveName(pid);
-        if (name.IsNullOrEmpty())
+        var today = DateTime.Now.ToString("yyyyMMdd");
+        var alive = new HashSet<string>();
+
+        foreach (var conn in list)
+        {
+            alive.Add(conn.Id);
+
+            ConnState state;
+            if (!_conns.TryGetValue(conn.Id, out state!))
+            {
+                // 第一次见到这条连接：把已有字节记为待归因（不是丢弃），
+                // 端口通常下一轮就能解析到进程名
+                state = new ConnState
+                {
+                    Port = conn.SourcePort,
+                    LastUp = 0,
+                    LastDown = 0,
+                    PendingUp = conn.Up,
+                    PendingDown = conn.Down,
+                };
+                _conns[conn.Id] = state;
+            }
+
+            var dUp = conn.Up >= state.LastUp ? conn.Up - state.LastUp : conn.Up;
+            var dDown = conn.Down >= state.LastDown ? conn.Down - state.LastDown : conn.Down;
+            state.LastUp = conn.Up;
+            state.LastDown = conn.Down;
+            if (state.Port == 0)
+            {
+                state.Port = conn.SourcePort;
+            }
+
+            state.PendingUp += dUp;
+            state.PendingDown += dDown;
+
+            if (state.PendingUp == 0 && state.PendingDown == 0)
+            {
+                continue;
+            }
+
+            var name = PortProcessResolver.Instance.Resolve(state.Port);
+            if (name.IsNullOrEmpty())
+            {
+                // 还解析不到进程：先留在这条连接上，下一轮再试（早期版本直接丢弃，
+                // 实测 4MB 只记到 195KB，就是这段被丢掉的）
+                continue;
+            }
+
+            var key = $"{today}|{name}";
+            lock (_lock)
+            {
+                var cur = _pending.TryGetValue(key, out var p) ? p : (0L, 0L);
+                _pending[key] = (cur.Item1 + state.PendingUp, cur.Item2 + state.PendingDown);
+            }
+
+            state.PendingUp = 0;
+            state.PendingDown = 0;
+        }
+
+        // 连接断开：它上面的待归因字节再试一次，然后丢弃状态
+        foreach (var id in _conns.Keys.Where(k => !alive.Contains(k)).ToList())
+        {
+            var state = _conns[id];
+            if (state.PendingUp > 0 || state.PendingDown > 0)
+            {
+                var name = PortProcessResolver.Instance.Resolve(state.Port);
+                if (name.IsNotEmpty())
+                {
+                    var key = $"{today}|{name}";
+                    lock (_lock)
+                    {
+                        var cur = _pending.TryGetValue(key, out var p) ? p : (0L, 0L);
+                        _pending[key] = (cur.Item1 + state.PendingUp, cur.Item2 + state.PendingDown);
+                    }
+                }
+            }
+
+            _conns.Remove(id);
+        }
+    }
+
+    private void MaybeFlush()
+    {
+        if (DateTime.Now - _lastFlush < FlushInterval)
         {
             return;
         }
 
-        _matchedEvents++;   // TEMPDBG
-        var key = $"{(ProxyOnly ? "p" : "a")}|{DateTime.Now:yyyyMMdd}|{name}";
-        var needFlush = false;
-        lock (_lock)
-        {
-            var cur = _pending.TryGetValue(key, out var p) ? p : (0L, 0L);
-            _pending[key] = (cur.Item1 + up, cur.Item2 + down);
-
-            if (DateTime.Now - _lastFlush >= FlushInterval)
-            {
-                needFlush = true;
-            }
-        }
-
-        // 锁外排落库：ETW 回调在热路径上，不能在这里做 IO；
-        // 同时也不能让 UI 线程取数据时抢不到锁。
-        if (needFlush)
-        {
-            _ = FlushAsync();
-        }
-    }
-
-    /// <summary>PID → 进程名。缓存起来：每包都查一次进程表会很慢。</summary>
-    private string? ResolveName(int pid)
-    {
-        lock (_lock)
-        {
-            if (_pidNames.TryGetValue(pid, out var cached))
-            {
-                return cached;
-            }
-        }
-
-        string name;
-        try
-        {
-            // 系统进程（pid 0/4）与已退出的进程直接跳过
-            using var proc = Process.GetProcessById(pid);
-            name = proc.ProcessName;
-        }
-        catch
-        {
-            return null;
-        }
-
-        if (name.IsNullOrEmpty())
-        {
-            return null;
-        }
-
-        lock (_lock)
-        {
-            _pidNames[pid] = name;
-        }
-
-        return name;
+        Flush();
     }
 
     public void Flush()
@@ -299,14 +242,14 @@ public class AppStatService
                     await SQLiteHelper.Instance.ReplaceAsync(new AppStatItem
                     {
                         Key = key,
-                        Up = delta.Item1,
-                        Down = delta.Item2,
+                        Up = delta.Up,
+                        Down = delta.Down,
                     });
                 }
                 else
                 {
-                    row.Up += delta.Item1;
-                    row.Down += delta.Item2;
+                    row.Up += delta.Up;
+                    row.Down += delta.Down;
                     await SQLiteHelper.Instance.ReplaceAsync(row);
                 }
             }
@@ -318,7 +261,7 @@ public class AppStatService
                 foreach (var (key, delta) in snapshot)
                 {
                     var cur = _pending.TryGetValue(key, out var p) ? p : (0L, 0L);
-                    _pending[key] = (cur.Item1 + delta.Item1, cur.Item2 + delta.Item2);
+                    _pending[key] = (cur.Item1 + delta.Up, cur.Item2 + delta.Down);
                 }
             }
 
@@ -334,23 +277,18 @@ public class AppStatService
         try
         {
             var from = DateTime.Now.AddDays(-(days - 1)).ToString("yyyyMMdd");
-            var modePrefix = ProxyOnly ? "p|" : "a|";
-            var table = SQLiteHelper.Instance.TableAsync<AppStatItem>();
-            var rows = await table.Where(t => t.Key != null).ToListAsync();
+            var rows = await SQLiteHelper.Instance.TableAsync<AppStatItem>().ToListAsync();
 
             var map = new Dictionary<string, AppStatItem>();
             foreach (var row in rows)
             {
-                // key 形如 "p|20261023|chrome"：第一段是口径，第二段是日期
-                var parts = row.Key.Split('|', 3);
-                if (parts.Length != 3
-                    || !string.Equals(parts[0], modePrefix[..1], StringComparison.Ordinal)
-                    || string.CompareOrdinal(parts[1], from) < 0)
+                var sep = row.Key.IndexOf('|');
+                if (sep <= 0 || string.CompareOrdinal(row.Key[..sep], from) < 0)
                 {
                     continue;
                 }
 
-                var name = parts[2];
+                var name = row.Key[(sep + 1)..];
                 if (!map.TryGetValue(name, out var agg))
                 {
                     agg = new AppStatItem { Key = name };
@@ -378,6 +316,7 @@ public class AppStatService
             lock (_lock)
             {
                 _pending.Clear();
+                _conns.Clear();
             }
         }
         catch (Exception ex)
@@ -386,28 +325,91 @@ public class AppStatService
         }
     }
 
-    /// <summary>运行状态说明：空串表示正常。</summary>
-    public string StatusHint => !IsSupported ? UnsupportedHint : (_lastError ?? string.Empty);
+    private void ResetSeen() => _conns.Clear();
 
-    /// <summary>停掉上次运行残留的同名 ETW 会话（logman 在 Windows 上自带）。</summary>
-    private static void StopStaleSession()
+    public string StatusHint => UnsupportedHint;
+}
+
+/// <summary>把 clash API 的 /connections 解析成归因所需的最小字段。</summary>
+public static class ClashConnectionsParser
+{
+    public readonly record struct Conn(string Id, int SourcePort, long Up, long Down);
+
+    public static List<Conn> Parse(string? json)
     {
+        var result = new List<Conn>();
+        if (json.IsNullOrEmpty())
+        {
+            return result;
+        }
+
         try
         {
-            using var proc = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            using var doc = JsonDocument.Parse(json!);
+            if (doc.RootElement.ValueKind != JsonValueKind.Object
+                || !doc.RootElement.TryGetProperty("connections", out var arr)
+                || arr.ValueKind != JsonValueKind.Array)
             {
-                FileName = "logman.exe",
-                Arguments = $"stop {SessionName} -ets",
-                UseShellExecute = false,
-                CreateNoWindow = true,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-            });
-            proc?.WaitForExit(3000);
+                return result;
+            }
+
+            foreach (var item in arr.EnumerateArray())
+            {
+                if (item.ValueKind != JsonValueKind.Object)
+                {
+                    continue;
+                }
+
+                var id = item.TryGetProperty("id", out var idEl) ? idEl.GetString() : null;
+                if (id.IsNullOrEmpty())
+                {
+                    continue;
+                }
+
+                var port = 0;
+                if (item.TryGetProperty("metadata", out var meta)
+                    && meta.ValueKind == JsonValueKind.Object
+                    && meta.TryGetProperty("sourcePort", out var sp))
+                {
+                    var text = sp.ValueKind switch
+                    {
+                        JsonValueKind.String => sp.GetString(),
+                        JsonValueKind.Number => sp.GetRawText(),
+                        _ => null,
+                    };
+                    if (text is not null)
+                    {
+                        int.TryParse(text, out port);
+                    }
+                }
+
+                result.Add(new Conn(
+                    id!,
+                    port,
+                    ReadLong(item, "upload"),
+                    ReadLong(item, "download")));
+            }
         }
-        catch (Exception ex)
+        catch (JsonException)
         {
-            Logging.SaveLog($"{_tag}.StopStaleSession", ex);
+            return [];
         }
+
+        return result;
+    }
+
+    private static long ReadLong(JsonElement parent, string name)
+    {
+        if (!parent.TryGetProperty(name, out var el))
+        {
+            return 0;
+        }
+
+        return el.ValueKind switch
+        {
+            JsonValueKind.Number when el.TryGetInt64(out var v) => v,
+            JsonValueKind.String when long.TryParse(el.GetString(), out var v) => v,
+            _ => 0,
+        };
     }
 }
