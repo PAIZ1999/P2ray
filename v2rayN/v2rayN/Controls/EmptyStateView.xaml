@@ -1,0 +1,40 @@
+<UserControl
+    x:Class="v2rayN.Controls.EmptyStateView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    d:DesignHeight="160"
+    d:DesignWidth="320"
+    mc:Ignorable="d">
+
+    <!-- 统一的空状态：图标 + 主文案 + 一句引导。
+         四个页面（流量 / 节点 / 订阅 / 路由规则）共用，避免各写一套样式。 -->
+    <StackPanel
+        MaxWidth="420"
+        HorizontalAlignment="Center"
+        VerticalAlignment="Center">
+        <materialDesign:PackIcon
+            x:Name="icoEmpty"
+            Width="28"
+            Height="28"
+            HorizontalAlignment="Center"
+            Foreground="{StaticResource P2rayTextTertiaryBrush}"
+            Kind="InboxOutline" />
+        <TextBlock
+            x:Name="txtTitle"
+            Margin="0,10,0,0"
+            HorizontalAlignment="Center"
+            Style="{StaticResource P2rayBody}"
+            Text="暂无内容"
+            TextAlignment="Center" />
+        <TextBlock
+            x:Name="txtHint"
+            Margin="0,4,0,0"
+            HorizontalAlignment="Center"
+            Style="{StaticResource P2rayMicro}"
+            TextAlignment="Center"
+            TextWrapping="Wrap" />
+    </StackPanel>
+</UserControl>

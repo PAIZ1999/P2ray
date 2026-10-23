@@ -523,6 +523,51 @@
         </Setter>
     </Style>
 
+    <!-- 单行输入框：与 P2rayComboBox 视觉一致（深底、圆角、1px 边框） -->
+    <Style x:Key="P2rayTextBox" TargetType="{x:Type TextBox}">
+        <Setter Property="Height" Value="28" />
+        <Setter Property="Padding" Value="10,0" />
+        <Setter Property="FontSize" Value="{StaticResource P2rayFontBody}" />
+        <Setter Property="Foreground" Value="{StaticResource P2rayTextPrimaryBrush}" />
+        <Setter Property="CaretBrush" Value="{StaticResource P2rayTextPrimaryBrush}" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type TextBox}">
+                    <Border
+                        x:Name="bd"
+                        Background="{StaticResource P2rayElevatedBrush}"
+                        BorderBrush="Transparent"
+                        BorderThickness="1"
+                        CornerRadius="{StaticResource P2rayRadiusS}">
+                        <ScrollViewer
+                            x:Name="PART_ContentHost"
+                            Margin="{TemplateBinding Padding}"
+                            VerticalAlignment="Center" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="bd" Property="BorderBrush" Value="{StaticResource P2rayBorderBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter TargetName="bd" Property="BorderBrush" Value="{StaticResource P2rayAccentBrush}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    <!-- 多行输入框（JSON / 规则编辑）：与单行同视觉，但不固定高度 -->
+    <Style x:Key="P2rayTextBoxArea" TargetType="{x:Type TextBox}" BasedOn="{StaticResource P2rayTextBox}">
+        <Setter Property="Height" Value="NaN" />
+        <Setter Property="AcceptsReturn" Value="True" />
+        <Setter Property="TextWrapping" Value="NoWrap" />
+        <Setter Property="VerticalContentAlignment" Value="Top" />
+        <Setter Property="VerticalScrollBarVisibility" Value="Auto" />
+        <Setter Property="HorizontalScrollBarVisibility" Value="Auto" />
+        <Setter Property="FontFamily" Value="Consolas, Cascadia Mono, monospace" />
+        <Setter Property="FontSize" Value="12" />
+    </Style>
     <Style x:Key="P2rayComboBox" TargetType="{x:Type ComboBox}">
         <Setter Property="Height" Value="28" />
         <Setter Property="MinWidth" Value="150" />
@@ -548,7 +593,7 @@
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
 
-                                <ContentPresenter
+                                <ContentPresenter x:Name="SelectedContent"
                                     Grid.Column="0"
                                     Margin="10,0,4,0"
                                     HorizontalAlignment="Left"
@@ -558,6 +603,19 @@
                                     ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
                                     ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"
                                     IsHitTestVisible="False" />
+
+                                    <!-- 可编辑模式：DNS 地址等允许手输，ComboBox 通过这个命名部件接管输入 -->
+                                    <TextBox
+                                        x:Name="PART_EditableTextBox"
+                                        Grid.Column="0"
+                                        Margin="10,0,4,0"
+                                        VerticalAlignment="Center"
+                                        Background="Transparent"
+                                        BorderThickness="0"
+                                        CaretBrush="{StaticResource P2rayTextPrimaryBrush}"
+                                        Foreground="{StaticResource P2rayTextPrimaryBrush}"
+                                        IsReadOnly="{TemplateBinding IsReadOnly}"
+                                        Visibility="Collapsed" />
 
                                 <materialDesign:PackIcon
                                     Grid.Column="1"
@@ -611,6 +669,10 @@
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter Property="Opacity" Value="0.4" />
+                        </Trigger>
+                        <Trigger Property="IsEditable" Value="True">
+                            <Setter TargetName="PART_EditableTextBox" Property="Visibility" Value="Visible" />
+                            <Setter TargetName="SelectedContent" Property="Visibility" Value="Collapsed" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

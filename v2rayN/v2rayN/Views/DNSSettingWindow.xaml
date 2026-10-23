@@ -126,7 +126,7 @@
                             Width="300"
                             Margin="{StaticResource Margin8}"
                             IsEditable="True"
-                            Style="{StaticResource DefComboBox}" />
+                            Style="{StaticResource P2rayComboBox}" />
                         <TextBlock
                             Grid.Row="1"
                             Grid.Column="2"
@@ -150,7 +150,7 @@
                             Width="300"
                             Margin="{StaticResource Margin8}"
                             IsEditable="True"
-                            Style="{StaticResource DefComboBox}" />
+                            Style="{StaticResource P2rayComboBox}" />
                         <TextBlock
                             Grid.Row="2"
                             Grid.Column="2"
@@ -174,7 +174,7 @@
                             Width="300"
                             Margin="{StaticResource Margin8}"
                             IsEditable="True"
-                            Style="{StaticResource DefComboBox}" />
+                            Style="{StaticResource P2rayComboBox}" />
                         <TextBlock
                             Grid.Row="3"
                             Grid.Column="2"
@@ -198,7 +198,7 @@
                             Width="200"
                             Margin="{StaticResource Margin8}"
                             materialDesign:HintAssist.Hint="Default"
-                            Style="{StaticResource DefComboBox}" />
+                            Style="{StaticResource P2rayComboBox}" />
                         <TextBlock
                             Grid.Row="5"
                             Grid.Column="2"
@@ -222,7 +222,7 @@
                             Width="200"
                             Margin="{StaticResource Margin8}"
                             materialDesign:HintAssist.Hint="Default"
-                            Style="{StaticResource DefComboBox}" />
+                            Style="{StaticResource P2rayComboBox}" />
                         <TextBlock
                             Grid.Row="6"
                             Grid.Column="2"
@@ -246,7 +246,7 @@
                             Width="200"
                             Margin="{StaticResource Margin8}"
                             materialDesign:HintAssist.Hint="Default"
-                            Style="{StaticResource DefComboBox}" />
+                            Style="{StaticResource P2rayComboBox}" />
                         <TextBlock
                             Grid.Row="7"
                             Grid.Column="2"
@@ -263,7 +263,7 @@
                             VerticalAlignment="Center"
                             Style="{StaticResource ToolbarTextBlock}"
                             Text="{x:Static resx:ResUI.TbParallelQuery}" />
-                        <ToggleButton
+                        <ToggleButton Style="{StaticResource P2rayToggle}"
                             x:Name="togParallelQuery"
                             Grid.Row="8"
                             Grid.Column="1"
@@ -277,7 +277,7 @@
                             VerticalAlignment="Center"
                             Style="{StaticResource ToolbarTextBlock}"
                             Text="{x:Static resx:ResUI.TbServeStale}" />
-                        <ToggleButton
+                        <ToggleButton Style="{StaticResource P2rayToggle}"
                             x:Name="togServeStale"
                             Grid.Row="9"
                             Grid.Column="1"
@@ -291,7 +291,7 @@
                             VerticalAlignment="Center"
                             Style="{StaticResource ToolbarTextBlock}"
                             Text="{x:Static resx:ResUI.TbEnableHappyEyeballs}" />
-                        <ToggleButton
+                        <ToggleButton Style="{StaticResource P2rayToggle}"
                             x:Name="togEnableHappyEyeballs"
                             Grid.Row="10"
                             Grid.Column="1"
@@ -345,7 +345,7 @@
                             VerticalAlignment="Center"
                             Style="{StaticResource ToolbarTextBlock}"
                             Text="{x:Static resx:ResUI.TbSettingsUseSystemHosts}" />
-                        <ToggleButton
+                        <ToggleButton Style="{StaticResource P2rayToggle}"
                             x:Name="togUseSystemHosts"
                             Grid.Row="1"
                             Grid.Column="1"
@@ -359,7 +359,7 @@
                             VerticalAlignment="Center"
                             Style="{StaticResource ToolbarTextBlock}"
                             Text="{x:Static resx:ResUI.TbAddCommonDNSHosts}" />
-                        <ToggleButton
+                        <ToggleButton Style="{StaticResource P2rayToggle}"
                             x:Name="togAddCommonHosts"
                             Grid.Row="2"
                             Grid.Column="1"
@@ -379,7 +379,7 @@
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
 
-                            <ToggleButton
+                            <ToggleButton Style="{StaticResource P2rayToggle}"
                                 x:Name="togFakeIP"
                                 Grid.Column="0"
                                 Margin="{StaticResource Margin8}"
@@ -390,7 +390,7 @@
                                 Margin="{StaticResource Margin8}"
                                 HorizontalAlignment="Stretch"
                                 IsEditable="True"
-                                Style="{StaticResource DefComboBox}" />
+                                Style="{StaticResource P2rayComboBox}" />
                         </Grid>
                         <TextBlock
                             Grid.Row="3"
@@ -408,7 +408,7 @@
                             VerticalAlignment="Center"
                             Style="{StaticResource ToolbarTextBlock}"
                             Text="{x:Static resx:ResUI.TbBlockSVCBHTTPSQueries}" />
-                        <ToggleButton
+                        <ToggleButton Style="{StaticResource P2rayToggle}"
                             x:Name="togBlockBindingQuery"
                             Grid.Row="4"
                             Grid.Column="1"
@@ -430,7 +430,7 @@
                             VerticalAlignment="Center"
                             Style="{StaticResource ToolbarTextBlock}"
                             Text="{x:Static resx:ResUI.TbBlockAAAAQueries}" />
-                        <ToggleButton
+                        <ToggleButton Style="{StaticResource P2rayToggle}"
                             x:Name="togBlockAAAAQuery"
                             Grid.Row="5"
                             Grid.Column="1"
@@ -459,7 +459,7 @@
                             Width="200"
                             Margin="{StaticResource Margin8}"
                             IsEditable="True"
-                            Style="{StaticResource DefComboBox}" />
+                            Style="{StaticResource P2rayComboBox}" />
                         <TextBlock
                             Grid.Row="6"
                             Grid.Column="2"
@@ -487,7 +487,7 @@
                             materialDesign:HintAssist.Hint="{x:Static resx:ResUI.TbDNSHostsConfig}"
                             AcceptsReturn="True"
                             BorderThickness="1"
-                            Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                            Style="{StaticResource P2rayTextBoxArea}"
                             TextWrapping="Wrap"
                             VerticalScrollBarVisibility="Auto" />
                     </Grid>
@@ -508,7 +508,7 @@
                                 VerticalAlignment="Center"
                                 Style="{StaticResource ToolbarTextBlock}"
                                 Text="{x:Static resx:ResUI.TbCustomDNSEnable}" />
-                            <ToggleButton
+                            <ToggleButton Style="{StaticResource P2rayToggle}"
                                 x:Name="togRayCustomDNSEnableCompatible"
                                 Margin="{StaticResource Margin8}"
                                 HorizontalAlignment="Left" />
@@ -539,7 +539,7 @@
                                 VerticalAlignment="Center"
                                 Style="{StaticResource ToolbarTextBlock}"
                                 Text="{x:Static resx:ResUI.TbSettingsUseSystemHosts}" />
-                            <ToggleButton
+                            <ToggleButton Style="{StaticResource P2rayToggle}"
                                 x:Name="togUseSystemHostsCompatible"
                                 Margin="{StaticResource Margin8}"
                                 HorizontalAlignment="Left" />
@@ -551,11 +551,11 @@
                                 VerticalAlignment="Center"
                                 Style="{StaticResource ToolbarTextBlock}"
                                 Text="{x:Static resx:ResUI.TbSettingsDomainStrategy4Freedom}" />
-                            <ComboBox
+                            <ComboBox IsEditable="True"
                                 x:Name="cmbdomainStrategy4FreedomCompatible"
                                 Width="150"
                                 Margin="{StaticResource Margin8}"
-                                Style="{StaticResource DefComboBox}" />
+                                Style="{StaticResource P2rayComboBox}" />
                         </StackPanel>
 
                         <StackPanel Orientation="Horizontal">
@@ -569,7 +569,7 @@
                                 Width="150"
                                 Margin="{StaticResource Margin8}"
                                 IsEditable="True"
-                                Style="{StaticResource DefComboBox}" />
+                                Style="{StaticResource P2rayComboBox}" />
                         </StackPanel>
                     </WrapPanel>
 
@@ -587,7 +587,7 @@
                             materialDesign:HintAssist.Hint="HTTP/SOCKS"
                             AcceptsReturn="True"
                             BorderThickness="1"
-                            Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                            Style="{StaticResource P2rayTextBoxArea}"
                             TextWrapping="Wrap"
                             VerticalScrollBarVisibility="Auto" />
 
@@ -600,7 +600,7 @@
                             materialDesign:HintAssist.Hint="{x:Static resx:ResUI.TbSettingsTunMode}"
                             AcceptsReturn="True"
                             BorderThickness="1"
-                            Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                            Style="{StaticResource P2rayTextBoxArea}"
                             TextWrapping="Wrap"
                             VerticalScrollBarVisibility="Auto" />
                     </Grid>
@@ -621,7 +621,7 @@
                                 VerticalAlignment="Center"
                                 Style="{StaticResource ToolbarTextBlock}"
                                 Text="{x:Static resx:ResUI.TbCustomDNSEnable}" />
-                            <ToggleButton
+                            <ToggleButton Style="{StaticResource P2rayToggle}"
                                 x:Name="togSBCustomDNSEnableCompatible"
                                 Margin="{StaticResource Margin8}"
                                 HorizontalAlignment="Left" />
@@ -652,11 +652,11 @@
                                 VerticalAlignment="Center"
                                 Style="{StaticResource ToolbarTextBlock}"
                                 Text="{x:Static resx:ResUI.TbSettingsDomainStrategy4Out}" />
-                            <ComboBox
+                            <ComboBox IsEditable="True"
                                 x:Name="cmbdomainStrategy4OutCompatible"
                                 Width="150"
                                 Margin="{StaticResource Margin8}"
-                                Style="{StaticResource DefComboBox}" />
+                                Style="{StaticResource P2rayComboBox}" />
                         </StackPanel>
 
                         <StackPanel Orientation="Horizontal">
@@ -670,7 +670,7 @@
                                 Width="150"
                                 Margin="{StaticResource Margin8}"
                                 IsEditable="True"
-                                Style="{StaticResource DefComboBox}" />
+                                Style="{StaticResource P2rayComboBox}" />
                         </StackPanel>
                     </WrapPanel>
 
@@ -688,7 +688,7 @@
                             materialDesign:HintAssist.Hint="HTTP/SOCKS"
                             AcceptsReturn="True"
                             BorderThickness="1"
-                            Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                            Style="{StaticResource P2rayTextBoxArea}"
                             TextWrapping="Wrap"
                             VerticalScrollBarVisibility="Auto" />
 
@@ -701,7 +701,7 @@
                             materialDesign:HintAssist.Hint="{x:Static resx:ResUI.TbSettingsTunMode}"
                             AcceptsReturn="True"
                             BorderThickness="1"
-                            Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                            Style="{StaticResource P2rayTextBoxArea}"
                             TextWrapping="Wrap"
                             VerticalScrollBarVisibility="Auto" />
                     </Grid>

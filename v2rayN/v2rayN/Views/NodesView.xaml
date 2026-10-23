@@ -3,6 +3,7 @@
     x:TypeArguments="vms:DashboardViewModel"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="clr-namespace:v2rayN.Controls"
     xmlns:conv="clr-namespace:v2rayN.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
@@ -256,13 +257,14 @@
                     </ListBox.ItemTemplate>
                 </ListBox>
 
-                <TextBlock
+                <controls:EmptyStateView
                     x:Name="txtEmpty"
                     Grid.Row="1"
                     HorizontalAlignment="Center"
                     VerticalAlignment="Center"
-                    Style="{StaticResource P2rayCaption}"
-                    Text="暂无节点。从剪贴板导入分享链接，或在首页更新订阅。" />
+                    Hint="从剪贴板导入分享链接，或在首页更新订阅"
+                    Icon="ServerNetworkOutline"
+                    Title="还没有节点" />
             </Grid>
         </Border>
     </DockPanel>
