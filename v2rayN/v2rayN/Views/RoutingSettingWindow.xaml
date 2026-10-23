@@ -95,7 +95,7 @@
                     Grid.Column="0"
                     VerticalAlignment="Center"
                     Style="{StaticResource P2rayBody}">
-                    <Hyperlink Click="linkdomainStrategy_Click">
+                    <Hyperlink Click="linkdomainStrategy_Click" Foreground="{StaticResource P2rayAccentTextBrush}">
                         <Run Text="{x:Static resx:ResUI.TbdomainStrategy}" />
                     </Hyperlink>
                 </TextBlock>
@@ -112,7 +112,7 @@
                     Margin="0,10,0,0"
                     VerticalAlignment="Center"
                     Style="{StaticResource P2rayBody}">
-                    <Hyperlink Click="linkdomainStrategy4Singbox_Click">
+                    <Hyperlink Click="linkdomainStrategy4Singbox_Click" Foreground="{StaticResource P2rayAccentTextBrush}">
                         <Run Text="{x:Static resx:ResUI.TbdomainStrategy4Singbox}" />
                     </Hyperlink>
                 </TextBlock>
@@ -133,11 +133,7 @@
 
         <!-- 规则列表 -->
         <Border Grid.Row="3" Style="{StaticResource P2rayCard}">
-            <TabControl
-                x:Name="tabAdvanced"
-                Background="Transparent"
-                BorderThickness="0">
-                <TabItem Header="{x:Static resx:ResUI.TbRoutingTabRuleList}">
+            <Grid>
                     <DataGrid
                         x:Name="lstRoutings"                        ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                         AutoGenerateColumns="False"
@@ -257,8 +253,26 @@
                                 Header="{x:Static resx:ResUI.LvCustomIcon}" />
                         </DataGrid.Columns>
                     </DataGrid>
-                </TabItem>
-            </TabControl>
+
+                <!-- 空状态：列表为空时给一句引导，避免大片留白 -->
+                <TextBlock
+                    x:Name="txtEmptyRules"
+                    Margin="0,40,0,0"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Top"
+                    Text="还没有规则集。点右上角「添加规则集」，或从模板一键导入。">
+                    <TextBlock.Style>
+                        <Style BasedOn="{StaticResource P2rayMicro}" TargetType="TextBlock">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding ElementName=lstRoutings, Path=HasItems}" Value="False">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+            </Grid>
         </Border>
     </Grid>
 </base:WindowBase>
