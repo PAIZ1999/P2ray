@@ -23,161 +23,242 @@
             <BooleanToVisibilityConverter x:Key="BoolToVisConverter" />
         </ResourceDictionary>
     </Window.Resources>
-    <DockPanel>
-        <ToolBarTray DockPanel.Dock="Top">
-            <ToolBar
-                HorizontalAlignment="Center"
+
+    <!-- 内容层改为 P2ray 风格：分组卡片 + 顶部操作 + 自绘行高亮。
+         窗口外框（标题栏/缩放）仍走 WindowGlobal，与其它窗口保持一致。 -->
+    <Grid Margin="20,16,20,18">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- 标题 + 顶部操作 -->
+        <Grid Grid.Row="0" Margin="0,0,0,16">
+            <StackPanel VerticalAlignment="Center">
+                <TextBlock Style="{StaticResource P2rayH1}" Text="{x:Static resx:ResUI.menuRoutingSetting}" />
+                <TextBlock
+                    Margin="0,3,0,0"
+                    Style="{StaticResource P2rayMicro}"
+                    Text="决定哪些流量走代理、哪些直连。列表从上到下匹配，先命中先生效。" />
+            </StackPanel>
+
+            <StackPanel
+                HorizontalAlignment="Right"
                 VerticalAlignment="Center"
-                ClipToBounds="True"
-                Style="{StaticResource MaterialDesignToolBar}">
-                <Button x:Name="menuRoutingAdvancedAdd2">
+                Orientation="Horizontal">
+                <Button
+                    x:Name="menuRoutingAdvancedAdd2"
+                    Style="{StaticResource P2raySecondaryButton}">
                     <StackPanel Orientation="Horizontal">
                         <materialDesign:PackIcon
-                            Margin="{StaticResource MarginRight8}"
+                            Width="13"
+                            Height="13"
+                            Margin="0,0,6,0"
                             VerticalAlignment="Center"
                             Kind="Plus" />
-                        <TextBlock Style="{StaticResource ToolbarTextBlock}" Text="{x:Static resx:ResUI.menuRoutingAdvancedAdd}" />
+                        <TextBlock VerticalAlignment="Center" Text="{x:Static resx:ResUI.menuRoutingAdvancedAdd}" />
                     </StackPanel>
                 </Button>
-                <Separator />
-                <Button x:Name="menuRoutingAdvancedImportRules2">
+                <Button
+                    x:Name="menuRoutingAdvancedImportRules2"
+                    Margin="8,0,0,0"
+                    Style="{StaticResource P2raySecondaryButton}">
                     <StackPanel Orientation="Horizontal">
                         <materialDesign:PackIcon
-                            Margin="{StaticResource MarginRight8}"
+                            Width="13"
+                            Height="13"
+                            Margin="0,0,6,0"
                             VerticalAlignment="Center"
                             Kind="Import" />
-                        <TextBlock Style="{StaticResource ToolbarTextBlock}" Text="{x:Static resx:ResUI.menuRoutingAdvancedImportRules}" />
+                        <TextBlock VerticalAlignment="Center" Text="{x:Static resx:ResUI.menuRoutingAdvancedImportRules}" />
                     </StackPanel>
                 </Button>
-            </ToolBar>
-        </ToolBarTray>
-
-        <Grid Margin="{StaticResource Margin8}" DockPanel.Dock="Top">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-            </Grid.RowDefinitions>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
-
-            <TextBlock
-                Grid.Row="0"
-                Grid.Column="0"
-                Margin="{StaticResource Margin4}"
-                VerticalAlignment="Center"
-                Style="{StaticResource ToolbarTextBlock}">
-                <Hyperlink Click="linkdomainStrategy_Click">
-                    <TextBlock Text="{x:Static resx:ResUI.TbdomainStrategy}" />
-                    <materialDesign:PackIcon Kind="Link" />
-                </Hyperlink>
-            </TextBlock>
-            <ComboBox
-                x:Name="cmbdomainStrategy"
-                Grid.Row="0"
-                Grid.Column="1"
-                Width="300"
-                Margin="{StaticResource Margin4}"
-                Style="{StaticResource DefComboBox}" />
-
-            <TextBlock
-                Grid.Row="1"
-                Grid.Column="0"
-                Margin="{StaticResource Margin4}"
-                VerticalAlignment="Center"
-                Style="{StaticResource ToolbarTextBlock}">
-                <Hyperlink Click="linkdomainStrategy4Singbox_Click">
-                    <TextBlock Text="{x:Static resx:ResUI.TbdomainStrategy4Singbox}" />
-                    <materialDesign:PackIcon Kind="Link" />
-                </Hyperlink>
-            </TextBlock>
-            <ComboBox
-                x:Name="cmbdomainStrategy4Singbox"
-                Grid.Row="1"
-                Grid.Column="1"
-                Width="300"
-                Margin="{StaticResource Margin4}"
-                Style="{StaticResource DefComboBox}" />
+            </StackPanel>
         </Grid>
 
-        <TabControl x:Name="tabAdvanced">
-            <TabItem HorizontalAlignment="Left" Header="{x:Static resx:ResUI.TbRoutingTabRuleList}">
-                <DataGrid
-                    x:Name="lstRoutings"
-                    AutoGenerateColumns="False"
-                    BorderThickness="1"
-                    CanUserAddRows="False"
-                    CanUserResizeRows="False"
-                    CanUserSortColumns="False"
-                    EnableRowVirtualization="True"
-                    GridLinesVisibility="All"
-                    HeadersVisibility="Column"
-                    IsReadOnly="True"
-                    Style="{StaticResource DefDataGrid}">
-                    <DataGrid.ContextMenu>
-                        <ContextMenu Style="{StaticResource DefContextMenu}">
-                            <MenuItem
-                                x:Name="menuRoutingAdvancedAdd"
-                                Height="{StaticResource MenuItemHeight}"
-                                Header="{x:Static resx:ResUI.menuRoutingAdvancedAdd}" />
-                            <MenuItem
-                                x:Name="menuRoutingAdvancedRemove"
-                                Height="{StaticResource MenuItemHeight}"
-                                Header="{x:Static resx:ResUI.menuRoutingAdvancedRemove}"
-                                InputGestureText="Back" />
-                            <MenuItem
-                                x:Name="menuRoutingAdvancedSelectAll"
-                                Height="{StaticResource MenuItemHeight}"
-                                Header="{x:Static resx:ResUI.menuSelectAll}"
-                                InputGestureText="Ctrl+A" />
-                            <MenuItem
-                                x:Name="menuRoutingAdvancedSetDefault"
-                                Height="{StaticResource MenuItemHeight}"
-                                Header="{x:Static resx:ResUI.menuRoutingAdvancedSetDefault}"
-                                InputGestureText="Enter" />
-                            <Separator />
-                            <MenuItem
-                                x:Name="menuRoutingAdvancedImportRules"
-                                Height="{StaticResource MenuItemHeight}"
-                                Header="{x:Static resx:ResUI.menuRoutingAdvancedImportRules}" />
-                        </ContextMenu>
-                    </DataGrid.ContextMenu>
-                    <DataGrid.Resources>
-                        <Style BasedOn="{StaticResource MaterialDesignDataGridCell}" TargetType="DataGridCell">
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding IsActive}" Value="True">
-                                    <Setter Property="Background" Value="{DynamicResource MaterialDesign.Brush.Primary.Light}" />
-                                    <Setter Property="Foreground" Value="Black" />
-                                    <Setter Property="BorderBrush" Value="{DynamicResource MaterialDesign.Brush.Primary.Light}" />
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </DataGrid.Resources>
-                    <DataGrid.Columns>
-                        <DataGridTextColumn
-                            Width="*"
-                            Binding="{Binding Remarks}"
-                            Header="{x:Static resx:ResUI.LvRemarks}" />
-                        <DataGridTextColumn
-                            Width="60"
-                            Binding="{Binding RuleNum}"
-                            Header="{x:Static resx:ResUI.LvCount}" />
-                        <DataGridTextColumn
-                            Width="60"
-                            Binding="{Binding Sort}"
-                            Header="{x:Static resx:ResUI.LvSort}" />
-                        <DataGridTextColumn
-                            Width="*"
-                            Binding="{Binding Url}"
-                            Header="{x:Static resx:ResUI.LvUrl}" />
-                        <DataGridTextColumn
-                            Width="300"
-                            Binding="{Binding CustomIcon}"
-                            Header="{x:Static resx:ResUI.LvCustomIcon}" />
-                    </DataGrid.Columns>
-                </DataGrid>
-            </TabItem>
-        </TabControl>
-    </DockPanel>
+        <!-- 域名解析策略 -->
+        <Border Grid.Row="1" Margin="0,0,0,14" Style="{StaticResource P2rayCard}">
+            <Grid Margin="16,12">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="320" />
+                </Grid.ColumnDefinitions>
+
+                <TextBlock
+                    Grid.Row="0"
+                    Grid.Column="0"
+                    VerticalAlignment="Center"
+                    Style="{StaticResource P2rayBody}">
+                    <Hyperlink Click="linkdomainStrategy_Click">
+                        <Run Text="{x:Static resx:ResUI.TbdomainStrategy}" />
+                    </Hyperlink>
+                </TextBlock>
+                <ComboBox
+                    x:Name="cmbdomainStrategy"
+                    Grid.Row="0"
+                    Grid.Column="1"
+                    Margin="12,0,0,0"
+                    Style="{StaticResource P2rayComboBox}" />
+
+                <TextBlock
+                    Grid.Row="1"
+                    Grid.Column="0"
+                    Margin="0,10,0,0"
+                    VerticalAlignment="Center"
+                    Style="{StaticResource P2rayBody}">
+                    <Hyperlink Click="linkdomainStrategy4Singbox_Click">
+                        <Run Text="{x:Static resx:ResUI.TbdomainStrategy4Singbox}" />
+                    </Hyperlink>
+                </TextBlock>
+                <ComboBox
+                    x:Name="cmbdomainStrategy4Singbox"
+                    Grid.Row="1"
+                    Grid.Column="1"
+                    Margin="12,10,0,0"
+                    Style="{StaticResource P2rayComboBox}" />
+            </Grid>
+        </Border>
+
+        <TextBlock
+            Grid.Row="2"
+            Margin="0,0,0,8"
+            Style="{StaticResource P2raySectionLabel}"
+            Text="{x:Static resx:ResUI.TbRoutingTabRuleList}" />
+
+        <!-- 规则列表 -->
+        <Border Grid.Row="3" Style="{StaticResource P2rayCard}">
+            <TabControl
+                x:Name="tabAdvanced"
+                Background="Transparent"
+                BorderThickness="0">
+                <TabItem Header="{x:Static resx:ResUI.TbRoutingTabRuleList}">
+                    <DataGrid
+                        x:Name="lstRoutings"
+                        AutoGenerateColumns="False"
+                        BorderThickness="0"
+                        CanUserAddRows="False"
+                        CanUserResizeRows="False"
+                        CanUserSortColumns="False"
+                        EnableRowVirtualization="True"
+                        GridLinesVisibility="None"
+                        HeadersVisibility="Column"
+                        IsReadOnly="True"
+                        Background="Transparent"
+                        BorderBrush="{StaticResource P2rayDividerBrush}"
+                        ColumnHeaderHeight="34"
+                        Foreground="{StaticResource P2rayTextPrimaryBrush}"
+                        RowHeight="38"
+                        RowBackground="Transparent"
+                        AlternatingRowBackground="Transparent"
+                        SelectionMode="Single">
+                        <DataGrid.ContextMenu>
+                            <ContextMenu Style="{StaticResource DefContextMenu}">
+                                <MenuItem
+                                    x:Name="menuRoutingAdvancedAdd"
+                                    Height="{StaticResource MenuItemHeight}"
+                                    Header="{x:Static resx:ResUI.menuRoutingAdvancedAdd}" />
+                                <MenuItem
+                                    x:Name="menuRoutingAdvancedRemove"
+                                    Height="{StaticResource MenuItemHeight}"
+                                    Header="{x:Static resx:ResUI.menuRoutingAdvancedRemove}"
+                                    InputGestureText="Back" />
+                                <MenuItem
+                                    x:Name="menuRoutingAdvancedSelectAll"
+                                    Height="{StaticResource MenuItemHeight}"
+                                    Header="{x:Static resx:ResUI.menuSelectAll}"
+                                    InputGestureText="Ctrl+A" />
+                                <MenuItem
+                                    x:Name="menuRoutingAdvancedSetDefault"
+                                    Height="{StaticResource MenuItemHeight}"
+                                    Header="{x:Static resx:ResUI.menuRoutingAdvancedSetDefault}"
+                                    InputGestureText="Enter" />
+                                <Separator />
+                                <MenuItem
+                                    x:Name="menuRoutingAdvancedImportRules"
+                                    Height="{StaticResource MenuItemHeight}"
+                                    Header="{x:Static resx:ResUI.menuRoutingAdvancedImportRules}" />
+                            </ContextMenu>
+                        </DataGrid.ContextMenu>
+                        <DataGrid.Resources>
+                            <!-- 当前生效的规则用强调色标出，替代原来 MaterialDesign 的主色单元格 -->
+                            <Style TargetType="DataGridCell">
+                                <Setter Property="Background" Value="Transparent" />
+                                <Setter Property="BorderThickness" Value="0" />
+                                <Setter Property="Padding" Value="10,0" />
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="DataGridCell">
+                                            <Border
+                                                x:Name="cell"
+                                                Padding="{TemplateBinding Padding}"
+                                                Background="{TemplateBinding Background}"
+                                                SnapsToDevicePixels="True">
+                                                <ContentPresenter VerticalAlignment="Center" />
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <DataTrigger Binding="{Binding IsActive}" Value="True">
+                                                    <Setter TargetName="cell" Property="Background" Value="{StaticResource P2rayAccentSoftBrush}" />
+                                                </DataTrigger>
+                                                <Trigger Property="IsSelected" Value="True">
+                                                    <Setter TargetName="cell" Property="Background" Value="{StaticResource P2rayHoverBrush}" />
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                            <Style TargetType="DataGridColumnHeader">
+                                <Setter Property="Background" Value="Transparent" />
+                                <Setter Property="Foreground" Value="{StaticResource P2rayTextTertiaryBrush}" />
+                                <Setter Property="FontSize" Value="11" />
+                                <Setter Property="FontWeight" Value="Normal" />
+                                <Setter Property="Padding" Value="10,0" />
+                                <Setter Property="BorderThickness" Value="0,0,0,1" />
+                                <Setter Property="BorderBrush" Value="{StaticResource P2rayDividerBrush}" />
+                                <Setter Property="HorizontalContentAlignment" Value="Left" />
+                                <Setter Property="VerticalContentAlignment" Value="Center" />
+                            </Style>
+                            <Style TargetType="DataGridRow">
+                                <Setter Property="Background" Value="Transparent" />
+                                <Setter Property="Foreground" Value="{StaticResource P2rayTextPrimaryBrush}" />
+                                <Style.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="{StaticResource P2rayHoverBrush}" />
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </DataGrid.Resources>
+                        <DataGrid.Columns>
+                            <DataGridTextColumn
+                                Width="*"
+                                Binding="{Binding Remarks}"
+                                Header="{x:Static resx:ResUI.LvRemarks}" />
+                            <DataGridTextColumn
+                                Width="70"
+                                Binding="{Binding RuleNum}"
+                                Header="{x:Static resx:ResUI.LvCount}" />
+                            <DataGridTextColumn
+                                Width="70"
+                                Binding="{Binding Sort}"
+                                Header="{x:Static resx:ResUI.LvSort}" />
+                            <DataGridTextColumn
+                                Width="*"
+                                Binding="{Binding Url}"
+                                Header="{x:Static resx:ResUI.LvUrl}" />
+                            <DataGridTextColumn
+                                Width="260"
+                                Binding="{Binding CustomIcon}"
+                                Header="{x:Static resx:ResUI.LvCustomIcon}" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </TabItem>
+            </TabControl>
+        </Border>
+    </Grid>
 </base:WindowBase>
