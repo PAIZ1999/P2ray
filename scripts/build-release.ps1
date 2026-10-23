@@ -94,8 +94,29 @@ if ($preservedConfig) {
 }
 if (Test-Path $OutDir) {
     Write-Host "清理旧产物..." -ForegroundColor DarkGray
-    Remove-Item $OutDir -Recurse -Force
+    try {
+        Remove-Item $OutDir -Recurse -Force -ErrorAction Stop
+    }
+    catch {
+        # 最常见的原因：还有内核进程在跑，锁住了 bin 下的 exe
+        $running = Get-Process -ErrorAction SilentlyContinue |
+            Where-Object { $_.ProcessName -match 'mihomo|sing-box|xray' } |
+            Select-Object -ExpandProperty ProcessName -Unique
+        if ($running) {
+            throw "无法清理产物目录：以下内核进程仍在运行，请先退出 —— $($running -join ', ')。原始错误：$($_.Exception.Message)"
+        }
+        throw
+    }
 }
+# 构建中途失败也要把用户配置还原，否则配置会留在临时目录里、dist 变空。
+trap {
+    if ($preservedConfig) {
+        Restore-P2rayUserConfig -OutDir $OutDir -Stash $preservedConfig | Out-Null
+        Write-Host "构建失败，已还原用户配置 (guiConfigs)" -ForegroundColor Yellow
+    }
+    throw
+}
+
 New-Item -ItemType Directory -Path $OutDir -Force | Out-Null
 
 # ---------------------------------------------------------------------------
