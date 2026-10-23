@@ -66,7 +66,8 @@ public partial class App
             _ = Task.Run(async () =>
             {
                 var code = await Selftest.SelftestRunner.RunAsync(e.Args);
-                Shutdown(code);
+                // Shutdown 必须在 UI 线程执行，否则不会真正退出
+                Dispatcher.Invoke(() => Shutdown(code));
             });
         }
     }

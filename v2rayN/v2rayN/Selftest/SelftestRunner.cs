@@ -4,6 +4,7 @@ using System.Text.Json;
 using ServiceLib;
 using ServiceLib.Common;
 using ServiceLib.Helper;
+using ServiceLib.Handler.Builder;
 using ServiceLib.Manager;
 using ServiceLib.ViewModels;
 
@@ -45,16 +46,27 @@ public static class SelftestRunner
             result["indexId"] = first.IndexId;
             result["coreTypeVless"] = cfg.CoreTypeItem?.FirstOrDefault(t => t.ConfigType == EConfigType.VLESS)?.CoreType.ToString();
 
-            // 2) 用和界面「连接」按钮同一条命令启动内核。
-            //    必须在 UI 线程执行：命令内部会改 ReactiveUI 属性，进而更新控件；
-            //    在后台线程调用会抛"调用线程无法访问此对象"（已实测）。
-            //    注意 Dispatcher.InvokeAsync 传 async 委托时返回的是 Task 的 Task，
-            //    要 await 两次才能真正等到命令结束，否则会误判为"已发起"。
-            var op = System.Windows.Application.Current.Dispatcher.InvokeAsync(
-                () => StatusBarViewModel.Instance.SystemProxySetCmd.Execute().FirstOrDefaultAsync());
-            await await op;
-            result["connectIssuedMs"] = sw.ElapsedMilliseconds;
+            // 2) 不经过 UI 的 ViewModel，直接走 CoreManager（和 MainWindowViewModel.Reload 同一套）。
+            //    之前试过调用 StatusBarViewModel 的命令：后台线程调用会抛跨线程异常，
+            //    回到 UI 线程又因数据库异步而挂起 —— 两条路都不通。
+            var profile = await ConfigHandler.GetDefaultServer(cfg);
+            if (profile is null)
+            {
+                result["error"] = "GetDefaultServer 返回空";
+                return await FinishAsync(outPath, result, 5);
+            }
 
+            var all = await CoreConfigContextBuilder.BuildAll(cfg, profile);
+            result["contextBuilt"] = all.Success;
+            if (!all.Success)
+            {
+                result["contextErrors"] = string.Join("; ", all.CombinedValidatorResult.Errors.Select(e => e.ToString()));
+                return await FinishAsync(outPath, result, 6);
+            }
+
+            await CoreManager.Instance.Init(cfg, (_, _) => Task.CompletedTask);
+            await CoreManager.Instance.LoadCore(all.MainResult.Context, all.PreSocksResult?.Context);
+            result["loadCoreDone"] = true;
             // 3) 等内核起来（本地端口开始监听）
             var port = AppManager.Instance.GetLocalPort(EInboundProtocol.socks);
             var listening = false;
@@ -79,16 +91,30 @@ public static class SelftestRunner
             }
 
             // 4) 产生一些流量：走本地代理端口下载，验证统计链路
-            var before = await CountTrafficRowsAsync();
+            // 诊断：确认 clash API 可达，并记录内核自报的累计值
+            var statePort = AppManager.Instance.StatePort2;
+            result["statePort"] = statePort;
+            var clashBefore = await ReadClashTotalsAsync(statePort);
+            result["clashDownBefore"] = clashBefore?.Down;
+            result["clashUpBefore"] = clashBefore?.Up;
+
+            var before = await SumTrafficAsync();
             await GenerateTrafficAsync(port);
-            await Task.Delay(6000);
-            var after = await CountTrafficRowsAsync();
 
-            result["trafficRowsBefore"] = before;
-            result["trafficRowsAfter"] = after;
-            result["trafficRowsGrew"] = after > before;
+            // 统计服务每 20 秒才落盘一次，等不到就显式 flush，避免把"还没落盘"误判成"没统计"
+            await Task.Delay(8000);
+            await ServiceLib.Services.TrafficStatService.Instance.FlushAsync();
 
-            return await FinishAsync(outPath, result, after > before ? 0 : 4);
+            var after = await SumTrafficAsync();
+            result["clashDownAfter"] = (await ReadClashTotalsAsync(statePort))?.Down;
+
+            // 诊断：统计服务用的是 HttpClientHelper，确认它能不能拿到同一份数据
+            result["trafficDownBefore"] = before.Down;
+            result["trafficDownAfter"] = after.Down;
+            result["trafficGrew"] = after.Down > before.Down;
+            result["trafficRowsAfter"] = after.Rows;
+
+            return await FinishAsync(outPath, result, after.Down > before.Down ? 0 : 4);
         }
         catch (Exception ex)
         {
@@ -137,17 +163,51 @@ public static class SelftestRunner
     {
         try
         {
-            using var handler = new HttpClientHandler
+            // 用系统自带 curl：HttpClient 的 socks5 代理在部分环境下不生效（实测没有产生流量）
+            var psi = new System.Diagnostics.ProcessStartInfo
             {
-                Proxy = new System.Net.WebProxy($"socks5://127.0.0.1:{port}"),
-                UseProxy = true,
+                FileName = "curl.exe",
+                Arguments = $"-s -o NUL --socks5-hostname 127.0.0.1:{port} --max-time 30 https://speed.cloudflare.com/__down?bytes=4000000",
+                UseShellExecute = false,
+                CreateNoWindow = true,
             };
-            using var client = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(20) };
-            await client.GetStringAsync("https://speed.cloudflare.com/__down?bytes=2000000");
+            using var proc = System.Diagnostics.Process.Start(psi);
+            if (proc is not null)
+            {
+                await proc.WaitForExitAsync();
+            }
         }
         catch (Exception ex)
         {
             Logging.SaveLog("selftest.GenerateTraffic", ex);
+        }
+    }
+
+    /// <summary>直接问 clash API 要累计值，用来区分"内核没流量"和"统计没记录"。</summary>
+    private static async Task<(long Up, long Down)?> ReadClashTotalsAsync(int statePort)
+    {
+        try
+        {
+            using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(5) };
+            var json = await client.GetStringAsync($"http://127.0.0.1:{statePort}/connections");
+            return ServiceLib.Services.TrafficTotalsParser.ParseClashTotals(json);
+        }
+        catch (Exception ex)
+        {
+            Logging.SaveLog("selftest.ReadClashTotals", ex);
+            return null;
+        }
+    }
+    private static async Task<(long Down, int Rows)> SumTrafficAsync()
+    {
+        try
+        {
+            var rows = await SQLiteHelper.Instance.TableAsync<ServiceLib.Models.Entities.TrafficStatItem>().ToListAsync();
+            return (rows.Sum(r => r.Down), rows.Count);
+        }
+        catch
+        {
+            return (-1, -1);
         }
     }
 
