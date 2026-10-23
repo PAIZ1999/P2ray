@@ -58,6 +58,17 @@ public partial class App
         var mainWindow = (MainWindow)viewFor;
         mainWindow.Show();
         MainWindow = mainWindow;
+
+        // 隐藏的自检入口：只给验证用，正常启动不受影响
+        if (e.Args.Any(t => t == "--selftest"))
+        {
+            // 后台跑：数据库异步调用在 UI 线程上会挂起（本项目已踩过两次）
+            _ = Task.Run(async () =>
+            {
+                var code = await Selftest.SelftestRunner.RunAsync(e.Args);
+                Shutdown(code);
+            });
+        }
     }
 
     private void App_DispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
