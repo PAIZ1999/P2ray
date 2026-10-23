@@ -1,16 +1,51 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Shapes;
+using Path = System.Windows.Shapes.Path;
 using ReactiveUI;
+using ReactiveUI.Primitives.Signals;
 using ServiceLib.ViewModels;
 
 namespace v2rayN.Views;
 
-/// <summary>流量统计页：区间切换 + 折线趋势 + 每日明细。</summary>
+/// <summary>
+/// 流量统计页：区间切换 + 折线趋势 + 每日明细。
+///
+/// 折线图是自绘的（Canvas + Path），不用第三方图表库：
+/// 本项目只需要"一条面积线 + 十字准线 + 悬停卡片"，为此引入一整套图表依赖
+/// 收益不大；自己画反而能把网格、留白、命中测试都调到与界面其余部分一致。
+/// </summary>
 public partial class TrafficView : ReactiveUserControl<TrafficViewModel>
 {
+    private const double PlotHeight = 200;
+    private const double YGutter = 62;
+
     /// <summary>防止 RadioButton 的 Checked 与 VM 赋值互相触发。</summary>
     private bool _suppressRangeSync;
+
+    // 绘图元素只创建一次，重绘时改坐标，避免频繁重建可视树
+    private readonly Path _areaPath = new() { StrokeThickness = 0 };
+    private readonly Path _downPath = new()
+    {
+        StrokeThickness = 2.4,
+        StrokeLineJoin = PenLineJoin.Round,
+    };
+    private readonly Path _upPath = new()
+    {
+        StrokeThickness = 1.4,
+        StrokeDashArray = [3, 3],
+        Opacity = 0.9,
+    };
+    /// <summary>每个数据点的小圆点，重绘时重建。</summary>
+    private readonly List<Ellipse> _dots = [];
+
+    private readonly Line _crossLine = new() { StrokeThickness = 1, Visibility = Visibility.Collapsed };
+    private readonly Ellipse _hoverDot = new() { Width = 7, Height = 7, Visibility = Visibility.Collapsed };
+    private readonly Ellipse _hoverDotUp = new() { Width = 6, Height = 6, Visibility = Visibility.Collapsed };
+
+    private bool _layerReady;
+    private int _hoverIndex = -1;
 
     public TrafficView()
     {
@@ -21,46 +56,7 @@ public partial class TrafficView : ReactiveUserControl<TrafficViewModel>
             this.OneWayBind(ViewModel, vm => vm.Ranges, v => v.lstRanges.ItemsSource).DisposeWith(disposables);
             this.OneWayBind(ViewModel, vm => vm.Days, v => v.lstDays.ItemsSource).DisposeWith(disposables);
             this.OneWayBind(ViewModel, vm => vm.Domains, v => v.lstDomains.ItemsSource).DisposeWith(disposables);
-            this.OneWayBind(ViewModel, vm => vm.DomainTotalText, v => v.txtDomainTotal.Text).DisposeWith(disposables);
-            this.OneWayBind(ViewModel, vm => vm.DomainHint, v => v.txtDomainHint.Text).DisposeWith(disposables);
-            this.OneWayBind(ViewModel, vm => vm.DomainHint, v => v.txtDomainHint.Visibility,
-                    s => string.IsNullOrEmpty(s) ? Visibility.Collapsed : Visibility.Visible).DisposeWith(disposables);
             this.OneWayBind(ViewModel, vm => vm.Apps, v => v.lstApps.ItemsSource).DisposeWith(disposables);
-            this.OneWayBind(ViewModel, vm => vm.AppTotalText, v => v.txtAppTotal.Text).DisposeWith(disposables);
-            this.OneWayBind(ViewModel, vm => vm.AppHint, v => v.txtAppHint.Text).DisposeWith(disposables);
-            this.OneWayBind(ViewModel, vm => vm.AppHint, v => v.txtAppHint.Visibility,
-                    s => string.IsNullOrEmpty(s) ? Visibility.Collapsed : Visibility.Visible).DisposeWith(disposables);
-            // 子标签切换：三个面板互斥。可见性同时依赖 IsDomainTab 与 IsAppTab，
-            // 用 OneWayBind 只会在其中一个变化时重算，必须合并订阅。
-            this.WhenAnyValue(x => x.ViewModel!.IsDomainTab, x => x.ViewModel!.IsAppTab)
-                .ObserveOn(RxSchedulers.MainThreadScheduler)
-                .Subscribe(_ =>
-                {
-                    if (ViewModel is null)
-                    {
-                        return;
-                    }
-
-                    var app = ViewModel.IsAppTab;
-                    var domain = ViewModel.IsDomainTab;
-                    summaryPanel.Visibility = !app && !domain ? Visibility.Visible : Visibility.Collapsed;
-                    domainPanel.Visibility = domain && !app ? Visibility.Visible : Visibility.Collapsed;
-                    appPanel.Visibility = app ? Visibility.Visible : Visibility.Collapsed;
-                })
-                .DisposeWith(disposables);
-            // Y 轴四档刻度：写进四个固定 TextBlock，与网格线共用 0/56/113/170 的 y 值
-            this.OneWayBind(ViewModel, vm => vm.YAxisLabels, v => v.txtY0.Text,
-                    labels => labels is { Count: > 0 } ? labels[0] : string.Empty).DisposeWith(disposables);
-            this.OneWayBind(ViewModel, vm => vm.YAxisLabels, v => v.txtY1.Text,
-                    labels => labels is { Count: > 1 } ? labels[1] : string.Empty).DisposeWith(disposables);
-            this.OneWayBind(ViewModel, vm => vm.YAxisLabels, v => v.txtY2.Text,
-                    labels => labels is { Count: > 2 } ? labels[2] : string.Empty).DisposeWith(disposables);
-            this.OneWayBind(ViewModel, vm => vm.YAxisLabels, v => v.txtY3.Text,
-                    labels => labels is { Count: > 3 } ? labels[3] : string.Empty).DisposeWith(disposables);
-            this.OneWayBind(ViewModel, vm => vm.XAxisLabels, v => v.lstXAxis.ItemsSource).DisposeWith(disposables);
-            this.OneWayBind(ViewModel, vm => vm.DownPoints, v => v.lstHotspots.ItemsSource).DisposeWith(disposables);
-            // 圆点与热区共用同一批点：坐标一致，悬停位置才对得上
-            this.OneWayBind(ViewModel, vm => vm.DownPoints, v => v.lstDots.ItemsSource).DisposeWith(disposables);
 
             this.OneWayBind(ViewModel, vm => vm.RangeTotalDownText, v => v.txtRangeDown.Text).DisposeWith(disposables);
             this.OneWayBind(ViewModel, vm => vm.RangeTotalUpText, v => v.txtRangeUp.Text).DisposeWith(disposables);
@@ -68,42 +64,371 @@ public partial class TrafficView : ReactiveUserControl<TrafficViewModel>
             this.OneWayBind(ViewModel, vm => vm.RangePeakDayText, v => v.txtPeakDay.Text).DisposeWith(disposables);
             this.OneWayBind(ViewModel, vm => vm.RangePeakDownText, v => v.txtPeakDown.Text).DisposeWith(disposables);
 
-            // 折线用 Geometry.Parse 转换：Path.Data 期待 Geometry，
-            // 直接绑字符串会走类型转换器，字符串里出现非几何语法时整页会炸，
-            // 这里显式解析并兜住异常。
-            this.OneWayBind(ViewModel, vm => vm.DownLinePath, v => v.pathDownLine.Data,
-                    ToGeometry).DisposeWith(disposables);
-            this.OneWayBind(ViewModel, vm => vm.UpLinePath, v => v.pathUpLine.Data,
-                    ToGeometry).DisposeWith(disposables);
-            this.OneWayBind(ViewModel, vm => vm.DownAreaPath, v => v.pathDownArea.Data,
-                    ToGeometry).DisposeWith(disposables);
+            this.OneWayBind(ViewModel, vm => vm.DomainTotalText, v => v.txtDomainTotal.Text).DisposeWith(disposables);
+            this.OneWayBind(ViewModel, vm => vm.DomainHint, v => v.txtDomainHint.Text).DisposeWith(disposables);
+            this.OneWayBind(ViewModel, vm => vm.DomainHint, v => v.txtDomainHint.Visibility,
+                    s => string.IsNullOrEmpty(s) ? Visibility.Collapsed : Visibility.Visible).DisposeWith(disposables);
 
-            // 选中态同步：容器是延迟生成的，布局跑完再设一次
+            this.OneWayBind(ViewModel, vm => vm.AppTotalText, v => v.txtAppTotal.Text).DisposeWith(disposables);
+            this.OneWayBind(ViewModel, vm => vm.AppHint, v => v.txtAppHint.Text).DisposeWith(disposables);
+            this.OneWayBind(ViewModel, vm => vm.AppHint, v => v.txtAppHint.Visibility,
+                    s => string.IsNullOrEmpty(s) ? Visibility.Collapsed : Visibility.Visible).DisposeWith(disposables);
+
+            this.OneWayBind(ViewModel, vm => vm.HasData, v => v.txtChartEmpty.Visibility,
+                    has => has ? Visibility.Collapsed : Visibility.Visible).DisposeWith(disposables);
+
+            // 子标签切换：三个面板互斥。可见性同时依赖两个状态，必须合并订阅。
+            this.WhenAnyValue(x => x.ViewModel!.IsDomainTab, x => x.ViewModel!.IsAppTab)
+                .ObserveOn(RxSchedulers.MainThreadScheduler)
+                .Subscribe(_ => ApplyTabVisibility())
+                .DisposeWith(disposables);
+
+            // 数据变化 → 重绘
+            this.WhenAnyValue(x => x.ViewModel!.Series, x => x.ViewModel!.SeriesMax)
+                .ObserveOn(RxSchedulers.MainThreadScheduler)
+                .Subscribe(_ => RenderChart())
+                .DisposeWith(disposables);
+
+            // 容器延迟生成：布局跑完再同步区间高亮
+            this.WhenAnyValue(x => x.ViewModel!.Days)
+                .ObserveOn(RxSchedulers.MainThreadScheduler)
+                .Subscribe(_ => Dispatcher.BeginInvoke(new Action(SyncRangeSelection)))
+                .DisposeWith(disposables);
+
             this.WhenAnyValue(x => x.ViewModel!.SelectedRange)
                 .ObserveOn(RxSchedulers.MainThreadScheduler)
                 .Subscribe(_ => Dispatcher.BeginInvoke(new Action(SyncRangeSelection)))
                 .DisposeWith(disposables);
         });
-        // 容器是延迟生成的：Loaded 时可能还没生成，用 Background 优先级再补一次
-        Loaded += (_, _) => Dispatcher.BeginInvoke(new Action(SyncRangeSelection),
-            System.Windows.Threading.DispatcherPriority.Background);
+
+        Loaded += (_, _) =>
+        {
+            EnsureLayer();
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                SyncRangeSelection();
+                RenderChart();
+            }), System.Windows.Threading.DispatcherPriority.Background);
+        };
     }
 
-    private static Geometry? ToGeometry(string? path)
+    private void ApplyTabVisibility()
     {
-        if (string.IsNullOrWhiteSpace(path))
+        if (ViewModel is null)
         {
-            return null;
+            return;
         }
 
-        try
+        var app = ViewModel.IsAppTab;
+        var domain = ViewModel.IsDomainTab;
+        summaryPanel.Visibility = !app && !domain ? Visibility.Visible : Visibility.Collapsed;
+        domainPanel.Visibility = domain && !app ? Visibility.Visible : Visibility.Collapsed;
+        appPanel.Visibility = app ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private void EnsureLayer()
+    {
+        if (_layerReady)
         {
-            return Geometry.Parse(path);
+            return;
         }
-        catch
+
+        _areaPath.SetResourceReference(Shape.FillProperty, "P2rayAccentSoftBrush");
+        _downPath.SetResourceReference(Shape.StrokeProperty, "P2rayAccentBrush");
+        _upPath.SetResourceReference(Shape.StrokeProperty, "P2raySuccessBrush");
+        _crossLine.SetResourceReference(Shape.StrokeProperty, "P2rayBorderBrush");
+        _hoverDot.SetResourceReference(Shape.FillProperty, "P2rayAccentBrush");
+        _hoverDotUp.SetResourceReference(Shape.FillProperty, "P2raySuccessBrush");
+
+        plotLayer.Children.Add(_areaPath);
+        plotLayer.Children.Add(_downPath);
+        plotLayer.Children.Add(_upPath);
+        plotLayer.Children.Add(_crossLine);
+        plotLayer.Children.Add(_hoverDot);
+        plotLayer.Children.Add(_hoverDotUp);
+        _layerReady = true;
+    }
+
+    private void Plot_SizeChanged(object sender, SizeChangedEventArgs e) => RenderChart();
+
+    /// <summary>重绘网格、刻度、面积与折线。窗口尺寸或数据变化时调用。</summary>
+    private void RenderChart()
+    {
+        EnsureLayer();
+
+        var points = ViewModel?.Series;
+        var width = plotHost.ActualWidth;
+        if (points is null || points.Count == 0 || width <= 1)
         {
-            return null;
+            _areaPath.Data = null;
+            _downPath.Data = null;
+            _upPath.Data = null;
+            yAxisLayer.Children.Clear();
+            xAxisLayer.Children.Clear();
+            return;
         }
+
+        var max = ViewModel?.SeriesMax ?? 1;
+        if (max <= 0)
+        {
+            max = 1;
+        }
+
+        var right = width;
+        var bottom = PlotHeight;
+
+        // ── 网格线 + Y 轴刻度（4 档，压线居中） ──
+        yAxisLayer.Children.Clear();
+        for (var i = 0; i <= 3; i++)
+        {
+            var ratio = i / 3.0;
+            var y = bottom - bottom * ratio;
+
+            var line = new Line
+            {
+                X1 = 0,
+                X2 = right,
+                Y1 = y,
+                Y2 = y,
+                StrokeThickness = 1,
+                Opacity = i == 0 ? 0.55 : 0.28,
+            };
+            line.SetResourceReference(Shape.StrokeProperty, "P2rayDividerBrush");
+            plotLayer.Children.Insert(i, line);
+
+            var label = new TextBlock
+            {
+                Text = FormatAxis(max * ratio),
+                FontSize = 10,
+                Width = YGutter - 10,
+                TextAlignment = TextAlignment.Right,
+            };
+            label.SetResourceReference(TextBlock.ForegroundProperty, "P2rayTextTertiaryBrush");
+            Canvas.SetLeft(label, 0);
+            Canvas.SetTop(label, y - 7);
+            yAxisLayer.Children.Add(label);
+        }
+
+        // 网格线插入后，折线元素需要保持在最上层
+        Panel.SetZIndex(_areaPath, 2);
+        Panel.SetZIndex(_downPath, 3);
+        Panel.SetZIndex(_upPath, 4);
+        Panel.SetZIndex(_crossLine, 5);
+        Panel.SetZIndex(_hoverDot, 6);
+        Panel.SetZIndex(_hoverDotUp, 7);
+
+        // ── 折线与面积 ──
+        var stepX = points.Count > 1 ? right / (points.Count - 1) : 0;
+        var downGeo = new StreamGeometry();
+        var upGeo = new StreamGeometry();
+        using (var ctx = downGeo.Open())
+        {
+            for (var i = 0; i < points.Count; i++)
+            {
+                var x = points.Count > 1 ? i * stepX : right / 2;
+                var y = bottom - bottom * Math.Clamp(points[i].Down / max, 0, 1);
+                if (i == 0)
+                {
+                    ctx.BeginFigure(new Point(x, y), false, false);
+                }
+                else
+                {
+                    ctx.LineTo(new Point(x, y), true, false);
+                }
+            }
+        }
+
+        using (var ctx = upGeo.Open())
+        {
+            for (var i = 0; i < points.Count; i++)
+            {
+                var x = points.Count > 1 ? i * stepX : right / 2;
+                var y = bottom - bottom * Math.Clamp(points[i].Up / max, 0, 1);
+                if (i == 0)
+                {
+                    ctx.BeginFigure(new Point(x, y), false, false);
+                }
+                else
+                {
+                    ctx.LineTo(new Point(x, y), true, false);
+                }
+            }
+        }
+
+        downGeo.Freeze();
+        upGeo.Freeze();
+        _downPath.Data = downGeo;
+        _upPath.Data = upGeo;
+
+        // 面积：折线首尾闭合到底边
+        if (points.Count > 1)
+        {
+            var areaGeo = new StreamGeometry();
+            using (var ctx = areaGeo.Open())
+            {
+                ctx.BeginFigure(new Point(0, bottom), true, true);
+                for (var i = 0; i < points.Count; i++)
+                {
+                    var x = i * stepX;
+                    var y = bottom - bottom * Math.Clamp(points[i].Down / max, 0, 1);
+                    ctx.LineTo(new Point(x, y), true, false);
+                }
+
+                ctx.LineTo(new Point(right, bottom), true, false);
+            }
+
+            areaGeo.Freeze();
+            _areaPath.Data = areaGeo;
+        }
+        else
+        {
+            _areaPath.Data = null;
+        }
+
+        // ── 数据点圆点：≤14 个点时才画，30 天会糊成一条带 ──
+        foreach (var dot in _dots)
+        {
+            plotLayer.Children.Remove(dot);
+        }
+
+        _dots.Clear();
+        if (points.Count <= 14)
+        {
+            for (var i = 0; i < points.Count; i++)
+            {
+                var x = points.Count > 1 ? i * stepX : right / 2;
+                var y = bottom - bottom * Math.Clamp(points[i].Down / max, 0, 1);
+                var dot = new Ellipse { Width = 5, Height = 5, Opacity = 0.95 };
+                dot.SetResourceReference(Shape.FillProperty, "P2rayAccentBrush");
+                Canvas.SetLeft(dot, x - 2.5);
+                Canvas.SetTop(dot, y - 2.5);
+                Panel.SetZIndex(dot, 5);
+                plotLayer.Children.Add(dot);
+                _dots.Add(dot);
+            }
+        }
+
+        // ── X 轴刻度：最多 7 个，均匀取样，避免重叠 ──
+        xAxisLayer.Children.Clear();
+        var labelStep = Math.Max(1, (int)Math.Ceiling(points.Count / 7.0));
+        for (var i = 0; i < points.Count; i += labelStep)
+        {
+            var x = points.Count > 1 ? i * stepX : right / 2;
+            var label = new TextBlock
+            {
+                Text = points[i].DateText,
+                FontSize = 10,
+            };
+            label.SetResourceReference(TextBlock.ForegroundProperty, "P2rayTextTertiaryBrush");
+            Canvas.SetLeft(label, Math.Clamp(x - 18, 0, Math.Max(0, right - 40)));
+            Canvas.SetTop(label, 0);
+            xAxisLayer.Children.Add(label);
+        }
+
+        HideHover();
+    }
+
+    /// <summary>Y 轴刻度文案：短一些，避免长单位把绘图区挤窄。</summary>
+    private static string FormatAxis(double value)
+    {
+        if (value <= 0)
+        {
+            return "0";
+        }
+
+        string[] units = ["B", "K", "M", "G", "T"];
+        var unit = 0;
+        while (value >= 1024 && unit < units.Length - 1)
+        {
+            value /= 1024;
+            unit++;
+        }
+
+        return unit == 0 ? $"{(int)value} B" : $"{value:F0} {units[unit]}";
+    }
+
+    private void Plot_MouseMove(object sender, System.Windows.Input.MouseEventArgs e)
+    {
+        var points = ViewModel?.Series;
+        if (points is null || points.Count == 0)
+        {
+            return;
+        }
+
+        var width = plotHost.ActualWidth;
+        if (width <= 1)
+        {
+            return;
+        }
+
+        var pos = e.GetPosition(plotHost);
+        var stepX = points.Count > 1 ? width / (points.Count - 1) : 0;
+        var index = stepX > 0 ? (int)Math.Round(pos.X / stepX) : 0;
+        ShowHoverAt(index, pos.X);
+    }
+
+    /// <summary>把十字准线、圆点与数值卡片移动到第 index 个点。posX 为鼠标在绘图区内的 x。</summary>
+    private void ShowHoverAt(int index, double posX)
+    {
+        var points = ViewModel?.Series;
+        if (points is null || points.Count == 0)
+        {
+            return;
+        }
+
+        index = Math.Clamp(index, 0, points.Count - 1);
+        _hoverIndex = index;
+
+        var width = plotHost.ActualWidth;
+        if (width <= 1)
+        {
+            return;
+        }
+
+        var max = ViewModel?.SeriesMax ?? 1;
+        if (max <= 0)
+        {
+            max = 1;
+        }
+
+        var stepX = points.Count > 1 ? width / (points.Count - 1) : 0;
+        var x = points.Count > 1 ? index * stepX : width / 2;
+        var yDown = PlotHeight - PlotHeight * Math.Clamp(points[index].Down / max, 0, 1);
+        var yUp = PlotHeight - PlotHeight * Math.Clamp(points[index].Up / max, 0, 1);
+
+        _crossLine.X1 = x;
+        _crossLine.X2 = x;
+        _crossLine.Y1 = 0;
+        _crossLine.Y2 = PlotHeight;
+        _crossLine.Visibility = Visibility.Visible;
+
+        _hoverDot.Visibility = Visibility.Visible;
+        Canvas.SetLeft(_hoverDot, x - 3.5);
+        Canvas.SetTop(_hoverDot, yDown - 3.5);
+
+        _hoverDotUp.Visibility = Visibility.Visible;
+        Canvas.SetLeft(_hoverDotUp, x - 3);
+        Canvas.SetTop(_hoverDotUp, yUp - 3);
+
+        txtHoverDate.Text = points[index].Date.ToString("yyyy-MM-dd ddd");
+        txtHoverDown.Text = points[index].DownText;
+        txtHoverUp.Text = points[index].UpText;
+
+        hoverCard.Visibility = Visibility.Visible;
+        var cardWidth = 132.0;
+        var left = Math.Clamp(posX + 14, 0, Math.Max(0, width - cardWidth));
+        hoverCard.Margin = new Thickness(YGutter + left, 8, 0, 0);
+    }
+
+    private void Plot_MouseLeave(object sender, System.Windows.Input.MouseEventArgs e) => HideHover();
+
+    private void HideHover()
+    {
+        _hoverIndex = -1;
+        _crossLine.Visibility = Visibility.Collapsed;
+        _hoverDot.Visibility = Visibility.Collapsed;
+        _hoverDotUp.Visibility = Visibility.Collapsed;
+        hoverCard.Visibility = Visibility.Collapsed;
     }
 
     private void SyncRangeSelection()
@@ -134,7 +459,6 @@ public partial class TrafficView : ReactiveUserControl<TrafficViewModel>
     /// <summary>
     /// 再挂一个 Click：RadioButton 在自定义模板下，若初始 IsChecked 已被写成
     /// 其它项，单靠 Checked 可能不触发（同组互斥会吞掉点击）。
-    /// Click 一定会在鼠标点击时触发，作为兜底。
     /// </summary>
     private void Range_Click(object sender, RoutedEventArgs e) => ApplyRange(sender);
 
@@ -148,9 +472,21 @@ public partial class TrafficView : ReactiveUserControl<TrafficViewModel>
         if (sender is RadioButton { Tag: TrafficRange range })
         {
             ViewModel.SelectedRange = range;
-            // 点击后强制校正一次选中态，避免组内互斥把高亮留在别的项上
-            Dispatcher.BeginInvoke(new Action(SyncRangeSelection), System.Windows.Threading.DispatcherPriority.Background);
+            Dispatcher.BeginInvoke(new Action(SyncRangeSelection),
+                System.Windows.Threading.DispatcherPriority.Background);
         }
+    }
+
+    private void Tab_Checked(object sender, RoutedEventArgs e)
+    {
+        if (ViewModel is null || sender is not RadioButton { Tag: string tag })
+        {
+            return;
+        }
+
+        ViewModel.IsDomainTab = tag == "domain";
+        ViewModel.IsAppTab = tag == "app";
+        ViewModel.RefreshCmd.Execute().Subscribe();
     }
 
     private static IEnumerable<T> FindVisualChildren<T>(DependencyObject root) where T : DependencyObject
@@ -169,19 +505,6 @@ public partial class TrafficView : ReactiveUserControl<TrafficViewModel>
                 yield return nested;
             }
         }
-    }
-
-    /// <summary>子标签切换。按域名标签会触发一次数据刷新。</summary>
-    private void Tab_Checked(object sender, RoutedEventArgs e)
-    {
-        if (ViewModel is null || sender is not RadioButton { Tag: string tag })
-        {
-            return;
-        }
-
-        ViewModel.IsDomainTab = tag == "domain";
-        ViewModel.IsAppTab = tag == "app";
-        ViewModel.RefreshCmd.Execute().Subscribe();
     }
 
     private void BtnClear_Click(object sender, RoutedEventArgs e)

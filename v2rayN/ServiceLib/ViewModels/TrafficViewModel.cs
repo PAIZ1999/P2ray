@@ -75,6 +75,18 @@ public partial class TrafficViewModel : ReactiveObject
     [Reactive]
     public partial bool HasData { get; set; }
 
+    /// <summary>折线数据点，供视图直接绘制与命中测试。</summary>
+    [Reactive]
+    public partial BulkObservableCollection<TrafficSeriesPoint> Series { get; set; } = [];
+
+    /// <summary>Y 轴上限（含顶部留白后的值），视图据此换算像素。</summary>
+    [Reactive]
+    public partial double SeriesMax { get; set; }
+
+    /// <summary>Y 轴上限的可读文本，如 "30.9 MB"。</summary>
+    [Reactive]
+    public partial string SeriesMaxText { get; set; } = string.Empty;
+
     /// <summary>当前是否处于「按域名」子标签。</summary>
     [Reactive]
     public partial bool IsDomainTab { get; set; }
@@ -232,19 +244,37 @@ public partial class TrafficViewModel : ReactiveObject
             areaSegments.Add("Z");
         }
 
+        // 交给视图绘制：VM 只提供数值与文案，像素换算在视图里做，
+        // 这样窗口缩放时不用重算 VM，也不会出现坐标与控件尺寸不一致。
+        Series = new BulkObservableCollection<TrafficSeriesPoint>(rows.Select(r => new TrafficSeriesPoint
+        {
+            Date = r.Date,
+            Up = r.Up,
+            Down = r.Down,
+            DateText = r.Date.ToString("MM/dd"),
+            UpText = FormatBytes(r.Up),
+            DownText = FormatBytes(r.Down),
+        }));
+        SeriesMax = scaleMax;
+        SeriesMaxText = FormatBytes((long)scaleMax);
+
         DownPoints = new BulkObservableCollection<TrafficPoint>(points);
         DownLinePath = string.Join(" ", downSegments);
         UpLinePath = string.Join(" ", upSegments);
         DownAreaPath = string.Join(" ", areaSegments);
 
         // Y 轴：4 档刻度，最高档即 scaleMax
-        YAxisLabels = new BulkObservableCollection<string>(
-        [
-            FormatBytes((long)scaleMax),
-            FormatBytes((long)(scaleMax * 0.66)),
-            FormatBytes((long)(scaleMax * 0.33)),
-            "0",
-        ]);
+        // 没有数据时只有底部一个 0：四档都算成 0 B 会显示成 "0 B / 0 B / 0 B / 0"，
+// 看起来像渲染错误。
+        YAxisLabels = scaleMax > 1
+            ? new BulkObservableCollection<string>(
+            [
+                FormatBytes((long)scaleMax),
+                FormatBytes((long)(scaleMax * 0.66)),
+                FormatBytes((long)(scaleMax * 0.33)),
+                "0",
+            ])
+            : new BulkObservableCollection<string>(["", "", "", "0"]);
 
         XAxisLabels = new BulkObservableCollection<TrafficAxisLabel>(
             points.Where(p => p.ShowLabel)
@@ -288,8 +318,17 @@ public partial class TrafficViewModel : ReactiveObject
         RangeAverageDownText = FormatBytes(rows.Count > 0 ? totalDown / rows.Count : 0);
 
         var peak = rows.OrderByDescending(r => r.Down).FirstOrDefault();
-        RangePeakDayText = peak.Date == default ? "—" : peak.Date.ToString("MM-dd");
-        RangePeakDownText = FormatBytes(peak.Down);
+        // 区间内一点流量都没有时，显示"峰值日 10-17 / 0 B"会让人以为那天真有数据
+        if (totalDown == 0 && totalUp == 0)
+        {
+            RangePeakDayText = "—";
+            RangePeakDownText = string.Empty;
+        }
+        else
+        {
+            RangePeakDayText = peak.Date == default ? "—" : peak.Date.ToString("MM-dd");
+            RangePeakDownText = FormatBytes(peak.Down);
+        }
     }
 
     /// <summary>
@@ -490,4 +529,19 @@ public class DomainStatRow
     public double DownBarWidth { get; set; }
 
     public double UpBarWidth { get; set; }
+}
+/// <summary>折线上的一个数据点。像素坐标由视图计算，VM 只给数值与文案。</summary>
+public class TrafficSeriesPoint
+{
+    public DateTime Date { get; set; }
+
+    public long Up { get; set; }
+
+    public long Down { get; set; }
+
+    public string DateText { get; set; } = string.Empty;
+
+    public string UpText { get; set; } = string.Empty;
+
+    public string DownText { get; set; } = string.Empty;
 }

@@ -30,12 +30,14 @@
                         Text="统计经过 P2ray 的代理流量，不含未走代理的直连。" />
                 </StackPanel>
 
-                <!-- 子标签：概览（按天） / 按域名 -->
-                <Border
-                    Margin="0,6,12,0"
+                <StackPanel
+                    Margin="0,6,0,0"
                     HorizontalAlignment="Right"
                     VerticalAlignment="Top"
-                    Style="{StaticResource P2raySegmentTrack}">
+                    Orientation="Horizontal">
+
+                <!-- 子标签：概览（按天） / 按域名 -->
+                <Border Margin="0,0,10,0" Style="{StaticResource P2raySegmentTrack}">
                     <StackPanel Orientation="Horizontal">
                         <RadioButton
                             x:Name="tabSummary"
@@ -65,11 +67,8 @@
                     </StackPanel>
                 </Border>
 
-                <!-- 区间切换放在标题右侧：它控制整页内容，属于"页面级"操作 -->
-                <Border
-                    HorizontalAlignment="Right"
-                    VerticalAlignment="Top"
-                    Style="{StaticResource P2raySegmentTrack}">
+                                <!-- 区间切换放在标题右侧：它控制整页内容，属于"页面级"操作 -->
+                <Border Style="{StaticResource P2raySegmentTrack}">
                     <ItemsControl x:Name="lstRanges">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
@@ -89,6 +88,7 @@
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
                 </Border>
+                </StackPanel>
             </Grid>
 
             <StackPanel x:Name="summaryPanel">
@@ -152,207 +152,139 @@
                 </Border>
             </UniformGrid>
 
-            <!-- ═══ 折线图 ═══ -->
-            <TextBlock Style="{StaticResource P2raySectionLabel}" Text="每日趋势" />
+            <!-- ═══ 折线图（自绘：网格 + 面积 + 折线 + 十字准线 + 跟随卡片） ═══ -->
             <Border Margin="0,0,0,18" Style="{StaticResource P2rayCard}">
-                <Grid Margin="16,14,16,10">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="56" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
+                <Grid Margin="18,16,18,12">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
 
-                    <!-- Y 轴刻度：与网格线共用同一组绝对 y 值，避免等分容器带来的 1-2px 偏移 -->
-                    <Canvas Grid.Row="0" Grid.Column="0" Height="170" ClipToBounds="False">
+                    <!-- 标题行：左侧说明，右侧图例 -->
+                    <Grid Grid.Row="0" Margin="0,0,0,10">
                         <TextBlock
-                            x:Name="txtY0"
-                            Canvas.Left="0"
-                            Canvas.Top="-7"
-                            Width="48"
-                            FontSize="10"
-                            TextAlignment="Right"
-                            Foreground="{StaticResource P2rayTextTertiaryBrush}" />
-                        <TextBlock
-                            x:Name="txtY1"
-                            Canvas.Left="0"
-                            Canvas.Top="49"
-                            Width="48"
-                            FontSize="10"
-                            TextAlignment="Right"
-                            Foreground="{StaticResource P2rayTextTertiaryBrush}" />
-                        <TextBlock
-                            x:Name="txtY2"
-                            Canvas.Left="0"
-                            Canvas.Top="106"
-                            Width="48"
-                            FontSize="10"
-                            TextAlignment="Right"
-                            Foreground="{StaticResource P2rayTextTertiaryBrush}" />
-                        <TextBlock
-                            x:Name="txtY3"
-                            Canvas.Left="0"
-                            Canvas.Top="163"
-                            Width="48"
-                            FontSize="10"
-                            TextAlignment="Right"
-                            Foreground="{StaticResource P2rayTextTertiaryBrush}" />
-                    </Canvas>
+                            VerticalAlignment="Center"
+                            Style="{StaticResource P2rayMicro}"
+                            Text="每日趋势" />
+                        <StackPanel
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Center"
+                            Orientation="Horizontal">
+                            <Border
+                                Width="12"
+                                Height="3"
+                                VerticalAlignment="Center"
+                                Background="{StaticResource P2rayAccentBrush}"
+                                CornerRadius="2" />
+                            <TextBlock
+                                Margin="6,0,14,0"
+                                VerticalAlignment="Center"
+                                Style="{StaticResource P2rayMicro}"
+                                Text="下行" />
+                            <Border
+                                Width="12"
+                                Height="3"
+                                VerticalAlignment="Center"
+                                Background="{StaticResource P2raySuccessBrush}"
+                                CornerRadius="2" />
+                            <TextBlock
+                                Margin="6,0,0,0"
+                                VerticalAlignment="Center"
+                                Style="{StaticResource P2rayMicro}"
+                                Text="上行" />
+                        </StackPanel>
+                    </Grid>
 
-                    <!-- 绘图区 -->
-                    <Viewbox
-                        Grid.Row="0"
-                        Grid.Column="1"
-                        Height="170"
-                        Stretch="Fill">
+                    <!-- 绘图区：Canvas 由代码绘制，命中测试也在代码里做 -->
+                    <Grid Grid.Row="1" Height="200">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="62" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Y 轴刻度：右侧对齐到网格线 -->
+                        <Canvas x:Name="yAxisLayer" Grid.Column="0" Height="200" />
+
                         <Grid
-                            Width="1000"
-                            Height="170">
-                            <!-- 水平网格线：与 Y 轴刻度同一组 y 值 -->
-                            <Canvas Height="170" IsHitTestVisible="False">
-                                <Border Canvas.Top="0" Width="1000" Height="1" Background="{StaticResource P2rayDividerBrush}" Opacity="0.55" />
-                                <Border Canvas.Top="56" Width="1000" Height="1" Background="{StaticResource P2rayDividerBrush}" Opacity="0.35" />
-                                <Border Canvas.Top="113" Width="1000" Height="1" Background="{StaticResource P2rayDividerBrush}" Opacity="0.35" />
-                                <Border Canvas.Top="169" Width="1000" Height="1" Background="{StaticResource P2rayDividerBrush}" Opacity="0.55" />
-                            </Canvas>
-
-                            <!-- 下行面积：渐变到底部，避免一大块纯色显得闷 -->
-                            <Path x:Name="pathDownArea" Stretch="None">
-                                <Path.Fill>
-                                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                        <GradientStop Offset="0" Color="#7A3B9BFF" />
-                                        <GradientStop Offset="0.55" Color="#2E3B9BFF" />
-                                        <GradientStop Offset="1" Color="#003B9BFF" />
-                                    </LinearGradientBrush>
-                                </Path.Fill>
-                            </Path>
-                            <!-- 下行折线 -->
-                            <Path
-                                x:Name="pathDownLine"
-                                Stroke="{StaticResource P2rayAccentBrush}"
-                                StrokeThickness="2.4"
-                                StrokeLineJoin="Round"
-                                Stretch="None" />
-                            <!-- 上行折线（虚线，避免和下行抢视觉） -->
-                            <Path
-                                x:Name="pathUpLine"
-                                Stroke="{StaticResource P2raySuccessBrush}"
-                                StrokeDashArray="3 3"
-                                StrokeThickness="1.4"
-                                Opacity="0.85"
-                                Stretch="None" />
-
-                            <!-- 数据点：点数少时才画圆，30 天时会糊成一片 -->
-                            <ItemsControl x:Name="lstDots">
-                                <ItemsControl.ItemsPanel>
-                                    <ItemsPanelTemplate>
-                                        <Canvas />
-                                    </ItemsPanelTemplate>
-                                </ItemsControl.ItemsPanel>
-                                <ItemsControl.ItemContainerStyle>
-                                    <Style TargetType="ContentPresenter">
-                                        <Setter Property="Canvas.Left" Value="{Binding DotX}" />
-                                        <Setter Property="Canvas.Top" Value="{Binding DotY}" />
-                                    </Style>
-                                </ItemsControl.ItemContainerStyle>
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <Ellipse
-                                            Width="6"
-                                            Height="6"
-                                            Fill="{StaticResource P2rayAccentBrush}"
-                                            Visibility="{Binding IsDotVisible, Converter={StaticResource BoolToVis}}" />
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-
-                            <!-- 悬停热区：每个点一块透明区域，提示框显示当日数值 -->
-                            <ItemsControl x:Name="lstHotspots">
-                                <ItemsControl.ItemsPanel>
-                                    <ItemsPanelTemplate>
-                                        <Canvas />
-                                    </ItemsPanelTemplate>
-                                </ItemsControl.ItemsPanel>
-                                <ItemsControl.ItemContainerStyle>
-                                    <Style TargetType="ContentPresenter">
-                                        <Setter Property="Canvas.Left" Value="{Binding HotX}" />
-                                        <Setter Property="Canvas.Top" Value="0" />
-                                    </Style>
-                                </ItemsControl.ItemContainerStyle>
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <Rectangle
-                                            Width="{Binding HotWidth}"
-                                            Height="170"
-                                            ToolTip="{Binding Tooltip}">
-                                            <Rectangle.Fill>
-                                                <SolidColorBrush Color="White" Opacity="0.001" />
-                                            </Rectangle.Fill>
-                                        </Rectangle>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-
-                            <ItemsControl x:Name="lstXAxis">
-                                <ItemsControl.ItemsPanel>
-                                    <ItemsPanelTemplate>
-                                        <Canvas />
-                                    </ItemsPanelTemplate>
-                                </ItemsControl.ItemsPanel>
-                                <ItemsControl.ItemContainerStyle>
-                                    <Style TargetType="ContentPresenter">
-                                        <Setter Property="Canvas.Top" Value="176" />
-                                    </Style>
-                                </ItemsControl.ItemContainerStyle>
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <TextBlock
-                                            FontSize="10"
-                                            Foreground="{StaticResource P2rayTextTertiaryBrush}"
-                                            Text="{Binding Text}">
-                                            <TextBlock.RenderTransform>
-                                                <TranslateTransform X="{Binding X}" />
-                                            </TextBlock.RenderTransform>
-                                        </TextBlock>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
+                            x:Name="plotHost"
+                            Grid.Column="1"
+                            Background="Transparent"
+                            ClipToBounds="True"
+                            MouseLeave="Plot_MouseLeave"
+                            MouseMove="Plot_MouseMove"
+                            SizeChanged="Plot_SizeChanged">
+                            <Canvas x:Name="plotLayer" />
                         </Grid>
-                    </Viewbox>                    <!-- X 轴刻度：放在绘图区同一坐标系里，随 Viewbox 一起缩放 -->
+                    </Grid>
+
+                    <!-- X 轴刻度 -->
+                    <Canvas
+                        x:Name="xAxisLayer"
+                        Grid.Row="2"
+                        Height="18"
+                        Margin="62,6,0,0" />
+
+                    <!-- 空数据提示 -->
+                    <TextBlock
+                        x:Name="txtChartEmpty"
+                        Grid.Row="1"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        FontSize="12"
+                        Foreground="{StaticResource P2rayTextTertiaryBrush}"
+                        Text="该区间还没有流量记录"
+                        Visibility="Collapsed" />
+
+                    <!-- 悬停卡片：随鼠标水平位置滑动，垂直方向固定顶部，避免抖动 -->
+                    <Border
+                        x:Name="hoverCard"
+                        Grid.Row="1"
+                        Padding="10,7"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Top"
+                        Background="{StaticResource P2rayElevatedBrush}"
+                        CornerRadius="6"
+                        IsHitTestVisible="False"
+                        Visibility="Collapsed">
+                        <StackPanel>
+                            <TextBlock
+                                x:Name="txtHoverDate"
+                                FontSize="10"
+                                Foreground="{StaticResource P2rayTextTertiaryBrush}" />
+                            <StackPanel Margin="0,4,0,0" Orientation="Horizontal">
+                                <Ellipse
+                                    Width="6"
+                                    Height="6"
+                                    VerticalAlignment="Center"
+                                    Fill="{StaticResource P2rayAccentBrush}" />
+                                <TextBlock
+                                    x:Name="txtHoverDown"
+                                    Margin="5,0,0,0"
+                                    VerticalAlignment="Center"
+                                    FontFamily="Consolas, Cascadia Mono, monospace"
+                                    FontSize="11"
+                                    Foreground="{StaticResource P2rayTextPrimaryBrush}" />
+                            </StackPanel>
+                            <StackPanel Margin="0,2,0,0" Orientation="Horizontal">
+                                <Ellipse
+                                    Width="6"
+                                    Height="6"
+                                    VerticalAlignment="Center"
+                                    Fill="{StaticResource P2raySuccessBrush}" />
+                                <TextBlock
+                                    x:Name="txtHoverUp"
+                                    Margin="5,0,0,0"
+                                    VerticalAlignment="Center"
+                                    FontFamily="Consolas, Cascadia Mono, monospace"
+                                    FontSize="11"
+                                    Foreground="{StaticResource P2rayTextPrimaryBrush}" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
                 </Grid>
             </Border>
-
-            <StackPanel Margin="0,0,0,8" Orientation="Horizontal">
-                <Border
-                    Width="14"
-                    Height="3"
-                    VerticalAlignment="Center"
-                    Background="{StaticResource P2rayAccentBrush}"
-                    CornerRadius="2" />
-                <TextBlock
-                    Margin="6,0,18,0"
-                    VerticalAlignment="Center"
-                    Style="{StaticResource P2rayMicro}"
-                    Text="下行" />
-                <Border
-                    Width="14"
-                    Height="3"
-                    VerticalAlignment="Center"
-                    Background="{StaticResource P2raySuccessBrush}"
-                    CornerRadius="2" />
-                <TextBlock
-                    Margin="6,0,0,0"
-                    VerticalAlignment="Center"
-                    Style="{StaticResource P2rayMicro}"
-                    Text="上行（虚线）" />
-                <TextBlock
-                    Margin="18,0,0,0"
-                    VerticalAlignment="Center"
-                    Style="{StaticResource P2rayMicro}"
-                    Text="悬停折线可查看当日用量" />
-            </StackPanel>
+            
 
             <!-- ═══ 明细 ═══ -->
             <TextBlock Style="{StaticResource P2raySectionLabel}" Text="每日明细" />
@@ -373,8 +305,8 @@
                                 Grid.Column="1"
                                 Margin="0,0,16,0"
                                 Style="{StaticResource P2rayMicro}"
-                                Text="占比" />
-                            <StackPanel Grid.Column="2" Orientation="Horizontal">
+                                Text="趋势" />
+                            <StackPanel Grid.Column="3" Orientation="Horizontal">
                                 <TextBlock
                                     Width="84"
                                     HorizontalAlignment="Right"
@@ -398,7 +330,7 @@
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
                                 <Border Padding="12,4" Style="{StaticResource P2rayRow}">
-                            <Grid Margin="0,1">
+                                    <Grid Margin="0,1">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="96" />
                                             <ColumnDefinition Width="*" />
@@ -414,7 +346,7 @@
                                         <Grid
                                             Grid.Column="1"
                                             Height="16"
-                                            Margin="0,0,14,0"
+                                            Margin="0,0,10,0"
                                             VerticalAlignment="Center">
                                             <!-- 底轨：没有它时，占比很小的那一天只会剩一个小点，
                                                  看不出"占了多少"这层含义 -->
@@ -437,15 +369,12 @@
                                                     Background="{StaticResource P2raySuccessBrush}"
                                                     CornerRadius="0,4,4,0" />
                                             </StackPanel>
-                                            <TextBlock
-                                                HorizontalAlignment="Right"
-                                                VerticalAlignment="Center"
-                                                FontSize="10"
-                                                Foreground="{StaticResource P2rayTextTertiaryBrush}"
-                                                Text="{Binding ShareText}" />
                                         </Grid>
 
-                                        <StackPanel Grid.Column="2" Orientation="Horizontal">
+                                        <!-- 百分比单独一列：压在进度条上会和条长互相干扰，
+                                             条接近满格时更是直接盖住 -->
+
+                                        <StackPanel Grid.Column="3" Orientation="Horizontal">
                                             <TextBlock
                                                 Width="84"
                                                 HorizontalAlignment="Right"
@@ -529,8 +458,8 @@
                                     Grid.Column="1"
                                     Margin="0,0,16,0"
                                     Style="{StaticResource P2rayMicro}"
-                                    Text="占比" />
-                                <StackPanel Grid.Column="2" Orientation="Horizontal">
+                                    Text="趋势" />
+                                <StackPanel Grid.Column="3" Orientation="Horizontal">
                                     <TextBlock
                                         Width="90"
                                         HorizontalAlignment="Right"
@@ -553,7 +482,7 @@
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="240" />
                                                 <ColumnDefinition Width="*" />
-                                                <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
                                             </Grid.ColumnDefinitions>
 
                                             <TextBlock
@@ -567,7 +496,7 @@
                                             <Grid
                                                 Grid.Column="1"
                                                 Height="16"
-                                                Margin="0,0,16,0"
+                                                Margin="0,0,10,0"
                                                 VerticalAlignment="Center">
                                                 <Border
                                                     Height="8"
@@ -588,15 +517,9 @@
                                                         Background="{StaticResource P2raySuccessBrush}"
                                                         CornerRadius="0,4,4,0" />
                                                 </StackPanel>
-                                                <TextBlock
-                                                    HorizontalAlignment="Right"
-                                                    VerticalAlignment="Center"
-                                                    FontSize="10"
-                                                    Foreground="{StaticResource P2rayTextTertiaryBrush}"
-                                                    Text="{Binding ShareText}" />
                                             </Grid>
 
-                                            <StackPanel Grid.Column="2" Orientation="Horizontal">
+                                            <StackPanel Grid.Column="3" Orientation="Horizontal">
                                                 <TextBlock
                                                     Width="90"
                                                     HorizontalAlignment="Right"
@@ -673,8 +596,8 @@
                                     Grid.Column="1"
                                     Margin="0,0,16,0"
                                     Style="{StaticResource P2rayMicro}"
-                                    Text="占比" />
-                                <StackPanel Grid.Column="2" Orientation="Horizontal">
+                                    Text="趋势" />
+                                <StackPanel Grid.Column="3" Orientation="Horizontal">
                                     <TextBlock
                                         Width="90"
                                         HorizontalAlignment="Right"
@@ -697,7 +620,7 @@
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="240" />
                                                 <ColumnDefinition Width="*" />
-                                                <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
                                             </Grid.ColumnDefinitions>
                                             <TextBlock
                                                 Grid.Column="0"
@@ -709,7 +632,7 @@
                                             <Grid
                                                 Grid.Column="1"
                                                 Height="16"
-                                                Margin="0,0,16,0"
+                                                Margin="0,0,10,0"
                                                 VerticalAlignment="Center">
                                                 <Border
                                                     Height="8"
@@ -730,14 +653,9 @@
                                                         Background="{StaticResource P2raySuccessBrush}"
                                                         CornerRadius="0,4,4,0" />
                                                 </StackPanel>
-                                                <TextBlock
-                                                    HorizontalAlignment="Right"
-                                                    VerticalAlignment="Center"
-                                                    FontSize="10"
-                                                    Foreground="{StaticResource P2rayTextTertiaryBrush}"
-                                                    Text="{Binding ShareText}" />
                                             </Grid>
-                                            <StackPanel Grid.Column="2" Orientation="Horizontal">
+
+                                            <StackPanel Grid.Column="3" Orientation="Horizontal">
                                                 <TextBlock
                                                     Width="90"
                                                     HorizontalAlignment="Right"
