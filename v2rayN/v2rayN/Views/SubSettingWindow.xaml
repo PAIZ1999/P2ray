@@ -18,128 +18,206 @@
     Style="{StaticResource WindowGlobal}"
     WindowStartupLocation="CenterScreen"
     mc:Ignorable="d">
+    <!-- DialogHost 保留：分享订阅时会用它弹出二维码视图（标识符 SubDialog 不能改） -->
     <materialDesign:DialogHost
         materialDesign:TransitionAssist.DisableTransitions="True"
         CloseOnClickAway="True"
         Identifier="SubDialog"
         Style="{StaticResource MaterialDesignEmbeddedDialogHost}">
-        <DockPanel>
-            <ToolBarTray DockPanel.Dock="Top">
-                <ToolBar
-                    HorizontalAlignment="Center"
+        <Grid Margin="20,16,20,18">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <!-- 标题 + 操作 -->
+            <Grid Grid.Row="0" Margin="0,0,0,14">
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Style="{StaticResource P2rayH1}" Text="{x:Static resx:ResUI.menuSubSetting}" />
+                    <TextBlock
+                        Margin="0,3,0,0"
+                        Style="{StaticResource P2rayMicro}"
+                        Text="订阅地址会定期拉取节点列表。双击一行可编辑。" />
+                </StackPanel>
+
+                <StackPanel
+                    HorizontalAlignment="Right"
                     VerticalAlignment="Center"
-                    ClipToBounds="True"
-                    Style="{StaticResource MaterialDesignToolBar}">
-                    <Button x:Name="menuSubAdd">
+                    Orientation="Horizontal">
+                    <Button x:Name="menuSubAdd" Style="{StaticResource P2raySecondaryButton}">
                         <StackPanel Orientation="Horizontal">
                             <materialDesign:PackIcon
-                                Margin="{StaticResource MarginRight8}"
+                                Width="13"
+                                Height="13"
+                                Margin="0,0,6,0"
                                 VerticalAlignment="Center"
                                 Kind="Plus" />
-                            <TextBlock Style="{StaticResource ToolbarTextBlock}" Text="{x:Static resx:ResUI.menuSubAdd}" />
+                            <TextBlock VerticalAlignment="Center" Text="{x:Static resx:ResUI.menuSubAdd}" />
                         </StackPanel>
                     </Button>
-                    <Separator />
-                    <Button x:Name="menuSubDelete">
+                    <Button
+                        x:Name="menuSubEdit"
+                        Margin="8,0,0,0"
+                        Style="{StaticResource P2raySecondaryButton}">
                         <StackPanel Orientation="Horizontal">
                             <materialDesign:PackIcon
-                                Margin="{StaticResource MarginRight8}"
-                                VerticalAlignment="Center"
-                                Kind="Delete" />
-                            <TextBlock Style="{StaticResource ToolbarTextBlock}" Text="{x:Static resx:ResUI.menuSubDelete}" />
-                        </StackPanel>
-                    </Button>
-                    <Separator />
-                    <Button x:Name="menuSubEdit">
-                        <StackPanel Orientation="Horizontal">
-                            <materialDesign:PackIcon
-                                Margin="{StaticResource MarginRight8}"
+                                Width="13"
+                                Height="13"
+                                Margin="0,0,6,0"
                                 VerticalAlignment="Center"
                                 Kind="Edit" />
-                            <TextBlock Style="{StaticResource ToolbarTextBlock}" Text="{x:Static resx:ResUI.menuSubEdit}" />
+                            <TextBlock VerticalAlignment="Center" Text="{x:Static resx:ResUI.menuSubEdit}" />
                         </StackPanel>
                     </Button>
-                    <Separator />
-                    <Button x:Name="menuSubShare">
+                    <Button
+                        x:Name="menuSubShare"
+                        Margin="8,0,0,0"
+                        Style="{StaticResource P2raySecondaryButton}">
                         <StackPanel Orientation="Horizontal">
                             <materialDesign:PackIcon
-                                Margin="{StaticResource MarginRight8}"
+                                Width="13"
+                                Height="13"
+                                Margin="0,0,6,0"
                                 VerticalAlignment="Center"
                                 Kind="QrcodePlus" />
-                            <TextBlock Style="{StaticResource ToolbarTextBlock}" Text="{x:Static resx:ResUI.menuSubShare}" />
+                            <TextBlock VerticalAlignment="Center" Text="{x:Static resx:ResUI.menuSubShare}" />
                         </StackPanel>
                     </Button>
-                    <Button x:Name="menuClose" IsCancel="True">
+                    <Button
+                        x:Name="menuSubDelete"
+                        Margin="8,0,0,0"
+                        Style="{StaticResource P2raySecondaryButton}">
                         <StackPanel Orientation="Horizontal">
                             <materialDesign:PackIcon
-                                Margin="{StaticResource MarginRight8}"
+                                Width="13"
+                                Height="13"
+                                Margin="0,0,6,0"
                                 VerticalAlignment="Center"
-                                Kind="Close" />
-                            <TextBlock Style="{StaticResource ToolbarTextBlock}" Text="{x:Static resx:ResUI.menuClose}" />
+                                Kind="Delete" />
+                            <TextBlock VerticalAlignment="Center" Text="{x:Static resx:ResUI.menuSubDelete}" />
                         </StackPanel>
                     </Button>
-                </ToolBar>
-            </ToolBarTray>
+                </StackPanel>
+            </Grid>
 
-            <DataGrid
-                x:Name="lstSubscription"
-                AutoGenerateColumns="False"
-                BorderThickness="1"
-                CanUserAddRows="False"
-                CanUserResizeRows="False"
-                CanUserSortColumns="False"
-                EnableRowVirtualization="True"
-                GridLinesVisibility="All"
-                HeadersVisibility="Column"
-                IsReadOnly="True"
-                Style="{StaticResource DefDataGrid}">
-                <DataGrid.ContextMenu>
-                    <ContextMenu Style="{StaticResource DefContextMenu}">
-                        <MenuItem
-                            x:Name="menuSubAdd2"
-                            Height="{StaticResource MenuItemHeight}"
-                            Header="{x:Static resx:ResUI.menuSubAdd}" />
-                        <MenuItem
-                            x:Name="menuSubDelete2"
-                            Height="{StaticResource MenuItemHeight}"
-                            Header="{x:Static resx:ResUI.menuSubDelete}" />
-                        <MenuItem
-                            x:Name="menuSubEdit2"
-                            Height="{StaticResource MenuItemHeight}"
-                            Header="{x:Static resx:ResUI.menuSubEdit}" />
-                        <MenuItem
-                            x:Name="menuSubShare2"
-                            Height="{StaticResource MenuItemHeight}"
-                            Header="{x:Static resx:ResUI.menuSubShare}" />
-                    </ContextMenu>
-                </DataGrid.ContextMenu>
-                <DataGrid.Columns>
-                    <DataGridTextColumn
-                        Width="*"
-                        Binding="{Binding Remarks}"
-                        Header="{x:Static resx:ResUI.LvRemarks}" />
-                    <DataGridTextColumn
-                        Width="*"
-                        Binding="{Binding Url}"
-                        Header="{x:Static resx:ResUI.LvUrl}" />
-                    <DataGridCheckBoxColumn
-                        Width="100"
-                        Binding="{Binding Enabled}"
-                        Header="{x:Static resx:ResUI.LvEnabled}" />
-                    <DataGridTextColumn
-                        Width="150"
-                        Binding="{Binding AutoUpdateInterval}"
-                        Header="{x:Static resx:ResUI.LvAutoUpdateInterval}" />
-                    <DataGridTextColumn
-                        Width="150"
-                        Binding="{Binding UserAgent}"
-                        Header="{x:Static resx:ResUI.LvUserAgent}" />
-                    <DataGridTextColumn
-                        Width="80"
-                        Binding="{Binding Sort}"
-                        Header="{x:Static resx:ResUI.LvSort}" />
-                </DataGrid.Columns>
-            </DataGrid>
-        </DockPanel>
+            <!-- 订阅列表 -->
+            <Border Grid.Row="1" Style="{StaticResource P2rayCard}">
+                <DataGrid
+                    x:Name="lstSubscription"                    ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                    AutoGenerateColumns="False"
+                    AlternatingRowBackground="Transparent"
+                    Background="Transparent"
+                    BorderThickness="0"
+                    BorderBrush="{StaticResource P2rayDividerBrush}"
+                    CanUserAddRows="False"
+                    CanUserResizeRows="False"
+                    CanUserSortColumns="False"
+                    ColumnHeaderHeight="34"
+                    EnableRowVirtualization="True"
+                    Foreground="{StaticResource P2rayTextPrimaryBrush}"
+                    GridLinesVisibility="None"
+                    HeadersVisibility="Column"
+                    IsReadOnly="True"
+                    RowBackground="Transparent"
+                    RowHeight="38">
+                    <DataGrid.ContextMenu>
+                        <ContextMenu Style="{StaticResource DefContextMenu}">
+                            <MenuItem
+                                x:Name="menuSubAdd2"
+                                Height="{StaticResource MenuItemHeight}"
+                                Header="{x:Static resx:ResUI.menuSubAdd}" />
+                            <MenuItem
+                                x:Name="menuSubDelete2"
+                                Height="{StaticResource MenuItemHeight}"
+                                Header="{x:Static resx:ResUI.menuSubDelete}" />
+                            <MenuItem
+                                x:Name="menuSubEdit2"
+                                Height="{StaticResource MenuItemHeight}"
+                                Header="{x:Static resx:ResUI.menuSubEdit}" />
+                            <MenuItem
+                                x:Name="menuSubShare2"
+                                Height="{StaticResource MenuItemHeight}"
+                                Header="{x:Static resx:ResUI.menuSubShare}" />
+                        </ContextMenu>
+                    </DataGrid.ContextMenu>
+                    <DataGrid.Resources>
+                        <Style TargetType="DataGridCell">
+                            <Setter Property="Background" Value="Transparent" />
+                            <Setter Property="BorderThickness" Value="0" />
+                            <Setter Property="Padding" Value="10,0" />
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="DataGridCell">
+                                        <Border Padding="{TemplateBinding Padding}" Background="{TemplateBinding Background}">
+                                            <ContentPresenter VerticalAlignment="Center" />
+                                        </Border>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                        <Style TargetType="DataGridColumnHeader">
+                            <Setter Property="Background" Value="Transparent" />
+                            <Setter Property="Foreground" Value="{StaticResource P2rayTextTertiaryBrush}" />
+                            <Setter Property="FontSize" Value="11" />
+                            <Setter Property="FontWeight" Value="Normal" />
+                            <Setter Property="Padding" Value="10,0" />
+                            <Setter Property="BorderThickness" Value="0,0,0,1" />
+                            <Setter Property="BorderBrush" Value="{StaticResource P2rayDividerBrush}" />
+                            <Setter Property="HorizontalContentAlignment" Value="Left" />
+                            <Setter Property="VerticalContentAlignment" Value="Center" />
+                        </Style>
+                        <Style TargetType="DataGridRow">
+                            <Setter Property="Background" Value="Transparent" />
+                            <Setter Property="Foreground" Value="{StaticResource P2rayTextPrimaryBrush}" />
+                            <Style.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="Background" Value="{StaticResource P2rayHoverBrush}" />
+                                </Trigger>
+                                <Trigger Property="IsSelected" Value="True">
+                                    <Setter Property="Background" Value="{StaticResource P2rayAccentSoftBrush}" />
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGrid.Resources>
+                    <DataGrid.Columns>
+                        <DataGridTextColumn
+                            Width="*"
+                            Binding="{Binding Remarks}"
+                            Header="{x:Static resx:ResUI.LvRemarks}" />
+                        <DataGridTextColumn
+                            Width="*"
+                            Binding="{Binding Url}"
+                            Header="{x:Static resx:ResUI.LvUrl}" />
+                        <DataGridCheckBoxColumn
+                            Width="90"
+                            Binding="{Binding Enabled}"
+                            Header="{x:Static resx:ResUI.LvEnabled}" />
+                        <DataGridTextColumn
+                            Width="130"
+                            Binding="{Binding AutoUpdateInterval}"
+                            Header="{x:Static resx:ResUI.LvAutoUpdateInterval}" />
+                        <DataGridTextColumn
+                            Width="130"
+                            Binding="{Binding UserAgent}"
+                            Header="{x:Static resx:ResUI.LvUserAgent}" />
+                        <DataGridTextColumn
+                            Width="70"
+                            Binding="{Binding Sort}"
+                            Header="{x:Static resx:ResUI.LvSort}" />
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Border>
+
+            <!-- 底部：关闭 -->
+            <Button
+                x:Name="menuClose"
+                Grid.Row="2"
+                Margin="0,14,0,0"
+                HorizontalAlignment="Right"
+                Content="{x:Static resx:ResUI.menuClose}"
+                IsCancel="True"
+                Style="{StaticResource P2raySecondaryButton}" />
+        </Grid>
     </materialDesign:DialogHost>
 </base:WindowBase>

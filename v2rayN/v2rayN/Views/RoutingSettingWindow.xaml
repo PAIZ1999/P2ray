@@ -139,7 +139,7 @@
                 BorderThickness="0">
                 <TabItem Header="{x:Static resx:ResUI.TbRoutingTabRuleList}">
                     <DataGrid
-                        x:Name="lstRoutings"
+                        x:Name="lstRoutings"                        ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                         AutoGenerateColumns="False"
                         BorderThickness="0"
                         CanUserAddRows="False"
