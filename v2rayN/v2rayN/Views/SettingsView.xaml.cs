@@ -143,6 +143,9 @@ public partial class SettingsView : ReactiveUserControl<DashboardViewModel>
     #region 高级功能
 
     private async void BtnCoreSetting_Click(object sender, RoutedEventArgs e)
+        => await ShowAsync<CoreSettingViewModel>();
+
+    private async void BtnAdvancedSetting_Click(object sender, RoutedEventArgs e)
         => await ShowAsync<OptionSettingViewModel>();
 
     private async void BtnRouting_Click(object sender, RoutedEventArgs e)

@@ -384,7 +384,7 @@
                                 x:Name="btnCoreSetting"
                                 Margin="0,0,8,8"
                                 Click="BtnCoreSetting_Click"
-                                Content="核心设置"
+                                Content="内核设置"
                                 Style="{StaticResource P2raySecondaryButton}" />
                             <Button
                                 x:Name="btnRoutingSetting"

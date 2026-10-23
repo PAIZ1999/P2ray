@@ -1,0 +1,102 @@
+<base:WindowBase
+    x:Class="v2rayN.Views.CoreSettingWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:base="clr-namespace:v2rayN.Base"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:reactiveui="http://reactiveui.net"
+    xmlns:vms="clr-namespace:ServiceLib.ViewModels;assembly=ServiceLib"
+    Title="内核设置"
+    Width="720"
+    Height="640"
+    x:TypeArguments="vms:CoreSettingViewModel"
+    ResizeMode="CanResize"
+    ShowInTaskbar="False"
+    Style="{StaticResource WindowGlobal}"
+    WindowStartupLocation="CenterOwner"
+    mc:Ignorable="d">
+
+    <Grid Margin="22,18,22,18">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- 标题 -->
+        <StackPanel Grid.Row="0">
+            <TextBlock Style="{StaticResource P2rayH1}" Text="内核设置" />
+            <TextBlock
+                Margin="0,4,0,0"
+                Style="{StaticResource P2rayMicro}"
+                Text="按协议指定用哪个内核。想用「按域名」统计，把对应协议改成 sing_box 即可。" />
+        </StackPanel>
+
+        <!-- 列头 -->
+        <Grid Grid.Row="1" Margin="6,18,6,8">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="220" />
+            </Grid.ColumnDefinitions>
+            <TextBlock Style="{StaticResource P2raySectionLabel}" Text="协议" />
+            <TextBlock
+                Grid.Column="1"
+                Style="{StaticResource P2raySectionLabel}"
+                Text="内核" />
+        </Grid>
+
+        <!-- 映射列表 -->
+        <Border Grid.Row="2" Style="{StaticResource P2rayCard}">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <ItemsControl x:Name="lstRows" Margin="0,4">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Style="{StaticResource P2rayRow}">
+                                <Grid Margin="6,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="220" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock
+                                        VerticalAlignment="Center"
+                                        Style="{StaticResource P2rayBody}"
+                                        Text="{Binding Protocol}" />
+                                    <ComboBox
+                                        Grid.Column="1"
+                                        ItemsSource="{Binding Cores}"
+                                        SelectedItem="{Binding SelectedCore, Mode=TwoWay}"
+                                        Style="{StaticResource P2rayComboBox}" />
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </Border>
+
+        <!-- 底部操作 -->
+        <Grid Grid.Row="3" Margin="0,16,0,0">
+            <Button
+                x:Name="btnReset"
+                HorizontalAlignment="Left"
+                Click="BtnReset_Click"
+                Content="全部设为 Xray"
+                Style="{StaticResource P2raySecondaryButton}" />
+            <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
+                <Button
+                    x:Name="btnCancel"
+                    Click="BtnCancel_Click"
+                    Content="取消"
+                    Style="{StaticResource P2raySecondaryButton}" />
+                <Button
+                    x:Name="btnSave"
+                    Margin="8,0,0,0"
+                    Click="BtnSave_Click"
+                    Content="保存"
+                    Style="{StaticResource P2rayPrimaryButton}" />
+            </StackPanel>
+        </Grid>
+    </Grid>
+</base:WindowBase>
