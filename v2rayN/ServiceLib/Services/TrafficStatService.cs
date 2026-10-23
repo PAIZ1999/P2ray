@@ -49,20 +49,13 @@ public class TrafficStatService
             {
                 try
                 {
-                    var running = AppManager.Instance.RunningCoreType;
-                    if (running is not (ECoreType.Xray or ECoreType.v2fly or ECoreType.v2fly_v5))
+                    var totals = await ReadTotalsAsync(token).ConfigureAwait(false);
+                    if (totals is null)
                     {
                         continue;
                     }
 
-                    var url = $"{Global.HttpProtocol}{Global.Loopback}:{AppManager.Instance.StatePort}/debug/vars";
-                    var raw = await HttpClientHelper.Instance.TryGetAsync(url, token).ConfigureAwait(false);
-                    if (raw.IsNullOrEmpty())
-                    {
-                        continue;
-                    }
-
-                    var (up, down) = ReadProxyTotals(raw);
+                    var (up, down) = totals.Value;
                     if (up < 0 || down < 0)
                     {
                         continue;
@@ -106,6 +99,34 @@ public class TrafficStatService
         {
             // 关闭失败不影响退出
         }
+    }
+
+    /// <summary>
+    /// 读取当前内核的累计上下行字节。
+    ///
+    /// 两种内核走两条路：
+    ///   xray  → /debug/vars 的 stats（按 outbound 分项累加）
+    ///   sing-box / mihomo → clash API 的 uploadTotal / downloadTotal
+    /// 之前只实现了 xray 那条，于是切到 sing-box 后「概览」永远是 0。
+    /// </summary>
+    private static async Task<(long Up, long Down)?> ReadTotalsAsync(CancellationToken token)
+    {
+        var running = AppManager.Instance.RunningCoreType;
+
+        if (running is ECoreType.sing_box or ECoreType.mihomo)
+        {
+            var conns = await ClashApiManager.Instance.GetConnections().ConfigureAwait(false);
+            return conns is null ? null : ((long)conns.uploadTotal, (long)conns.downloadTotal);
+        }
+
+        if (running is not (ECoreType.Xray or ECoreType.v2fly or ECoreType.v2fly_v5))
+        {
+            return null;
+        }
+
+        var url = $"{Global.HttpProtocol}{Global.Loopback}:{AppManager.Instance.StatePort}/debug/vars";
+        var raw = await HttpClientHelper.Instance.TryGetAsync(url, token).ConfigureAwait(false);
+        return raw.IsNullOrEmpty() ? null : ReadProxyTotals(raw);
     }
 
     /// <summary>

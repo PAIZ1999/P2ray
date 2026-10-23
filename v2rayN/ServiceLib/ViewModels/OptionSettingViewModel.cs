@@ -418,6 +418,12 @@ public partial class OptionSettingViewModel : MyReactiveObject, ICloseable
 
     private async Task SaveCoreType()
     {
+        // 记录改动前的映射：内核是按协议映射的，改完必须重启对应内核才生效。
+        // 之前只是保存配置，正在运行的内核不会换 —— 用户会看到"已选 sing-box
+        // 但内核没起来"，必须先断开再连接才行。
+        var before = string.Join(",",
+            (_config.CoreTypeItem ?? []).Select(t => $"{t.ConfigType}:{t.CoreType}"));
+
         for (var k = 1; k <= _config.CoreTypeItem.Count; k++)
         {
             var item = _config.CoreTypeItem[k - 1];
@@ -465,6 +471,16 @@ public partial class OptionSettingViewModel : MyReactiveObject, ICloseable
             }
             item.CoreType = Enum.Parse<ECoreType>(type);
         }
+
+        var after = string.Join(",",
+            (_config.CoreTypeItem ?? []).Select(t => $"{t.ConfigType}:{t.CoreType}"));
+
+        if (before != after && AppManager.Instance.RunningCoreType != default)
+        {
+            NoticeManager.Instance.Enqueue("内核类型已更改，正在用新内核重新连接…");
+            AppEvents.ReloadCoreRequested.Publish();
+        }
+
         await Task.CompletedTask;
     }
 }

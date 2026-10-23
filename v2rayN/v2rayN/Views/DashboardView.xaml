@@ -755,6 +755,41 @@
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
 
+                    <!-- 常驻的添加行：原来只有"无订阅"引导里有添加按钮，
+                         一旦有了第一个订阅就再也加不了第二个 -->
+                    <Border x:Name="rowAddSub" Style="{StaticResource P2rayRow}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <Border
+                                Grid.Column="0"
+                                Background="{StaticResource P2rayIconGreen}"
+                                Style="{StaticResource P2rayRowIcon}">
+                                <materialDesign:PackIcon
+                                    Width="13"
+                                    Height="13"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Foreground="White"
+                                    Kind="Plus" />
+                            </Border>
+                            <TextBlock
+                                Grid.Column="1"
+                                VerticalAlignment="Center"
+                                Style="{StaticResource P2rayBody}"
+                                Text="添加订阅" />
+                            <Button
+                                Grid.Column="2"
+                                MinWidth="64"
+                                Click="BtnAddSub_Click"
+                                Content="添加"
+                                Style="{StaticResource P2rayPrimaryButton}" />
+                        </Grid>
+                    </Border>
+
                     <!-- 无订阅时的引导行 -->
                     <StackPanel x:Name="guidePanel">
                         <Border Style="{StaticResource P2rayRow}">

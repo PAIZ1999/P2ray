@@ -191,6 +191,9 @@ public partial class DashboardView : ReactiveUserControl<DashboardViewModel>
             // 订阅有无决定引导区与列表的可见性
             this.OneWayBind(ViewModel, vm => vm.Subscriptions, v => v.guidePanel.Visibility,
                     subs => subs is { Count: > 0 } ? Visibility.Collapsed : Visibility.Visible).DisposeWith(disposables);
+            // 常驻添加行只在已有订阅时出现：空状态已经有一条引导行，避免重复
+            this.OneWayBind(ViewModel, vm => vm.Subscriptions, v => v.rowAddSub.Visibility,
+                    subs => subs is { Count: > 0 } ? Visibility.Visible : Visibility.Collapsed).DisposeWith(disposables);
             this.OneWayBind(ViewModel, vm => vm.Subscriptions, v => v.lstSubscriptions.Visibility,
                     subs => subs is { Count: > 0 } ? Visibility.Visible : Visibility.Collapsed).DisposeWith(disposables);
 
