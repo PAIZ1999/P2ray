@@ -141,6 +141,7 @@ public class AppStatService
         }
 
         var key = $"{DateTime.Now:yyyyMMdd}|{name}";
+        var needFlush = false;
         lock (_lock)
         {
             var cur = _pending.TryGetValue(key, out var p) ? p : (0L, 0L);
@@ -148,8 +149,15 @@ public class AppStatService
 
             if (DateTime.Now - _lastFlush >= FlushInterval)
             {
-                FlushLocked();
+                needFlush = true;
             }
+        }
+
+        // 锁外排落库：ETW 回调在热路径上，不能在这里做 IO；
+        // 同时也不能让 UI 线程取数据时抢不到锁。
+        if (needFlush)
+        {
+            _ = FlushAsync();
         }
     }
 
@@ -189,43 +197,51 @@ public class AppStatService
         return name;
     }
 
-    private void FlushLocked()
+    public void Flush()
     {
-        _lastFlush = DateTime.Now;
-        if (_pending.Count == 0)
-        {
-            return;
-        }
+        _ = FlushAsync();
+    }
 
-        var snapshot = new Dictionary<string, (long, long)>(_pending);
-        _pending.Clear();
+    public async Task FlushAsync()
+    {
+        Dictionary<string, (long Up, long Down)> snapshot;
+        lock (_lock)
+        {
+            _lastFlush = DateTime.Now;
+            if (_pending.Count == 0)
+            {
+                return;
+            }
+
+            snapshot = new Dictionary<string, (long, long)>(_pending);
+            _pending.Clear();
+        }
 
         try
         {
             foreach (var (key, delta) in snapshot)
             {
                 var table = SQLiteHelper.Instance.TableAsync<AppStatItem>();
-                var row = table.Where(t => t.Key == key).FirstOrDefaultAsync().GetAwaiter().GetResult();
+                var row = await table.Where(t => t.Key == key).FirstOrDefaultAsync();
                 if (row is null)
                 {
-                    SQLiteHelper.Instance.ReplaceAsync(new AppStatItem
+                    await SQLiteHelper.Instance.ReplaceAsync(new AppStatItem
                     {
                         Key = key,
                         Up = delta.Item1,
                         Down = delta.Item2,
-                    }).GetAwaiter().GetResult();
+                    });
                 }
                 else
                 {
                     row.Up += delta.Item1;
                     row.Down += delta.Item2;
-                    SQLiteHelper.Instance.ReplaceAsync(row).GetAwaiter().GetResult();
+                    await SQLiteHelper.Instance.ReplaceAsync(row);
                 }
             }
         }
         catch (Exception ex)
         {
-            // 写库失败就把增量放回去，下一轮重试
             lock (_lock)
             {
                 foreach (var (key, delta) in snapshot)
@@ -239,18 +255,10 @@ public class AppStatService
         }
     }
 
-    public void Flush()
-    {
-        lock (_lock)
-        {
-            FlushLocked();
-        }
-    }
-
     /// <summary>最近 N 天按进程聚合，降序返回。Key 为进程名。</summary>
     public async Task<List<AppStatItem>> GetRangeAsync(int days)
     {
-        Flush();
+        await FlushAsync();
 
         try
         {

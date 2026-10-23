@@ -186,21 +186,28 @@ public class DomainStatService
         Flush();
     }
 
-    /// <summary>把内存增量写库。可重复调用。</summary>
+    /// <summary>
+    /// 排一次落库（不阻塞）。写库放到锁外异步做 —— 这个服务会在 UI 线程上
+    /// 被调用（切到「按域名」要取数），持锁同步等 SQLite 会让界面卡住。
+    /// </summary>
     public void Flush()
+    {
+        _ = FlushAsync();
+    }
+
+    public async Task FlushAsync()
     {
         Dictionary<string, (long Up, long Down)> snapshot;
         lock (_lock)
         {
+            _lastFlush = DateTime.Now;
             if (_pending.Count == 0)
             {
-                _lastFlush = DateTime.Now;
                 return;
             }
 
             snapshot = new Dictionary<string, (long, long)>(_pending);
             _pending.Clear();
-            _lastFlush = DateTime.Now;
         }
 
         try
@@ -208,27 +215,27 @@ public class DomainStatService
             foreach (var (key, delta) in snapshot)
             {
                 var table = SQLiteHelper.Instance.TableAsync<DomainStatItem>();
-                var row = table.Where(t => t.Key == key).FirstOrDefaultAsync().GetAwaiter().GetResult();
+                var row = await table.Where(t => t.Key == key).FirstOrDefaultAsync();
                 if (row is null)
                 {
-                    SQLiteHelper.Instance.ReplaceAsync(new DomainStatItem
+                    await SQLiteHelper.Instance.ReplaceAsync(new DomainStatItem
                     {
                         Key = key,
                         Up = delta.Up,
                         Down = delta.Down,
-                    }).GetAwaiter().GetResult();
+                    });
                 }
                 else
                 {
                     row.Up += delta.Up;
                     row.Down += delta.Down;
-                    SQLiteHelper.Instance.ReplaceAsync(row).GetAwaiter().GetResult();
+                    await SQLiteHelper.Instance.ReplaceAsync(row);
                 }
             }
         }
         catch (Exception ex)
         {
-            // 写库失败就把这批增量放回去，下一轮重试，不丢数据
+            // 写失败把这批增量放回内存，下一轮重试
             lock (_lock)
             {
                 foreach (var (key, delta) in snapshot)
@@ -245,7 +252,7 @@ public class DomainStatService
     /// <summary>最近 N 天按域名聚合，降序返回。</summary>
     public async Task<List<DomainStatItem>> GetRangeAsync(int days)
     {
-        Flush();
+        await FlushAsync();
 
         try
         {

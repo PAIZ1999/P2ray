@@ -196,9 +196,11 @@ public partial class TrafficView : ReactiveUserControl<TrafficViewModel>
             line.SetResourceReference(Shape.StrokeProperty, "P2rayDividerBrush");
             plotLayer.Children.Insert(i, line);
 
+            // 没有数据时只保留底部那个 0：四档都画会显示成 "1 B / 0 B / 0 B / 0"，
+            // 看起来像渲染错误
             var label = new TextBlock
             {
-                Text = FormatAxis(max * ratio),
+                Text = max <= 1 && i != 0 ? string.Empty : FormatAxis(max * ratio),
                 FontSize = 10,
                 Width = YGutter - 10,
                 TextAlignment = TextAlignment.Right,

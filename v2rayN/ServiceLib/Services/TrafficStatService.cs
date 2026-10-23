@@ -166,6 +166,7 @@ public class TrafficStatService
         {
             return;
         }
+        var needFlush = false;
         lock (_lock)
         {
             var hour = CurrentHourTick();
@@ -173,7 +174,7 @@ public class TrafficStatService
             {
                 // 跨小时：先把上一小时的余量刷掉，再从新桶开始。
                 // 不刷的话这一小时最后不足一个间隔的流量会被算进下一小时。
-                FlushLocked();
+                needFlush = true;
                 _hourTick = hour;
             }
 
@@ -183,67 +184,79 @@ public class TrafficStatService
 
             if (DateTime.Now - _lastFlush >= FlushInterval)
             {
-                FlushLocked();
+                needFlush = true;
             }
+        }
+
+        // 锁外再排落库：写库是 IO，不能占着锁做，否则 UI 线程取数据时会被堵住
+        if (needFlush)
+        {
+            _ = FlushAsync();
         }
     }
 
-    /// <summary>把内存里的累计值写入数据库。可安全重复调用。</summary>
+    /// <summary>
+    /// 排一次落库（不阻塞调用方）。
+    ///
+    /// 这里刻意不再「持锁等异步写库」：这个服务的调用点包含 UI 线程
+    /// （切到流量页会取当日/近几日数据），一旦在锁内同步等待 SQLite，
+    /// 只要写库那一刻被占用，界面就会整块卡死 —— 实测点「流量」标签直接卡住。
+    /// 现在只为写库拍快照，真正落库在锁外异步完成。
+    /// </summary>
     public void Flush()
     {
-        lock (_lock)
-        {
-            FlushLocked();
-        }
+        _ = FlushAsync();
     }
 
     public async Task FlushAsync()
     {
-        await Task.Run(Flush);
-    }
-
-    private void FlushLocked()
-    {
-        _lastFlush = DateTime.Now;
-        if (!_dirty || _hourTick == 0)
+        long hour;
+        long up;
+        long down;
+        lock (_lock)
         {
-            return;
+            _lastFlush = DateTime.Now;
+            if (!_dirty || _hourTick == 0)
+            {
+                return;
+            }
+
+            // 快照后立刻清脏标记：写库在锁外进行，期间新的增量会重新置脏，
+            // 下一轮 flush 再写一次，不会丢。
+            hour = _hourTick;
+            up = _up;
+            down = _down;
+            _dirty = false;
         }
 
-        var hour = _hourTick;
-        var up = _up;
-        var down = _down;
-
-        // 这里是同步落库：调用点在每秒的统计回调里，改成异步没人 await，
-        // 异常会被吞掉。SQLite 单行 upsert 足够快（实测微秒级），
-        // 且已有 20 秒节流，不会成为瓶颈。
         try
         {
             var table = SQLiteHelper.Instance.TableAsync<TrafficStatItem>();
-            // SQLite-net 的异步表查询只提供 *Async 版本，同步的 FirstOrDefault
-            // 会撞上 ImmutableArray 的扩展方法推断失败；这里是同步上下文，直接等结果。
-            var row = table.Where(t => t.HourTick == hour).FirstOrDefaultAsync().GetAwaiter().GetResult();
+            var row = await table.Where(t => t.HourTick == hour).FirstOrDefaultAsync();
             if (row is null)
             {
-                SQLiteHelper.Instance.ReplaceAsync(new TrafficStatItem
+                await SQLiteHelper.Instance.ReplaceAsync(new TrafficStatItem
                 {
                     HourTick = hour,
                     Up = up,
                     Down = down,
-                }).GetAwaiter().GetResult();
+                });
             }
             else
             {
                 row.Up = up;
                 row.Down = down;
-                SQLiteHelper.Instance.ReplaceAsync(row).GetAwaiter().GetResult();
+                await SQLiteHelper.Instance.ReplaceAsync(row);
             }
-
-            _dirty = false;
         }
         catch (Exception ex)
         {
-            // 落库失败不清 _dirty：下一轮再试，数据仍在内存里。
+            // 落库失败重新置脏，下一轮重试；数据仍在内存里
+            lock (_lock)
+            {
+                _dirty = true;
+            }
+
             Logging.SaveLog($"{_tag}.Flush", ex);
         }
     }
@@ -276,7 +289,7 @@ public class TrafficStatService
     /// <summary>最近 N 小时的小时桶，缺的小时补 0，便于界面直接画连续柱状图。</summary>
     public async Task<List<TrafficStatItem>> GetHourlyAsync(int hours)
     {
-        Flush();
+        await FlushAsync();
 
         var result = new List<TrafficStatItem>(hours);
         try
@@ -308,7 +321,7 @@ public class TrafficStatService
     /// <summary>最近 N 天按天汇总（由小时桶加出来）。</summary>
     public async Task<List<TrafficStatItem>> GetDailyAsync(int days)
     {
-        Flush();
+        await FlushAsync();
 
         var result = new List<TrafficStatItem>(days);
         try
