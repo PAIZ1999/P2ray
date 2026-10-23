@@ -9,7 +9,7 @@
          ——刚更新的用户被反复提示"有新版本"，因为程序始终自称旧版本。
          CI 里有一个校验步骤会拦住这种不一致。 -->
     <PropertyGroup>
-        <Version>1.9.1</Version>
+        <Version>1.10.0</Version>
     </PropertyGroup>
 
     <PropertyGroup>

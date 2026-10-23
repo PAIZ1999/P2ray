@@ -42,50 +42,52 @@ public static class ClashSubscriptionHandler
 
     /// <summary>
     /// 落盘并维护对应的自定义配置节点。返回节点 IndexId；失败返回 null。
+    ///
+    /// 全程放在 Task.Run 里、直接写库：
+    /// 上一版用 AppManager.GetProfileItem + ConfigHandler.AddServer，在 UI 线程
+    /// 发起时会卡住（文件写完了、节点没建出来、日志也没有异常）。
+    /// 这里不碰任何 UI 相关的链路，只做"写文件 + upsert 一行"。
     /// </summary>
     public static async Task<string?> ImportAsync(Config config, string subId, string remarks, string content,
         Func<bool, string, Task>? updateFunc)
     {
         try
         {
-            var dir = Path.Combine(Utils.GetConfigPath(""), "clash");
-            if (!Directory.Exists(dir))
+            return await Task.Run(async () =>
             {
-                Directory.CreateDirectory(dir);
-            }
+                var dir = Path.Combine(Utils.GetConfigPath(""), "clash");
+                if (!Directory.Exists(dir))
+                {
+                    Directory.CreateDirectory(dir);
+                }
 
-            var fileName = $"{subId.TrimEx()}.yaml";
-            var filePath = Path.Combine(dir, fileName);
-            await File.WriteAllTextAsync(filePath, content);
+                var fileName = $"{subId.TrimEx()}.yaml";
+                var filePath = Path.Combine(dir, fileName);
+                await File.WriteAllTextAsync(filePath, content);
 
-            // IndexId 固定：同一订阅重复更新只覆盖文件，不会越加越多
-            var indexId = $"clash-{subId.TrimEx()}";
-            var existing = await AppManager.Instance.GetProfileItem(indexId);
+                // IndexId 固定：同一订阅重复更新只覆盖文件，不会越加越多
+                var indexId = $"clash-{subId.TrimEx()}";
+                var table = SQLiteHelper.Instance.TableAsync<ProfileItem>();
+                var existing = await table.Where(t => t.IndexId == indexId).FirstOrDefaultAsync();
 
-            var profile = existing ?? new ProfileItem
-            {
-                IndexId = indexId,
-                ConfigType = EConfigType.Custom,
-                CoreType = ECoreType.mihomo,
-                Subid = subId,
-                IsSub = true,
-            };
+                var profile = existing ?? new ProfileItem
+                {
+                    IndexId = indexId,
+                    ConfigType = EConfigType.Custom,
+                    CoreType = ECoreType.mihomo,
+                    Subid = subId,
+                    IsSub = true,
+                };
 
-            profile.Remarks = remarks;
-            profile.Address = filePath;
+                profile.Remarks = remarks;
+                profile.Address = filePath;
 
-            if (existing is null)
-            {
-                await ConfigHandler.AddServer(config, profile);
-            }
-            else
-            {
                 await SQLiteHelper.Instance.ReplaceAsync(profile);
-            }
 
-            await updateFunc?.Invoke(false, $"已识别为 Clash 配置，保存为 mihomo 节点：{remarks}");
-            Logging.SaveLog($"{_tag}: 导入 Clash 订阅 {subId} -> {filePath}");
-            return indexId;
+                await updateFunc?.Invoke(false, $"已识别为 Clash 配置，保存为 mihomo 节点：{remarks}");
+                Logging.SaveLog($"{_tag}: 导入 Clash 订阅 {subId} -> {filePath}");
+                return indexId;
+            });
         }
         catch (Exception ex)
         {
