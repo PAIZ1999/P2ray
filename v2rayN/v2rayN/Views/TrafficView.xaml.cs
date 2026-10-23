@@ -1,3 +1,4 @@
+using System.Windows.Threading;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
@@ -105,6 +106,12 @@ public partial class TrafficView : ReactiveUserControl<TrafficViewModel>
                 .DisposeWith(disposables);
         });
 
+        // 实时刷新：统计每 2 秒轮询、5 秒落盘；页面每 3 秒取一次数。
+        // 原来只在进入页面时读一次库，用户下载时看到的是一动不动的数字。
+        RealtimeTimer = new DispatcherTimer(TimeSpan.FromSeconds(3), DispatcherPriority.Background,
+            (_, _) => RefreshIfVisible(), Dispatcher);
+        RealtimeTimer.Start();
+
         Loaded += (_, _) =>
         {
             EnsureLayer();
@@ -137,6 +144,28 @@ public partial class TrafficView : ReactiveUserControl<TrafficViewModel>
         finally
         {
             _suppressTabSync = false;
+        }
+    }
+
+    private readonly DispatcherTimer? RealtimeTimer;
+    private bool _refreshing;
+
+    /// <summary>只在页面可见时刷新；切到其它页或正在刷新时跳过。</summary>
+    private void RefreshIfVisible()
+    {
+        if (ViewModel is null || !IsVisible || _refreshing)
+        {
+            return;
+        }
+
+        _refreshing = true;
+        try
+        {
+            ViewModel.RefreshCmd.Execute().Subscribe(_ => _refreshing = false, _ => _refreshing = false);
+        }
+        catch
+        {
+            _refreshing = false;
         }
     }
 

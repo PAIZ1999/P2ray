@@ -22,7 +22,7 @@ public class AppStatService
     private static readonly Lazy<AppStatService> _instance = new(() => new());
     public static AppStatService Instance => _instance.Value;
 
-    private static readonly TimeSpan FlushInterval = TimeSpan.FromSeconds(20);
+    private static readonly TimeSpan FlushInterval = TimeSpan.FromSeconds(5);
     private const string SessionName = "P2ray-Kernel-Network";
 
     private readonly object _lock = new();
@@ -35,6 +35,7 @@ public class AppStatService
     private volatile bool _running;
     private long _seenEvents;   // TEMPDBG
     private long _matchedEvents;   // TEMPDBG
+    private readonly List<string> _largest = [];   // TEMPDBG
     private string? _lastError;
 
     /// <summary>是否具备运行条件（管理员）。</summary>
@@ -148,6 +149,27 @@ public class AppStatService
     /// <summary>诊断用：通过回环代理端口过滤后的事件数。</summary>
     public long DebugMatchedEvents => _matchedEvents;
 
+    /// <summary>诊断：回环事件里最大的 5 条（addr/port/size），用于确认大流量走的是哪个端口。</summary>
+    public string DebugLargestEvents { get { lock (_lock) { return string.Join(" | ", _largest); } } }
+
+    private void TrackLargest(int pid, long size, string? addr, int port)   // TEMPDBG
+    {
+        if (!IsLoopback(addr) || size <= 0)
+        {
+            return;
+        }
+
+        lock (_lock)
+        {
+            if (_largest.Count >= 5)
+            {
+                return;
+            }
+
+            _largest.Add($"pid={pid} addr={addr} port={port} size={size}");
+        }
+    }
+
     private static int ProxyPort()
     {
         try
@@ -168,6 +190,7 @@ public class AppStatService
     private void Accumulate(int pid, long up, long down, string? addr, int port)
     {
         _seenEvents++;   // TEMPDBG
+        TrackLargest(pid, up + down, addr, port);   // TEMPDBG
         if (ProxyOnly)
         {
             var proxyPort = ProxyPort();

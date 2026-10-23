@@ -14,7 +14,7 @@ public class TrafficStatService
     public static TrafficStatService Instance => _instance.Value;
 
     /// <summary>落库间隔。20 秒：既不会让磁盘一直响，异常退出最多也只丢这么久。</summary>
-    private static readonly TimeSpan FlushInterval = TimeSpan.FromSeconds(20);
+    private static readonly TimeSpan FlushInterval = TimeSpan.FromSeconds(5);
 
     private readonly object _lock = new();
     private long _hourTick;
@@ -43,7 +43,7 @@ public class TrafficStatService
 
         Task.Run(async () =>
         {
-            using var timer = new PeriodicTimer(TimeSpan.FromSeconds(5));
+            using var timer = new PeriodicTimer(TimeSpan.FromSeconds(2));
             while (!token.IsCancellationRequested && await timer.WaitForNextTickAsync(token).ConfigureAwait(false))
             {
                 try

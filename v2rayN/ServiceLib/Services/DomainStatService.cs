@@ -24,7 +24,7 @@ public class DomainStatService
     // 1 秒换来的开销只是一次本地 HTTP GET，可以接受；仍然会漏掉亚秒级短连接，
     // 这点在界面上如实说明，不假装精确。
     private static readonly TimeSpan PollInterval = TimeSpan.FromSeconds(1);
-    private static readonly TimeSpan FlushInterval = TimeSpan.FromSeconds(20);
+    private static readonly TimeSpan FlushInterval = TimeSpan.FromSeconds(5);
 
     private readonly object _lock = new();
 
