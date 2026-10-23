@@ -39,6 +39,15 @@ public partial class UpdateService(Config config, Func<bool, string, Task> updat
             url = result.Url!;
             fileName = Utils.GetTempPath(Utils.GetGuid());
             await downloadHandle.DownloadFileAsync(new() { FileUrl = url, FilePath = fileName }, blProxy, cancellationToken);
+
+            // 下载完成先校验完整性：不匹配就删掉，避免把损坏的包解压覆盖程序
+            var verify = await ChecksumHandler.VerifyAsync(url, fileName, downloadHandle, blProxy, cancellationToken);
+            if (!verify.Ok)
+            {
+                try { File.Delete(fileName); } catch { }
+                await UpdateFunc(false, verify.Msg);
+                return;
+            }
         }
         else
         {
@@ -89,6 +98,15 @@ public partial class UpdateService(Config config, Func<bool, string, Task> updat
             var ext = url.Contains(".tar.gz") ? ".tar.gz" : Path.GetExtension(url);
             fileName = Utils.GetTempPath(Utils.GetGuid() + ext);
             await downloadHandle.DownloadFileAsync(new() { FileUrl = url, FilePath = fileName }, blProxy, cancellationToken);
+
+            // 下载完成先校验完整性：不匹配就删掉，避免把损坏的包解压覆盖程序
+            var verify = await ChecksumHandler.VerifyAsync(url, fileName, downloadHandle, blProxy, cancellationToken);
+            if (!verify.Ok)
+            {
+                try { File.Delete(fileName); } catch { }
+                await UpdateFunc(false, verify.Msg);
+                return;
+            }
         }
         else
         {

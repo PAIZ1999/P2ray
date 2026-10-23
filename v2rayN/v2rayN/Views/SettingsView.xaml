@@ -437,7 +437,42 @@
             <TextBlock Style="{StaticResource P2raySectionLabel}" Text="数据" />
             <Border Margin="0,0,0,16" Style="{StaticResource P2rayCard}">
                 <StackPanel>
-                    <Border Style="{StaticResource P2rayRow}">
+                                        <Border Style="{StaticResource P2rayRow}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <Border
+                                Grid.Column="0"
+                                Background="{StaticResource P2rayIconGreen}"
+                                Style="{StaticResource P2rayRowIcon}">
+                                <materialDesign:PackIcon
+                                    Width="13"
+                                    Height="13"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Foreground="White"
+                                    Kind="ChartTimelineVariant" />
+                            </Border>
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                <TextBlock Style="{StaticResource P2rayBody}" Text="流量统计保留" />
+                                <TextBlock
+                                    Margin="0,2,0,0"
+                                    Style="{StaticResource P2rayMicro}"
+                                    Text="超过保留期的统计会自动清理，0 表示永久保留" />
+                            </StackPanel>
+                            <Button
+                                x:Name="btnRetention"
+                                Grid.Column="2"
+                                MinWidth="88"
+                                VerticalAlignment="Center"
+                                Click="BtnRetention_Click"
+                                Style="{StaticResource P2raySecondaryButton}" />
+                        </Grid>
+                    </Border>
+<Border Style="{StaticResource P2rayRow}">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" />

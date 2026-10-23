@@ -39,6 +39,7 @@ public partial class SettingsView : ReactiveUserControl<DashboardViewModel>
 
         RefreshAutoUpdateButton();
         RefreshLogLevelButton();
+        RefreshRetentionButton();
     }
 
     #region 通用
@@ -185,6 +186,24 @@ public partial class SettingsView : ReactiveUserControl<DashboardViewModel>
 
     #region 数据
 
+    /// <summary>保留期可选值：0 表示永久保留。</summary>
+    private static readonly int[] _retentionOptions = [30, 90, 365, 0];
+
+    private async void BtnRetention_Click(object sender, RoutedEventArgs e)
+    {
+        var config = AppManager.Instance.Config;
+        var current = Array.IndexOf(_retentionOptions, config.GuiItem.TrafficRetentionDays);
+        config.GuiItem.TrafficRetentionDays = _retentionOptions[(current + 1) % _retentionOptions.Length];
+
+        await ConfigHandler.SaveConfig(config);
+        RefreshRetentionButton();
+    }
+
+    private void RefreshRetentionButton()
+    {
+        var days = AppManager.Instance.Config.GuiItem.TrafficRetentionDays;
+        btnRetention.Content = days <= 0 ? "永久保留" : $"{days} 天";
+    }
     private void BtnOpenDir_Click(object sender, RoutedEventArgs e)
     {
         ProcUtils.ProcessStart(Utils.StartupPath());

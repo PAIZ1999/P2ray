@@ -79,6 +79,14 @@ public class GUIItem
     /// <summary>是否实时显示上下行速率。同样默认开启，否则首页流量卡恒为 0。</summary>
     public bool DisplayRealTimeSpeed { get; set; } = true;
 
+    /// <summary>
+    /// 流量统计的保留天数，0 表示永久保留。
+    ///
+    /// 三张统计表（时段 / 域名 / 应用）只增不减，长期使用会让数据库持续膨胀；
+    /// 默认保留 90 天，够看季度趋势，也不至于无限增长。
+    /// </summary>
+    public int TrafficRetentionDays { get; set; } = 90;
+
     public bool KeepOlderDedupl { get; set; }
     public int AutoUpdateInterval { get; set; }
     public int TrayMenuServersLimit { get; set; } = 20;
