@@ -199,6 +199,16 @@ public partial class NodesView : ReactiveUserControl<DashboardViewModel>
         ViewModel?.RefreshNodesCmd.Execute().Subscribe();
     }
 
+    private async void BtnCustomConfig_Click(object sender, RoutedEventArgs e)
+    {
+        if (ViewModel is null)
+        {
+            return;
+        }
+
+        await ViewModel.AddCustomConfigAsync();
+    }
+
     private void BtnImport_Click(object sender, RoutedEventArgs e)
     {
         ViewModel?.AddFromClipboardCmd.Execute().Subscribe();

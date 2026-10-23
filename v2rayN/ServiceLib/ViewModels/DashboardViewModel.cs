@@ -1131,6 +1131,9 @@ public partial class DashboardViewModel : MyReactiveObject
     public ReactiveCommand<RxVoid, RxVoid> RemoveNodeCmd => _profiles.RemoveServerCmd;
 
     /// <summary>编辑选中节点。</summary>
+    /// <summary>添加自定义配置节点（Clash YAML / Xray JSON），mihomo 只能靠这种形式使用。</summary>
+    public Task AddCustomConfigAsync() => _profiles.AddCustomConfigAsync();
+
     public ReactiveCommand<RxVoid, RxVoid> EditNodeCmd => _profiles.EditServerCmd;
 
     /// <summary>

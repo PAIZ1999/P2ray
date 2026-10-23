@@ -461,6 +461,28 @@ public partial class ProfilesViewModel : MyReactiveObject
         return lstSelected;
     }
 
+    /// <summary>
+    /// 添加「自定义配置」节点：地址指向本地的 Clash YAML / Xray JSON 文件。
+    /// 这类节点是唯一能把 mihomo 用起来的形式 —— mihomo 只吃 YAML，
+    /// 而程序里没有 Clash 格式的生成器，普通节点给不出 YAML。
+    /// </summary>
+    public async Task AddCustomConfigAsync()
+    {
+        var item = new ProfileItem
+        {
+            Subid = AppManager.Instance.Config.SubIndexId,
+            ConfigType = EConfigType.Custom,
+            IsSub = false,
+        };
+
+        var addServer2ViewModel = new AddServer2ViewModel(item);
+        var ret = await AppManager.Instance.WindowDialog.ShowDialogAsync(addServer2ViewModel);
+        if (ret == true)
+        {
+            await RefreshServers();
+        }
+    }
+
     public async Task EditServerAsync()
     {
         if (string.IsNullOrEmpty(SelectedProfile?.IndexId))

@@ -1,7 +1,7 @@
 #requires -Version 7.0
 <#
 .SYNOPSIS
-    获取 P2ray 运行所需的代理内核（Xray-core、sing-box），组装到 bin/<coretype>/ 目录。
+    获取 P2ray 运行所需的代理内核（Xray-core、sing-box、mihomo），组装到 bin/<coretype>/ 目录。
 
 .DESCRIPTION
     内核直接来自各上游官方 Release，不经过任何中转仓库：
@@ -55,6 +55,15 @@ $CoreSpec = @(
         Asset   = 'sing-box-{0}-windows-amd64.zip'
         Exe     = 'sing-box.exe'
         SubDir  = 'sing_box'
+    },
+    @{
+        Name    = 'mihomo'
+        Repo    = 'MetaCubeX/mihomo'
+        Version = 'v1.19.33'
+        # compatible 版不要求 AVX，兼容面最广；仅用于「自定义配置」类型的节点
+        Asset   = 'mihomo-windows-amd64-compatible-v{0}.zip'
+        Exe     = 'mihomo-windows-amd64-compatible.exe'
+        SubDir  = 'mihomo'
     }
 )
 

@@ -19,7 +19,11 @@ public class DomainStatService
     private static readonly Lazy<DomainStatService> _instance = new(() => new());
     public static DomainStatService Instance => _instance.Value;
 
-    private static readonly TimeSpan PollInterval = TimeSpan.FromSeconds(5);
+    // clash 的 /connections 只列"当前活跃"的连接：连接一关就消失，
+// 所以轮询周期直接决定漏计多少。实测 2MB 的下载 1 秒结束，5 秒周期完全抓不到。
+    // 1 秒换来的开销只是一次本地 HTTP GET，可以接受；仍然会漏掉亚秒级短连接，
+    // 这点在界面上如实说明，不假装精确。
+    private static readonly TimeSpan PollInterval = TimeSpan.FromSeconds(1);
     private static readonly TimeSpan FlushInterval = TimeSpan.FromSeconds(20);
 
     private readonly object _lock = new();
