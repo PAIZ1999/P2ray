@@ -21,6 +21,16 @@ public class StatisticsManager
         _updateFunc = updateFunc;
         if (config.GuiItem.EnableStatistics || _config.GuiItem.DisplayRealTimeSpeed)
         {
+            // 先把三个轮询器起起来，再做数据库相关的初始化。
+            //
+            // 顺序很关键：v1.6.0~v1.10.0 里这几行原来在 LoadCurrentHourAsync /
+            // PurgeExpired（同步阻塞版）之后，只要前面任何一步卡住或抛异常，
+            // StartPolling 就永远不会执行 —— 表现是"内核明明在走流量，统计全是 0"。
+            // 已用 --selftest 复现：内核走了 4,013,583 字节，数据库 0 增长。
+            TrafficStatService.Instance.StartPolling();
+            DomainStatService.Instance.StartPolling();
+            AppStatService.Instance.Start();
+
             await InitData();
 
             _statisticsXray = new StatisticsXrayService(config, UpdateServerStatHandler);
@@ -29,18 +39,8 @@ public class StatisticsManager
             // 把已经落库的当前小时累计读回内存，否则重启后本小时会从 0 覆盖重记。
             await TrafficStatService.Instance.LoadCurrentHourAsync();
 
-            // 时段统计自己轮询内核累计值，不依赖上游那份每秒增量
-            // （上游在计数器回退时会丢弃整轮，实测会丢掉整段下载）。
-            // 三张统计表只增不减，启动时按保留策略清一次过期数据
-            StatisticsRetentionHandler.PurgeExpired();
-
-            TrafficStatService.Instance.StartPolling();
-
-            // 按域名统计走 clash API，仅在 mihomo / sing-box 内核下有效
-            DomainStatService.Instance.StartPolling();
-
-            // 按应用统计走 ETW，需管理员权限；非管理员时内部会直接跳过
-            AppStatService.Instance.Start();
+            // 三张统计表只增不减，启动时按保留策略清一次过期数据（异步，不阻塞）
+            await StatisticsRetentionHandler.PurgeExpiredAsync();
         }
     }
 
