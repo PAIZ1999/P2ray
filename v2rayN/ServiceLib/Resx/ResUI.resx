@@ -1908,4 +1908,163 @@ The "Get Certificate" action may fail if a self-signed certificate is used or if
   <data name="menuAddMasqueServer" xml:space="preserve">
     <value>Add [MASQUE]</value>
   </data>
+  <data name="P2NavHome" xml:space="preserve">
+    <value>Home</value>
+  </data>
+  <data name="P2NavNodes" xml:space="preserve">
+    <value>Nodes</value>
+  </data>
+  <data name="P2NavTraffic" xml:space="preserve">
+    <value>Traffic</value>
+  </data>
+  <data name="P2NavSettings" xml:space="preserve">
+    <value>Settings</value>
+  </data>
+  <data name="P2NavImport" xml:space="preserve">
+    <value>Import</value>
+  </data>
+  <data name="P2NavCheckUpdate" xml:space="preserve">
+    <value>Check for updates</value>
+  </data>
+  <data name="P2HomeConnect" xml:space="preserve">
+    <value>Connect</value>
+  </data>
+  <data name="P2HomeDisconnect" xml:space="preserve">
+    <value>Disconnect</value>
+  </data>
+  <data name="P2HomeConnMode" xml:space="preserve">
+    <value>Connection</value>
+  </data>
+  <data name="P2HomeSysProxy" xml:space="preserve">
+    <value>System proxy</value>
+  </data>
+  <data name="P2HomeSysProxyHint" xml:space="preserve">
+    <value>Apps and browsers use the proxy automatically</value>
+  </data>
+  <data name="P2HomeTun" xml:space="preserve">
+    <value>TUN mode</value>
+  </data>
+  <data name="P2HomeTunHint" xml:space="preserve">
+    <value>Routes all traffic on this PC, including games and the command line</value>
+  </data>
+  <data name="P2HomeRouteMode" xml:space="preserve">
+    <value>Routing mode</value>
+  </data>
+  <data name="P2HomeDirectCustom" xml:space="preserve">
+    <value>Custom direct rules</value>
+  </data>
+  <data name="P2HomeConfigure" xml:space="preserve">
+    <value>Configure</value>
+  </data>
+  <data name="P2HomeAdd" xml:space="preserve">
+    <value>Add</value>
+  </data>
+  <data name="P2HomeDirectHint" xml:space="preserve">
+    <value>Enter a domain or IP, e.g. openai.com or 192.168.1.10. Sites listed here always connect directly.</value>
+  </data>
+  <data name="P2HomeRemove" xml:space="preserve">
+    <value>Remove</value>
+  </data>
+  <data name="P2HomeNetLocation" xml:space="preserve">
+    <value>Network location</value>
+  </data>
+  <data name="P2HomeRecheck" xml:space="preserve">
+    <value>Re-check</value>
+  </data>
+  <data name="P2HomeOverseasIp" xml:space="preserve">
+    <value>Overseas exit IP</value>
+  </data>
+  <data name="P2HomeScore" xml:space="preserve">
+    <value>Score</value>
+  </data>
+  <data name="P2HomeDomesticIp" xml:space="preserve">
+    <value>Domestic exit IP</value>
+  </data>
+  <data name="P2HomeDownload" xml:space="preserve">
+    <value>Download</value>
+  </data>
+  <data name="P2HomeUpload" xml:space="preserve">
+    <value>Upload</value>
+  </data>
+  <data name="P2HomeSubs" xml:space="preserve">
+    <value>Subscriptions</value>
+  </data>
+  <data name="P2HomeAddSub" xml:space="preserve">
+    <value>Add subscription</value>
+  </data>
+  <data name="P2HomeNoSub" xml:space="preserve">
+    <value>No subscriptions yet</value>
+  </data>
+  <data name="P2HomeNoSubHint" xml:space="preserve">
+    <value>Copy a subscription link from your provider</value>
+  </data>
+  <data name="P2HomeUpdateAllSubs" xml:space="preserve">
+    <value>Update all subscriptions</value>
+  </data>
+  <data name="P2HomeUpdate" xml:space="preserve">
+    <value>Update</value>
+  </data>
+  <data name="P2HomeNodesRuntime" xml:space="preserve">
+    <value>Nodes and runtime</value>
+  </data>
+  <data name="P2HomeAvailableNodes" xml:space="preserve">
+    <value>Available nodes</value>
+  </data>
+  <data name="P2HomeChange" xml:space="preserve">
+    <value>Change</value>
+  </data>
+  <data name="P2HomeNetStatus" xml:space="preserve">
+    <value>Network status</value>
+  </data>
+  <data name="P2HomeUptime" xml:space="preserve">
+    <value>Connected for</value>
+  </data>
+  <data name="P2HomeRunningCore" xml:space="preserve">
+    <value>Running core</value>
+  </data>
+  <data name="P2HomeLocalProxy" xml:space="preserve">
+    <value>Local proxy address</value>
+  </data>
+  <data name="P2HomeLocalProxyHint" xml:space="preserve">
+    <value>Expand to see the address when other apps need a proxy</value>
+  </data>
+  <data name="P2HomePort" xml:space="preserve">
+    <value>Port</value>
+  </data>
+  <data name="P2HomeApply" xml:space="preserve">
+    <value>Apply</value>
+  </data>
+  <data name="P2HomeCopy" xml:space="preserve">
+    <value>Copy</value>
+  </data>
+  <data name="P2HomeShowLog" xml:space="preserve">
+    <value>Show log</value>
+  </data>
+  <data name="P2HomeNoServer" xml:space="preserve">
+    <value>No node selected</value>
+  </data>
+  <data name="P2HomeClickToStart" xml:space="preserve">
+    <value>Click the button below to start</value>
+  </data>
+  <data name="P2HomeSelectNodeHint" xml:space="preserve">
+    <value>Pick one on the Nodes page, or import a subscription</value>
+  </data>
+  <data name="P2HomeRoutingHint" xml:space="preserve">
+    <value>Choose which sites go through the proxy.</value>
+  </data>
+  <data name="P2HomeCurrentIp" xml:space="preserve">
+    <value>Current exit IP</value>
+  </data>
+  <data name="P2HomeNotTested" xml:space="preserve">
+    <value>Not tested yet</value>
+  </data>
+  <data name="P2HomeSiteStatusFmt" xml:space="preserve">
+    <value>Site reachability {0} / {1} available</value>
+  </data>
+  <data name="P2HomeDisconnected" xml:space="preserve">
+    <value>Disconnected</value>
+  </data>
+  <data name="P2HomeSiteStatusEmpty" xml:space="preserve">
+    <value>Site reachability —</value>
+  </data>
 </root>

@@ -1,0 +1,44 @@
+P2NavHome	首页	Home
+P2NavNodes	线路	Nodes
+P2NavTraffic	流量	Traffic
+P2NavSettings	设置	Settings
+P2NavImport	导入	Import
+P2NavCheckUpdate	检查更新	Check for updates
+P2HomeConnect	连接	Connect
+P2HomeDisconnect	断开	Disconnect
+P2HomeConnMode	连接方式	Connection
+P2HomeSysProxy	系统代理	System proxy
+P2HomeSysProxyHint	浏览器等程序自动走代理，最省事	Apps and browsers use the proxy automatically
+P2HomeTun	TUN 模式	TUN mode
+P2HomeTunHint	接管电脑上全部流量，游戏与命令行也生效	Routes all traffic on this PC, including games and the command line
+P2HomeRouteMode	代理模式	Routing mode
+P2HomeDirectCustom	自定义直连	Custom direct rules
+P2HomeConfigure	配置	Configure
+P2HomeAdd	添加	Add
+P2HomeDirectHint	填域名或 IP，例如 openai.com 或 192.168.1.10。加进去的站永远直连，不走代理。	Enter a domain or IP, e.g. openai.com or 192.168.1.10. Sites listed here always connect directly.
+P2HomeRemove	移除	Remove
+P2HomeNetLocation	网络位置	Network location
+P2HomeRecheck	重新检测	Re-check
+P2HomeOverseasIp	境外出口 IP	Overseas exit IP
+P2HomeScore	评分	Score
+P2HomeDomesticIp	国内出口 IP	Domestic exit IP
+P2HomeDownload	下载	Download
+P2HomeUpload	上传	Upload
+P2HomeSubs	订阅	Subscriptions
+P2HomeAddSub	添加订阅	Add subscription
+P2HomeNoSub	还没有订阅	No subscriptions yet
+P2HomeNoSubHint	从服务商复制一条订阅链接	Copy a subscription link from your provider
+P2HomeUpdateAllSubs	更新全部订阅	Update all subscriptions
+P2HomeUpdate	更新	Update
+P2HomeNodesRuntime	线路与运行	Nodes and runtime
+P2HomeAvailableNodes	可用线路	Available nodes
+P2HomeChange	更换	Change
+P2HomeNetStatus	网络状态	Network status
+P2HomeUptime	已连接时长	Connected for
+P2HomeRunningCore	运行核心	Running core
+P2HomeLocalProxy	本地代理地址	Local proxy address
+P2HomeLocalProxyHint	其他软件要手动填代理时，展开查看地址	Expand to see the address when other apps need a proxy
+P2HomePort	端口	Port
+P2HomeApply	应用	Apply
+P2HomeCopy	复制	Copy
+P2HomeShowLog	显示运行日志	Show log

@@ -1,3 +1,4 @@
+using ServiceLib.Resx;
 namespace ServiceLib.ViewModels;
 
 /// <summary>
@@ -30,7 +31,7 @@ public partial class DashboardViewModel : MyReactiveObject
 
                 // 上游给的是 "[VLESS] 名称(104.***.1:443)" 这种技术摘要。
                 // 面向不懂网络的用户，只显示节点名（去掉协议前缀和地址尾巴）。
-                RunningServerDisplay = isNoServer ? "还没有选择线路" : FriendlyNodeName(v);
+                RunningServerDisplay = isNoServer ? ResUIHelper.Get("P2HomeNoServer") : FriendlyNodeName(v);
             });
 
         this.WhenAnyValue(x => x._statusBar.RunningInfoDisplay)
@@ -610,7 +611,7 @@ public partial class DashboardViewModel : MyReactiveObject
     public partial bool IsNetProbeRunning { get; set; }
 
     [Reactive]
-    public partial string NetProbeStatus { get; set; } = "尚未检测";
+    public partial string NetProbeStatus { get; set; } = ResUIHelper.Get("P2HomeNotTested");
 
     [Reactive]
     public partial string NetProbeUpdatedAt { get; set; }
@@ -631,9 +632,9 @@ public partial class DashboardViewModel : MyReactiveObject
     /// 标题并在这一行左侧，避免又多一行小标题把面板撑高。
     /// </summary>
     public string NetProbeSummary => NetProbeTotalCount > 0
-        ? $"站点连通性　{NetProbeOkCount} / {NetProbeTotalCount} 可用"
+        ? string.Format(ResUIHelper.Get("P2HomeSiteStatusFmt"), NetProbeOkCount, NetProbeTotalCount)
             + (NetProbeViaProxy ? string.Empty : "（直连）")
-        : "站点连通性　—";
+        : ResUIHelper.Get("P2HomeSiteStatusEmpty");
 
     public ReactiveCommand<RxVoid, RxVoid> RefreshNetProbeCmd { get; }
 
@@ -651,7 +652,7 @@ public partial class DashboardViewModel : MyReactiveObject
 
     /// <summary>状态标题。内核没起来时不能说"已连接"。</summary>
     public string ConnectionStatusText => !IsConnected
-        ? "未连接"
+        ? ResUIHelper.Get("P2HomeDisconnected")
         : CorePortReady == false ? "连接异常" : "已连接";
 
     /// <summary>状态说明。区分"正常代理"和"代理没生效"。</summary>
@@ -950,7 +951,7 @@ public partial class DashboardViewModel : MyReactiveObject
     /// 文案只能有一份，否则两处各写一套迟早写岔。
     /// </summary>
     [Reactive]
-    public partial string RoutingHintText { get; set; } = "决定哪些网站的流量经过代理。";
+    public partial string RoutingHintText { get; set; } = ResUIHelper.Get("P2HomeRoutingHint");
 
     private void UpdateRoutingHintText(string? remarks)
     {
@@ -960,7 +961,7 @@ public partial class DashboardViewModel : MyReactiveObject
             "全局" => "全部网站都走代理。速度取决于线路，流量消耗也最大。",
             "黑名单" => "只有列表内的网站走代理，其余直连。适合明确知道要访问哪些站点的场景。",
             "规则" => "国内网站直连，境外网站走代理。日常使用推荐这一项。",
-            _ => "决定哪些网站的流量经过代理。",
+            _ => ResUIHelper.Get("P2HomeRoutingHint"),
         };
     }
 
@@ -1174,7 +1175,7 @@ public partial class DashboardViewModel : MyReactiveObject
     {
         if (summary.IsNullOrEmpty())
         {
-            return "还没有选择线路";
+            return ResUIHelper.Get("P2HomeNoServer");
         }
 
         var s = summary.Trim();
@@ -1236,13 +1237,13 @@ public partial class DashboardViewModel : MyReactiveObject
     /// 连接状态的一句话说明，替代"系统代理已开启"这种术语。
     /// </summary>
     [Reactive]
-    public partial string ConnectionHint { get; set; } = "点下面的按钮开始使用";
+    public partial string ConnectionHint { get; set; } = ResUIHelper.Get("P2HomeClickToStart");
 
     private void RefreshConnectionHint(bool connected)
     {
         if (!connected)
         {
-            ConnectionHint = HasServer ? "点下面的按钮开始使用" : "先去「线路」页挑一个，或从剪贴板导入订阅";
+            ConnectionHint = HasServer ? ResUIHelper.Get("P2HomeClickToStart") : ResUIHelper.Get("P2HomeSelectNodeHint");
             return;
         }
 

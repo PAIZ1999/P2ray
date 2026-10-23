@@ -8,6 +8,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:tr="clr-namespace:v2rayN.Markup"
     xmlns:reactiveui="http://reactiveui.net"
     xmlns:vms="clr-namespace:ServiceLib.ViewModels;assembly=ServiceLib"
     d:DesignHeight="820"
@@ -60,19 +61,19 @@
                         <Button
                             x:Name="btnConnect"
                             Click="BtnConnect_Click"
-                            Content="连接"
+                            Content="{tr:Tr P2HomeConnect}"
                             Style="{StaticResource P2rayConnectButton}" />
                         <Button
                             x:Name="btnDisconnect"
                             Click="BtnDisconnect_Click"
-                            Content="断开"
+                            Content="{tr:Tr P2HomeDisconnect}"
                             Style="{StaticResource P2rayDisconnectButton}" />
                     </StackPanel>
                 </Grid>
             </Border>
 
             <!-- ═══ 分组：连接方式 ═══ -->
-            <TextBlock Style="{StaticResource P2raySectionLabel}" Text="连接方式" />
+            <TextBlock Style="{StaticResource P2raySectionLabel}" Text="{tr:Tr P2HomeConnMode}" />
             <Border Margin="0,0,0,16" Style="{StaticResource P2rayCard}">
                 <StackPanel>
                     <!-- 系统代理 -->
@@ -98,11 +99,11 @@
                             </Border>
 
                             <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                <TextBlock Style="{StaticResource P2rayBody}" Text="系统代理" />
+                                <TextBlock Style="{StaticResource P2rayBody}" Text="{tr:Tr P2HomeSysProxy}" />
                                 <TextBlock
                                     Margin="0,2,0,0"
                                     Style="{StaticResource P2rayMicro}"
-                                    Text="浏览器等程序自动走代理，最省事" />
+                                    Text="{tr:Tr P2HomeSysProxyHint}" />
                             </StackPanel>
 
                             <ToggleButton
@@ -137,11 +138,11 @@
                             </Border>
 
                             <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                <TextBlock Style="{StaticResource P2rayBody}" Text="TUN 模式" />
+                                <TextBlock Style="{StaticResource P2rayBody}" Text="{tr:Tr P2HomeTun}" />
                                 <TextBlock
                                     Margin="0,2,0,0"
                                     Style="{StaticResource P2rayMicro}"
-                                    Text="接管电脑上全部流量，游戏与命令行也生效" />
+                                    Text="{tr:Tr P2HomeTunHint}" />
                             </StackPanel>
 
                             <ToggleButton
@@ -178,7 +179,7 @@
                             </Border>
 
                             <StackPanel Grid.Column="1">
-                                <TextBlock Style="{StaticResource P2rayBody}" Text="代理模式" />
+                                <TextBlock Style="{StaticResource P2rayBody}" Text="{tr:Tr P2HomeRouteMode}" />
 
                                 <!-- 一条轨道里均分三段：宽度固定，选中段才不会被文字长度带偏 -->
                                 <Border
@@ -229,14 +230,14 @@
                                     <TextBlock
                                         VerticalAlignment="Center"
                                         Style="{StaticResource P2rayCaption}"
-                                        Text="自定义直连" />
+                                        Text="{tr:Tr P2HomeDirectCustom}" />
                                     <Button
                                         x:Name="btnToggleDirectRule"
                                         HorizontalAlignment="Right"
                                         Padding="10,0"
                                         Height="24"
                                         Click="BtnToggleDirectRule_Click"
-                                        Content="配置"
+                                        Content="{tr:Tr P2HomeConfigure}"
                                         Style="{StaticResource P2raySecondaryButton}" />
                                 </Grid>
 
@@ -272,14 +273,14 @@
                                             Height="30"
                                             Margin="8,0,0,0"
                                             Click="BtnAddDirectRule_Click"
-                                            Content="添加"
+                                            Content="{tr:Tr P2HomeAdd}"
                                             Style="{StaticResource P2rayPrimaryButton}" />
                                     </Grid>
 
                                     <TextBlock
                                         Margin="1,6,0,0"
                                         Style="{StaticResource P2rayMicro}"
-                                        Text="填域名或 IP，例如 openai.com 或 192.168.1.10。加进去的站永远直连，不走代理。" />
+                                        Text="{tr:Tr P2HomeDirectHint}" />
 
                                     <TextBlock
                                         x:Name="txtDirectRuleStatus"
@@ -329,7 +330,7 @@
                                                             Width="48"
                                                             Height="22"
                                                             Click="BtnRemoveDirectRule_Click"
-                                                            Content="移除"
+                                                            Content="{tr:Tr P2HomeRemove}"
                                                             Style="{StaticResource P2raySecondaryButton}"
                                                             Tag="{Binding Id}" />
                                                     </Grid>
@@ -348,7 +349,7 @@
             <!-- 回答两个问题：外面看到我是谁（出口 IP + 归属地），以及常用站点能不能通。
                  布局参考 ip.net.coffee：左侧 IP 大字号，右侧连通性小卡网格。 -->
             <Grid Margin="0,0,0,6">
-                <TextBlock Style="{StaticResource P2raySectionLabel}" Text="网络位置" />
+                <TextBlock Style="{StaticResource P2raySectionLabel}" Text="{tr:Tr P2HomeNetLocation}" />
                 <Button
                     x:Name="btnRefreshNetProbe"
                     HorizontalAlignment="Right"
@@ -356,7 +357,7 @@
                     Padding="10,0"
                     Height="22"
                     Click="BtnRefreshNetProbe_Click"
-                    Content="重新检测"
+                    Content="{tr:Tr P2HomeRecheck}"
                     Style="{StaticResource P2raySecondaryButton}" />
             </Grid>
 
@@ -378,7 +379,7 @@
                         <TextBlock
                             x:Name="txtExitLabel"
                             Style="{StaticResource P2rayMicro}"
-                            Text="境外出口 IP" />
+                            Text="{tr:Tr P2HomeOverseasIp}" />
 
                         <StackPanel Margin="0,6,0,0" Orientation="Horizontal">
                             <!-- 国旗：Windows 不渲染旗帜 emoji，用素材位图。
@@ -417,7 +418,7 @@
                             <TextBlock
                                 VerticalAlignment="Center"
                                 Style="{StaticResource P2rayMicro}"
-                                Text="评分" />
+                                Text="{tr:Tr P2HomeScore}" />
                             <TextBlock
                                 x:Name="txtIpScore"
                                 Margin="6,0,0,0"
@@ -451,7 +452,7 @@
                             BorderThickness="0,1,0,0"
                             Visibility="Collapsed">
                             <StackPanel>
-                                <TextBlock Style="{StaticResource P2rayMicro}" Text="国内出口 IP" />
+                                <TextBlock Style="{StaticResource P2rayMicro}" Text="{tr:Tr P2HomeDomesticIp}" />
                                 <StackPanel Margin="0,6,0,0" Orientation="Horizontal">
                                     <Image
                                         x:Name="imgDomesticFlag"
@@ -617,7 +618,7 @@
             </Border>
 
             <!-- ═══ 分组：流量 ═══ -->
-            <TextBlock Style="{StaticResource P2raySectionLabel}" Text="流量" />
+            <TextBlock Style="{StaticResource P2raySectionLabel}" Text="{tr:Tr P2NavTraffic}" />
             <Border Margin="0,0,0,16" Style="{StaticResource P2rayCard}">
                 <StackPanel>
                     <!-- 行：下载 -->
@@ -647,7 +648,7 @@
                                 Grid.Column="1"
                                 VerticalAlignment="Center"
                                 Style="{StaticResource P2rayBody}"
-                                Text="下载" />
+                                Text="{tr:Tr P2HomeDownload}" />
 
                             <ctrl:Sparkline
                                 x:Name="chartDownload"
@@ -695,7 +696,7 @@
                                 Grid.Column="1"
                                 VerticalAlignment="Center"
                                 Style="{StaticResource P2rayBody}"
-                                Text="上传" />
+                                Text="{tr:Tr P2HomeUpload}" />
 
                             <TextBlock
                                 x:Name="txtUpload"
@@ -709,7 +710,7 @@
             </Border>
 
             <!-- ═══ 分组：订阅 ═══ -->
-            <TextBlock Style="{StaticResource P2raySectionLabel}" Text="订阅" />
+            <TextBlock Style="{StaticResource P2raySectionLabel}" Text="{tr:Tr P2HomeSubs}" />
             <Border Margin="0,0,0,16" Style="{StaticResource P2rayCard}">
                 <StackPanel>
                     <!-- 订阅列表 -->
@@ -780,12 +781,12 @@
                                 Grid.Column="1"
                                 VerticalAlignment="Center"
                                 Style="{StaticResource P2rayBody}"
-                                Text="添加订阅" />
+                                Text="{tr:Tr P2HomeAddSub}" />
                             <Button
                                 Grid.Column="2"
                                 MinWidth="64"
                                 Click="BtnAddSub_Click"
-                                Content="添加"
+                                Content="{tr:Tr P2HomeAdd}"
                                 Style="{StaticResource P2rayPrimaryButton}" />
                         </Grid>
                     </Border>
@@ -814,18 +815,18 @@
                                 </Border>
 
                                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                    <TextBlock Style="{StaticResource P2rayBody}" Text="还没有订阅" />
+                                    <TextBlock Style="{StaticResource P2rayBody}" Text="{tr:Tr P2HomeNoSub}" />
                                     <TextBlock
                                         Margin="0,2,0,0"
                                         Style="{StaticResource P2rayMicro}"
-                                        Text="从服务商复制一条订阅链接" />
+                                        Text="{tr:Tr P2HomeNoSubHint}" />
                                 </StackPanel>
 
                                 <Button
                                     Grid.Column="2"
                                     VerticalAlignment="Center"
                                     Click="BtnAddSub_Click"
-                                    Content="添加"
+                                    Content="{tr:Tr P2HomeAdd}"
                                     Style="{StaticResource P2rayPrimaryButton}" />
                             </Grid>
                         </Border>
@@ -857,13 +858,13 @@
                                 Grid.Column="1"
                                 VerticalAlignment="Center"
                                 Style="{StaticResource P2rayBody}"
-                                Text="更新全部订阅" />
+                                Text="{tr:Tr P2HomeUpdateAllSubs}" />
 
                             <Button
                                 Grid.Column="2"
                                 VerticalAlignment="Center"
                                 Click="BtnUpdateSub_Click"
-                                Content="更新"
+                                Content="{tr:Tr P2HomeUpdate}"
                                 Style="{StaticResource P2raySecondaryButton}" />
                         </Grid>
                     </Border>
@@ -880,7 +881,7 @@
             </Border>
 
             <!-- ═══ 分组：线路与运行 ═══ -->
-            <TextBlock Style="{StaticResource P2raySectionLabel}" Text="线路与运行" />
+            <TextBlock Style="{StaticResource P2raySectionLabel}" Text="{tr:Tr P2HomeNodesRuntime}" />
             <Border Margin="0,0,0,16" Style="{StaticResource P2rayCard}">
                 <StackPanel>
                     <!-- 可用线路 -->
@@ -910,7 +911,7 @@
                                 Grid.Column="1"
                                 VerticalAlignment="Center"
                                 Style="{StaticResource P2rayBody}"
-                                Text="可用线路" />
+                                Text="{tr:Tr P2HomeAvailableNodes}" />
 
                             <TextBlock
                                 x:Name="txtNodeCount"
@@ -924,7 +925,7 @@
                                 Grid.Column="3"
                                 VerticalAlignment="Center"
                                 Click="BtnGoNodes_Click"
-                                Content="更换"
+                                Content="{tr:Tr P2HomeChange}"
                                 Style="{StaticResource P2raySecondaryButton}" />
                         </Grid>
                     </Border>
@@ -955,7 +956,7 @@
                                 Grid.Column="1"
                                 VerticalAlignment="Center"
                                 Style="{StaticResource P2rayBody}"
-                                Text="网络状态" />
+                                Text="{tr:Tr P2HomeNetStatus}" />
 
                             <TextBlock
                                 x:Name="txtInternet"
@@ -991,7 +992,7 @@
                                 Grid.Column="1"
                                 VerticalAlignment="Center"
                                 Style="{StaticResource P2rayBody}"
-                                Text="已连接时长" />
+                                Text="{tr:Tr P2HomeUptime}" />
 
                             <TextBlock
                                 x:Name="txtRunTime"
@@ -1028,7 +1029,7 @@
                                 Grid.Column="1"
                                 VerticalAlignment="Center"
                                 Style="{StaticResource P2rayBody}"
-                                Text="运行核心" />
+                                Text="{tr:Tr P2HomeRunningCore}" />
 
                             <TextBlock
                                 x:Name="txtCoreType"
@@ -1079,12 +1080,12 @@
                                 Cursor="Hand"
                                 MouseLeftButtonUp="ProxyHeader_Click">
                                 <StackPanel VerticalAlignment="Center">
-                                    <TextBlock Style="{StaticResource P2rayBody}" Text="本地代理地址" />
+                                    <TextBlock Style="{StaticResource P2rayBody}" Text="{tr:Tr P2HomeLocalProxy}" />
                                     <TextBlock
                                         x:Name="txtProxySubtitle"
                                         Margin="0,2,0,0"
                                         Style="{StaticResource P2rayMicro}"
-                                        Text="其他软件要手动填代理时，展开查看地址" />
+                                        Text="{tr:Tr P2HomeLocalProxyHint}" />
                                 </StackPanel>
                             </Border>
 
@@ -1093,7 +1094,7 @@
                                 Margin="0,0,8,0"
                                 VerticalAlignment="Center"
                                 Style="{StaticResource P2rayMicro}"
-                                Text="端口" />
+                                Text="{tr:Tr P2HomePort}" />
 
                             <TextBox
                                 x:Name="txtPortInline"
@@ -1118,7 +1119,7 @@
                                 Margin="8,0,10,0"
                                 Padding="10,0"
                                 Click="BtnApplyPort_Click"
-                                Content="应用"
+                                Content="{tr:Tr P2HomeApply}"
                                 Height="26"
                                 Style="{StaticResource P2raySecondaryButton}" />
 
@@ -1179,7 +1180,7 @@
                                     Grid.Column="2"
                                     Padding="10,0"
                                     Click="BtnCopySocks5_Click"
-                                    Content="复制"
+                                    Content="{tr:Tr P2HomeCopy}"
                                     Height="24"
                                     Style="{StaticResource P2raySecondaryButton}" />
                             </Grid>
@@ -1218,7 +1219,7 @@
                                     Grid.Column="2"
                                     Padding="10,0"
                                     Click="BtnCopyHttp_Click"
-                                    Content="复制"
+                                    Content="{tr:Tr P2HomeCopy}"
                                     Height="24"
                                     Style="{StaticResource P2raySecondaryButton}" />
                             </Grid>
@@ -1234,7 +1235,7 @@
                 HorizontalAlignment="Left"
                 Margin="4,0,0,0"
                 Click="BtnToggleLog_Click"
-                Content="显示运行日志"
+                Content="{tr:Tr P2HomeShowLog}"
                 Style="{StaticResource P2raySecondaryButton}" />
 
             <Border

@@ -1,3 +1,4 @@
+using ServiceLib.Resx;
 using System.Windows;
 using System.Windows.Controls;
 using ReactiveUI;
@@ -92,7 +93,7 @@ public partial class DashboardView : ReactiveUserControl<DashboardViewModel>
             // 标签随路径变化：走代理时上面那条确实是"境外出口"，
             // 未连接时它就是本机地址，再叫"境外"会误导。
             this.OneWayBind(ViewModel, vm => vm.NetProbeViaProxy, v => v.txtExitLabel.Text,
-                    viaProxy => viaProxy ? "境外出口 IP" : "当前出口 IP").DisposeWith(disposables);
+                    viaProxy => viaProxy ? ResUIHelper.Get("P2HomeOverseasIp") : ResUIHelper.Get("P2HomeCurrentIp")).DisposeWith(disposables);
             this.OneWayBind(ViewModel, vm => vm.NetProbeStatus, v => v.txtNetProbeStatus.Text).DisposeWith(disposables);
             this.OneWayBind(ViewModel, vm => vm.NetProbeSummary, v => v.txtNetProbeSummary.Text).DisposeWith(disposables);
 

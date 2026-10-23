@@ -1897,4 +1897,163 @@
   <data name="menuAddMasqueServer" xml:space="preserve">
     <value>添加 [MASQUE]</value>
   </data>
+  <data name="P2NavHome" xml:space="preserve">
+    <value>首页</value>
+  </data>
+  <data name="P2NavNodes" xml:space="preserve">
+    <value>线路</value>
+  </data>
+  <data name="P2NavTraffic" xml:space="preserve">
+    <value>流量</value>
+  </data>
+  <data name="P2NavSettings" xml:space="preserve">
+    <value>设置</value>
+  </data>
+  <data name="P2NavImport" xml:space="preserve">
+    <value>导入</value>
+  </data>
+  <data name="P2NavCheckUpdate" xml:space="preserve">
+    <value>检查更新</value>
+  </data>
+  <data name="P2HomeConnect" xml:space="preserve">
+    <value>连接</value>
+  </data>
+  <data name="P2HomeDisconnect" xml:space="preserve">
+    <value>断开</value>
+  </data>
+  <data name="P2HomeConnMode" xml:space="preserve">
+    <value>连接方式</value>
+  </data>
+  <data name="P2HomeSysProxy" xml:space="preserve">
+    <value>系统代理</value>
+  </data>
+  <data name="P2HomeSysProxyHint" xml:space="preserve">
+    <value>浏览器等程序自动走代理，最省事</value>
+  </data>
+  <data name="P2HomeTun" xml:space="preserve">
+    <value>TUN 模式</value>
+  </data>
+  <data name="P2HomeTunHint" xml:space="preserve">
+    <value>接管电脑上全部流量，游戏与命令行也生效</value>
+  </data>
+  <data name="P2HomeRouteMode" xml:space="preserve">
+    <value>代理模式</value>
+  </data>
+  <data name="P2HomeDirectCustom" xml:space="preserve">
+    <value>自定义直连</value>
+  </data>
+  <data name="P2HomeConfigure" xml:space="preserve">
+    <value>配置</value>
+  </data>
+  <data name="P2HomeAdd" xml:space="preserve">
+    <value>添加</value>
+  </data>
+  <data name="P2HomeDirectHint" xml:space="preserve">
+    <value>填域名或 IP，例如 openai.com 或 192.168.1.10。加进去的站永远直连，不走代理。</value>
+  </data>
+  <data name="P2HomeRemove" xml:space="preserve">
+    <value>移除</value>
+  </data>
+  <data name="P2HomeNetLocation" xml:space="preserve">
+    <value>网络位置</value>
+  </data>
+  <data name="P2HomeRecheck" xml:space="preserve">
+    <value>重新检测</value>
+  </data>
+  <data name="P2HomeOverseasIp" xml:space="preserve">
+    <value>境外出口 IP</value>
+  </data>
+  <data name="P2HomeScore" xml:space="preserve">
+    <value>评分</value>
+  </data>
+  <data name="P2HomeDomesticIp" xml:space="preserve">
+    <value>国内出口 IP</value>
+  </data>
+  <data name="P2HomeDownload" xml:space="preserve">
+    <value>下载</value>
+  </data>
+  <data name="P2HomeUpload" xml:space="preserve">
+    <value>上传</value>
+  </data>
+  <data name="P2HomeSubs" xml:space="preserve">
+    <value>订阅</value>
+  </data>
+  <data name="P2HomeAddSub" xml:space="preserve">
+    <value>添加订阅</value>
+  </data>
+  <data name="P2HomeNoSub" xml:space="preserve">
+    <value>还没有订阅</value>
+  </data>
+  <data name="P2HomeNoSubHint" xml:space="preserve">
+    <value>从服务商复制一条订阅链接</value>
+  </data>
+  <data name="P2HomeUpdateAllSubs" xml:space="preserve">
+    <value>更新全部订阅</value>
+  </data>
+  <data name="P2HomeUpdate" xml:space="preserve">
+    <value>更新</value>
+  </data>
+  <data name="P2HomeNodesRuntime" xml:space="preserve">
+    <value>线路与运行</value>
+  </data>
+  <data name="P2HomeAvailableNodes" xml:space="preserve">
+    <value>可用线路</value>
+  </data>
+  <data name="P2HomeChange" xml:space="preserve">
+    <value>更换</value>
+  </data>
+  <data name="P2HomeNetStatus" xml:space="preserve">
+    <value>网络状态</value>
+  </data>
+  <data name="P2HomeUptime" xml:space="preserve">
+    <value>已连接时长</value>
+  </data>
+  <data name="P2HomeRunningCore" xml:space="preserve">
+    <value>运行核心</value>
+  </data>
+  <data name="P2HomeLocalProxy" xml:space="preserve">
+    <value>本地代理地址</value>
+  </data>
+  <data name="P2HomeLocalProxyHint" xml:space="preserve">
+    <value>其他软件要手动填代理时，展开查看地址</value>
+  </data>
+  <data name="P2HomePort" xml:space="preserve">
+    <value>端口</value>
+  </data>
+  <data name="P2HomeApply" xml:space="preserve">
+    <value>应用</value>
+  </data>
+  <data name="P2HomeCopy" xml:space="preserve">
+    <value>复制</value>
+  </data>
+  <data name="P2HomeShowLog" xml:space="preserve">
+    <value>显示运行日志</value>
+  </data>
+  <data name="P2HomeNoServer" xml:space="preserve">
+    <value>还没有选择线路</value>
+  </data>
+  <data name="P2HomeClickToStart" xml:space="preserve">
+    <value>点下面的按钮开始使用</value>
+  </data>
+  <data name="P2HomeSelectNodeHint" xml:space="preserve">
+    <value>先去「线路」页挑一个，或从剪贴板导入订阅</value>
+  </data>
+  <data name="P2HomeRoutingHint" xml:space="preserve">
+    <value>决定哪些网站的流量经过代理。</value>
+  </data>
+  <data name="P2HomeCurrentIp" xml:space="preserve">
+    <value>当前出口 IP</value>
+  </data>
+  <data name="P2HomeNotTested" xml:space="preserve">
+    <value>尚未检测</value>
+  </data>
+  <data name="P2HomeSiteStatusFmt" xml:space="preserve">
+    <value>站点连通性　{0} / {1} 可用</value>
+  </data>
+  <data name="P2HomeDisconnected" xml:space="preserve">
+    <value>未连接</value>
+  </data>
+  <data name="P2HomeSiteStatusEmpty" xml:space="preserve">
+    <value>站点连通性　—</value>
+  </data>
 </root>

@@ -6,6 +6,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:tr="clr-namespace:v2rayN.Markup"
     xmlns:reactiveui="http://reactiveui.net"
     xmlns:vms="clr-namespace:ServiceLib.ViewModels;assembly=ServiceLib"
     d:DesignHeight="760"
@@ -117,7 +118,7 @@
                         <TextBlock
                             Style="{StaticResource NavText}"
                             Foreground="{StaticResource P2rayTextSecondaryBrush}"
-                            Text="导入" />
+                            Text="{tr:Tr P2NavImport}" />
                     </StackPanel>
                 </Button>
 
@@ -139,7 +140,7 @@
                         <TextBlock
                             Style="{StaticResource NavText}"
                             Foreground="{StaticResource P2rayTextSecondaryBrush}"
-                            Text="检查更新" />
+                            Text="{tr:Tr P2NavCheckUpdate}" />
                     </StackPanel>
                 </Button>
             </StackPanel>
@@ -157,7 +158,7 @@
                             Height="{StaticResource P2rayNavIconSize}"
                             VerticalAlignment="Center"
                             Kind="HomeOutline" />
-                        <TextBlock Style="{StaticResource NavText}" Text="首页" />
+                        <TextBlock Style="{StaticResource NavText}" Text="{tr:Tr P2NavHome}" />
                     </StackPanel>
                 </RadioButton>
 
@@ -171,7 +172,7 @@
                             Height="{StaticResource P2rayNavIconSize}"
                             VerticalAlignment="Center"
                             Kind="ServerNetwork" />
-                        <TextBlock Style="{StaticResource NavText}" Text="线路" />
+                        <TextBlock Style="{StaticResource NavText}" Text="{tr:Tr P2NavNodes}" />
                     </StackPanel>
                 </RadioButton>
 
@@ -185,7 +186,7 @@
                             Height="{StaticResource P2rayNavIconSize}"
                             VerticalAlignment="Center"
                             Kind="ChartTimelineVariant" />
-                        <TextBlock Style="{StaticResource NavText}" Text="流量" />
+                        <TextBlock Style="{StaticResource NavText}" Text="{tr:Tr P2NavTraffic}" />
                     </StackPanel>
                 </RadioButton>
 
@@ -199,7 +200,7 @@
                             Height="{StaticResource P2rayNavIconSize}"
                             VerticalAlignment="Center"
                             Kind="CogOutline" />
-                        <TextBlock Style="{StaticResource NavText}" Text="设置" />
+                        <TextBlock Style="{StaticResource NavText}" Text="{tr:Tr P2NavSettings}" />
                     </StackPanel>
                 </RadioButton>
             </StackPanel>
