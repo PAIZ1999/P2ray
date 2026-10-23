@@ -33,7 +33,6 @@ public static class SelftestRunner
 
             // 1) 选一个节点（按配置里已有的顺序取第一个）
             var models = await AppManager.Instance.ProfileModels(cfg.SubIndexId, "");
-            Step($"profiles={models?.Count ?? -1}");
             var first = models?.FirstOrDefault();
             if (first is null)
             {
