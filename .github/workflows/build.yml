@@ -72,6 +72,12 @@ jobs:
           dotnet build ServiceLib.Tests/ServiceLib.Tests.csproj -c Release
           ./ServiceLib.Tests/bin/Release/net10.0/ServiceLib.Tests.exe
 
+    # 打包脚本曾在重建时删掉 guiConfigs（用户的节点/订阅/流量历史）。
+    # 这条只验证暂存-还原逻辑本身，不跑完整构建，几秒钟完成。
+    - name: Verify dist keeps user config
+      shell: pwsh
+      run: ./scripts/test-preserve-config.ps1
+
   build:
     name: build ${{ matrix.rid }}
     needs: [test, version-guard]

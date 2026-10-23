@@ -80,20 +80,19 @@ if (-not $dotnet) {
 }
 
 # 后续调用统一走 $dotnet，避免 PATH 与 DOTNET_ROOT 不一致时找不到
+. (Join-Path $PSScriptRoot 'lib\Preserve-Config.ps1')
+
 $env:DOTNET_ROOT = Split-Path $dotnet -Parent
 Write-Host "dotnet SDK : $sdkVersion ($dotnet)" -ForegroundColor Cyan
 Write-Host ""
 
 # 清理旧产物时保留用户配置：guiConfigs 里有节点、订阅与流量统计。
 # 直接整目录删除会把用户数据一起抹掉 —— 本机把 dist 当运行目录时尤其致命。
-$preservedConfig = $null
+$preservedConfig = Save-P2rayUserConfig -OutDir $OutDir
+if ($preservedConfig) {
+    Write-Host "已暂存用户配置 (guiConfigs)，构建后还原" -ForegroundColor DarkGray
+}
 if (Test-Path $OutDir) {
-    $configDir = Join-Path $OutDir 'guiConfigs'
-    if (Test-Path $configDir) {
-        $preservedConfig = Join-Path ([System.IO.Path]::GetTempPath()) ("p2ray-guiConfigs-" + [Guid]::NewGuid().ToString('N'))
-        Copy-Item $configDir $preservedConfig -Recurse -Force
-        Write-Host "已暂存用户配置 (guiConfigs)，构建后还原" -ForegroundColor DarkGray
-    }
     Write-Host "清理旧产物..." -ForegroundColor DarkGray
     Remove-Item $OutDir -Recurse -Force
 }
@@ -184,13 +183,7 @@ $manifest | ForEach-Object { "$($_.Sha256)  $($_.Path)" } | Set-Content -Path $m
 $totalMB = [math]::Round((($manifest | Measure-Object Size -Sum).Sum) / 1MB, 1)
 Write-Host ""
 # 还原用户配置
-if ($preservedConfig -and (Test-Path $preservedConfig)) {
-    $target = Join-Path $OutDir 'guiConfigs'
-    if (-not (Test-Path $target)) {
-        New-Item -ItemType Directory -Path $target -Force | Out-Null
-    }
-    Copy-Item (Join-Path $preservedConfig '*') $target -Recurse -Force
-    Remove-Item $preservedConfig -Recurse -Force -ErrorAction SilentlyContinue
+if (Restore-P2rayUserConfig -OutDir $OutDir -Stash $preservedConfig) {
     Write-Host "已还原用户配置 (guiConfigs)" -ForegroundColor DarkGray
 }
 
