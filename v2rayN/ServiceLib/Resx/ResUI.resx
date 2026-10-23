@@ -2187,4 +2187,160 @@ The "Get Certificate" action may fail if a self-signed certificate is used or if
   <data name="P2TrafficRange30" xml:space="preserve">
     <value>30 days</value>
   </data>
+  <data name="P2SetGeneral" xml:space="preserve">
+    <value>General</value>
+  </data>
+  <data name="P2SetAutoRun" xml:space="preserve">
+    <value>Launch at startup</value>
+  </data>
+  <data name="P2SetAutoRunHint" xml:space="preserve">
+    <value>Start P2ray after you sign in to Windows</value>
+  </data>
+  <data name="P2SetAutoHide" xml:space="preserve">
+    <value>Start minimized</value>
+  </data>
+  <data name="P2SetAutoHideHint" xml:space="preserve">
+    <value>Next launch goes straight to the tray</value>
+  </data>
+  <data name="P2SetAutoUpdate" xml:space="preserve">
+    <value>Auto-update interval</value>
+  </data>
+  <data name="P2SetAutoUpdateHint" xml:space="preserve">
+    <value>Refreshes rules and geo data; click to change</value>
+  </data>
+  <data name="P2SetNetwork" xml:space="preserve">
+    <value>Network</value>
+  </data>
+  <data name="P2SetAllowLan" xml:space="preserve">
+    <value>Allow LAN connections</value>
+  </data>
+  <data name="P2SetAllowLanHint" xml:space="preserve">
+    <value>Phones on the same Wi-Fi can use this PC as a proxy</value>
+  </data>
+  <data name="P2SetUdp" xml:space="preserve">
+    <value>UDP relay</value>
+  </data>
+  <data name="P2SetUdpHint" xml:space="preserve">
+    <value>Needed by voice calls and online games</value>
+  </data>
+  <data name="P2SetLogLevel" xml:space="preserve">
+    <value>Log level</value>
+  </data>
+  <data name="P2SetLogLevelHint" xml:space="preserve">
+    <value>Raise it when troubleshooting; warning is fine normally</value>
+  </data>
+  <data name="P2SetSubManage" xml:space="preserve">
+    <value>Subscriptions</value>
+  </data>
+  <data name="P2SetManage" xml:space="preserve">
+    <value>Manage</value>
+  </data>
+  <data name="P2SetUpdateSubsHint" xml:space="preserve">
+    <value>Fetches the latest node list, retries on failure</value>
+  </data>
+  <data name="P2SetAdvanced" xml:space="preserve">
+    <value>Advanced</value>
+  </data>
+  <data name="P2SetConfigRules" xml:space="preserve">
+    <value>Config and rules</value>
+  </data>
+  <data name="P2CoreTitle" xml:space="preserve">
+    <value>Core settings</value>
+  </data>
+  <data name="P2SetRouting" xml:space="preserve">
+    <value>Routing</value>
+  </data>
+  <data name="P2SetDns" xml:space="preserve">
+    <value>DNS</value>
+  </data>
+  <data name="P2SetFullTemplate" xml:space="preserve">
+    <value>Full config template</value>
+  </data>
+  <data name="P2SetHotkey" xml:space="preserve">
+    <value>Global hotkeys</value>
+  </data>
+  <data name="P2SetBackup" xml:space="preserve">
+    <value>Backup and restore</value>
+  </data>
+  <data name="P2SetRestartAdmin" xml:space="preserve">
+    <value>Restart as administrator</value>
+  </data>
+  <data name="P2SetClearStats" xml:space="preserve">
+    <value>Clear stats</value>
+  </data>
+  <data name="P2SetData" xml:space="preserve">
+    <value>Data</value>
+  </data>
+  <data name="P2SetRetention" xml:space="preserve">
+    <value>Keep traffic history</value>
+  </data>
+  <data name="P2SetRetentionHint" xml:space="preserve">
+    <value>Older entries are removed automatically; 0 keeps everything</value>
+  </data>
+  <data name="P2SetProgramDir" xml:space="preserve">
+    <value>Program folder</value>
+  </data>
+  <data name="P2SetOpen" xml:space="preserve">
+    <value>Open</value>
+  </data>
+  <data name="P2SetLogsBackup" xml:space="preserve">
+    <value>Logs and backups</value>
+  </data>
+  <data name="P2SetLogsBackupHint" xml:space="preserve">
+    <value>Where logs and automatic backups are stored</value>
+  </data>
+  <data name="P2SetAbout" xml:space="preserve">
+    <value>About</value>
+  </data>
+  <data name="P2SetVersion" xml:space="preserve">
+    <value>Version</value>
+  </data>
+  <data name="P2SetLicense" xml:space="preserve">
+    <value>License</value>
+  </data>
+  <data name="P2SetLicenseHint" xml:space="preserve">
+    <value>A fork of v2rayN, licensed under GPL-3.0</value>
+  </data>
+  <data name="P2SetCheck" xml:space="preserve">
+    <value>Check</value>
+  </data>
+  <data name="P2CoreHint" xml:space="preserve">
+    <value>Pick a core per protocol. For domain stats, switch the protocol to sing_box.</value>
+  </data>
+  <data name="P2CoreLabel" xml:space="preserve">
+    <value>Core</value>
+  </data>
+  <data name="P2CoreResetAll" xml:space="preserve">
+    <value>Set all to Xray</value>
+  </data>
+  <data name="P2DlgCancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="P2DlgSave" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="P2RoutingHint" xml:space="preserve">
+    <value>Decides what is proxied and what goes direct. Rules match top to bottom.</value>
+  </data>
+  <data name="P2RoutingEmptyHint" xml:space="preserve">
+    <value>No rule sets yet. Use Add rule set, or import a template.</value>
+  </data>
+  <data name="P2SubHint" xml:space="preserve">
+    <value>Subscriptions pull the node list periodically. Double-click a row to edit.</value>
+  </data>
+  <data name="P2DnsHint" xml:space="preserve">
+    <value>DNS decides how domains resolve. Keep the defaults unless you know what you need.</value>
+  </data>
+  <data name="P2SetSubCountFmt" xml:space="preserve">
+    <value>{0} subscriptions configured</value>
+  </data>
+  <data name="P2SetNoSubYet" xml:space="preserve">
+    <value>No subscriptions yet</value>
+  </data>
+  <data name="P2SetOff" xml:space="preserve">
+    <value>Off</value>
+  </data>
+  <data name="P2SetHoursFmt" xml:space="preserve">
+    <value>{0} h</value>
+  </data>
 </root>

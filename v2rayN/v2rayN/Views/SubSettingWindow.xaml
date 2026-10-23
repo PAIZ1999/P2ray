@@ -39,7 +39,7 @@
                     <TextBlock
                         Margin="0,3,0,0"
                         Style="{StaticResource P2rayMicro}"
-                        Text="订阅地址会定期拉取节点列表。双击一行可编辑。" />
+                        Text="{tr:Tr P2SubHint}" />
                 </StackPanel>
 
                 <StackPanel

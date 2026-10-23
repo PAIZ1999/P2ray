@@ -8,7 +8,7 @@
     xmlns:tr="clr-namespace:v2rayN.Markup"
     xmlns:reactiveui="http://reactiveui.net"
     xmlns:vms="clr-namespace:ServiceLib.ViewModels;assembly=ServiceLib"
-    Title="内核设置"
+    Title="{tr:Tr P2CoreTitle}"
     Width="720"
     Height="640"
     x:TypeArguments="vms:CoreSettingViewModel"
@@ -28,11 +28,11 @@
 
         <!-- 标题 -->
         <StackPanel Grid.Row="0">
-            <TextBlock Style="{StaticResource P2rayH1}" Text="内核设置" />
+            <TextBlock Style="{StaticResource P2rayH1}" Text="{tr:Tr P2CoreTitle}" />
             <TextBlock
                 Margin="0,4,0,0"
                 Style="{StaticResource P2rayMicro}"
-                Text="按协议指定用哪个内核。想用「按域名」统计，把对应协议改成 sing_box 即可。" />
+                Text="{tr:Tr P2CoreHint}" />
         </StackPanel>
 
         <!-- 列头 -->
@@ -45,7 +45,7 @@
             <TextBlock
                 Grid.Column="1"
                 Style="{StaticResource P2raySectionLabel}"
-                Text="内核" />
+                Text="{tr:Tr P2CoreLabel}" />
         </Grid>
 
         <!-- 映射列表 -->
@@ -83,19 +83,19 @@
                 x:Name="btnReset"
                 HorizontalAlignment="Left"
                 Click="BtnReset_Click"
-                Content="全部设为 Xray"
+                Content="{tr:Tr P2CoreResetAll}"
                 Style="{StaticResource P2raySecondaryButton}" />
             <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
                 <Button
                     x:Name="btnCancel"
                     Click="BtnCancel_Click"
-                    Content="取消"
+                    Content="{tr:Tr P2DlgCancel}"
                     Style="{StaticResource P2raySecondaryButton}" />
                 <Button
                     x:Name="btnSave"
                     Margin="8,0,0,0"
                     Click="BtnSave_Click"
-                    Content="保存"
+                    Content="{tr:Tr P2DlgSave}"
                     Style="{StaticResource P2rayPrimaryButton}" />
             </StackPanel>
         </Grid>

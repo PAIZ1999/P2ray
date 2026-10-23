@@ -42,7 +42,7 @@
                 <TextBlock
                     Margin="0,3,0,0"
                     Style="{StaticResource P2rayMicro}"
-                    Text="决定哪些流量走代理、哪些直连。列表从上到下匹配，先命中先生效。" />
+                    Text="{tr:Tr P2RoutingHint}" />
             </StackPanel>
 
             <StackPanel
@@ -261,7 +261,7 @@
                     Margin="0,40,0,0"
                     HorizontalAlignment="Center"
                     VerticalAlignment="Top"
-                    Text="还没有规则集。点右上角「添加规则集」，或从模板一键导入。">
+                    Text="{tr:Tr P2RoutingEmptyHint}">
                     <TextBlock.Style>
                         <Style BasedOn="{StaticResource P2rayMicro}" TargetType="TextBlock">
                             <Setter Property="Visibility" Value="Collapsed" />

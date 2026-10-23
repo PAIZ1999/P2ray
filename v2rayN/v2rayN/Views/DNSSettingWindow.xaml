@@ -24,7 +24,7 @@
             <TextBlock
                 Margin="0,3,0,0"
                 Style="{StaticResource P2rayMicro}"
-                Text="DNS 决定域名如何解析。不确定时保持默认即可，改错会导致无法上网。" />
+                Text="{tr:Tr P2DnsHint}" />
         </StackPanel>
 
         <StackPanel

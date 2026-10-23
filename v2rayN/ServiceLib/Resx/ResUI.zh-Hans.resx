@@ -2176,4 +2176,160 @@
   <data name="P2TrafficRange30" xml:space="preserve">
     <value>30 天</value>
   </data>
+  <data name="P2SetGeneral" xml:space="preserve">
+    <value>通用</value>
+  </data>
+  <data name="P2SetAutoRun" xml:space="preserve">
+    <value>开机自启动</value>
+  </data>
+  <data name="P2SetAutoRunHint" xml:space="preserve">
+    <value>登录 Windows 后自动运行 P2ray</value>
+  </data>
+  <data name="P2SetAutoHide" xml:space="preserve">
+    <value>启动时最小化</value>
+  </data>
+  <data name="P2SetAutoHideHint" xml:space="preserve">
+    <value>下次启动直接收进托盘，不弹窗打扰</value>
+  </data>
+  <data name="P2SetAutoUpdate" xml:space="preserve">
+    <value>自动更新间隔</value>
+  </data>
+  <data name="P2SetAutoUpdateHint" xml:space="preserve">
+    <value>定期刷新规则与识别库，点一下切换取值</value>
+  </data>
+  <data name="P2SetNetwork" xml:space="preserve">
+    <value>网络</value>
+  </data>
+  <data name="P2SetAllowLan" xml:space="preserve">
+    <value>允许局域网连接</value>
+  </data>
+  <data name="P2SetAllowLanHint" xml:space="preserve">
+    <value>同一 WiFi 下的手机等设备也能走这台电脑</value>
+  </data>
+  <data name="P2SetUdp" xml:space="preserve">
+    <value>UDP 转发</value>
+  </data>
+  <data name="P2SetUdpHint" xml:space="preserve">
+    <value>语音通话与联机游戏需要，关掉可能导致它们断线</value>
+  </data>
+  <data name="P2SetLogLevel" xml:space="preserve">
+    <value>日志级别</value>
+  </data>
+  <data name="P2SetLogLevelHint" xml:space="preserve">
+    <value>排查问题时调高，平时保持 warning 即可</value>
+  </data>
+  <data name="P2SetSubManage" xml:space="preserve">
+    <value>订阅管理</value>
+  </data>
+  <data name="P2SetManage" xml:space="preserve">
+    <value>管理</value>
+  </data>
+  <data name="P2SetUpdateSubsHint" xml:space="preserve">
+    <value>拉取最新节点列表，失败时自动重试</value>
+  </data>
+  <data name="P2SetAdvanced" xml:space="preserve">
+    <value>高级功能</value>
+  </data>
+  <data name="P2SetConfigRules" xml:space="preserve">
+    <value>配置与规则</value>
+  </data>
+  <data name="P2CoreTitle" xml:space="preserve">
+    <value>内核设置</value>
+  </data>
+  <data name="P2SetRouting" xml:space="preserve">
+    <value>路由</value>
+  </data>
+  <data name="P2SetDns" xml:space="preserve">
+    <value>DNS</value>
+  </data>
+  <data name="P2SetFullTemplate" xml:space="preserve">
+    <value>完整配置模板</value>
+  </data>
+  <data name="P2SetHotkey" xml:space="preserve">
+    <value>全局热键</value>
+  </data>
+  <data name="P2SetBackup" xml:space="preserve">
+    <value>备份与恢复</value>
+  </data>
+  <data name="P2SetRestartAdmin" xml:space="preserve">
+    <value>以管理员重启</value>
+  </data>
+  <data name="P2SetClearStats" xml:space="preserve">
+    <value>清除统计</value>
+  </data>
+  <data name="P2SetData" xml:space="preserve">
+    <value>数据</value>
+  </data>
+  <data name="P2SetRetention" xml:space="preserve">
+    <value>流量统计保留</value>
+  </data>
+  <data name="P2SetRetentionHint" xml:space="preserve">
+    <value>超过保留期的统计会自动清理，0 表示永久保留</value>
+  </data>
+  <data name="P2SetProgramDir" xml:space="preserve">
+    <value>程序目录</value>
+  </data>
+  <data name="P2SetOpen" xml:space="preserve">
+    <value>打开</value>
+  </data>
+  <data name="P2SetLogsBackup" xml:space="preserve">
+    <value>日志与备份</value>
+  </data>
+  <data name="P2SetLogsBackupHint" xml:space="preserve">
+    <value>运行记录与自动备份存放的位置</value>
+  </data>
+  <data name="P2SetAbout" xml:space="preserve">
+    <value>关于</value>
+  </data>
+  <data name="P2SetVersion" xml:space="preserve">
+    <value>版本</value>
+  </data>
+  <data name="P2SetLicense" xml:space="preserve">
+    <value>开源许可</value>
+  </data>
+  <data name="P2SetLicenseHint" xml:space="preserve">
+    <value>基于 v2rayN 二次开发，遵循 GPL-3.0</value>
+  </data>
+  <data name="P2SetCheck" xml:space="preserve">
+    <value>检查</value>
+  </data>
+  <data name="P2CoreHint" xml:space="preserve">
+    <value>按协议指定用哪个内核。想用「按域名」统计，把对应协议改成 sing_box 即可。</value>
+  </data>
+  <data name="P2CoreLabel" xml:space="preserve">
+    <value>内核</value>
+  </data>
+  <data name="P2CoreResetAll" xml:space="preserve">
+    <value>全部设为 Xray</value>
+  </data>
+  <data name="P2DlgCancel" xml:space="preserve">
+    <value>取消</value>
+  </data>
+  <data name="P2DlgSave" xml:space="preserve">
+    <value>保存</value>
+  </data>
+  <data name="P2RoutingHint" xml:space="preserve">
+    <value>决定哪些流量走代理、哪些直连。列表从上到下匹配，先命中先生效。</value>
+  </data>
+  <data name="P2RoutingEmptyHint" xml:space="preserve">
+    <value>还没有规则集。点右上角「添加规则集」，或从模板一键导入。</value>
+  </data>
+  <data name="P2SubHint" xml:space="preserve">
+    <value>订阅地址会定期拉取节点列表。双击一行可编辑。</value>
+  </data>
+  <data name="P2DnsHint" xml:space="preserve">
+    <value>DNS 决定域名如何解析。不确定时保持默认即可，改错会导致无法上网。</value>
+  </data>
+  <data name="P2SetSubCountFmt" xml:space="preserve">
+    <value>已配置 {0} 个订阅</value>
+  </data>
+  <data name="P2SetNoSubYet" xml:space="preserve">
+    <value>尚未配置订阅</value>
+  </data>
+  <data name="P2SetOff" xml:space="preserve">
+    <value>关闭</value>
+  </data>
+  <data name="P2SetHoursFmt" xml:space="preserve">
+    <value>{0} 小时</value>
+  </data>
 </root>

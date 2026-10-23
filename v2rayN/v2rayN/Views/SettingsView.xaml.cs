@@ -1,3 +1,4 @@
+using ServiceLib.Resx;
 using System.Windows;
 using ReactiveUI;
 using ServiceLib.Manager;
@@ -23,7 +24,7 @@ public partial class SettingsView : ReactiveUserControl<DashboardViewModel>
         this.WhenActivated(disposables =>
         {
             this.OneWayBind(ViewModel, vm => vm.Subscriptions, v => v.txtSubCount.Text,
-                    subs => subs is { Count: > 0 } ? $"已配置 {subs.Count} 个订阅" : "尚未配置订阅")
+                    subs => subs is { Count: > 0 } ? string.Format(ResUIHelper.Get("P2SetSubCountFmt"), subs.Count) : ResUIHelper.Get("P2SetNoSubYet"))
                 .DisposeWith(disposables);
         });
 
@@ -78,7 +79,7 @@ public partial class SettingsView : ReactiveUserControl<DashboardViewModel>
     private void RefreshAutoUpdateButton()
     {
         var hours = AppManager.Instance.Config.GuiItem.AutoUpdateInterval;
-        btnAutoUpdate.Content = hours <= 0 ? "关闭" : $"{hours} 小时";
+        btnAutoUpdate.Content = hours <= 0 ? ResUIHelper.Get("P2SetOff") : string.Format(ResUIHelper.Get("P2SetHoursFmt"), hours);
     }
 
     #endregion

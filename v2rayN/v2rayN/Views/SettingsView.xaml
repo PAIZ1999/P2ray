@@ -17,10 +17,10 @@
         <!-- macOS 设置页的分组是撑满内容区的，不设 MaxWidth，否则右侧会留一片空 -->
         <StackPanel Margin="24,18,24,28">
 
-            <TextBlock Margin="4,0,0,14" Style="{StaticResource P2rayH1}" Text="设置" />
+            <TextBlock Margin="4,0,0,14" Style="{StaticResource P2rayH1}" Text="{tr:Tr P2NavSettings}" />
 
             <!-- ═══ 通用 ═══ -->
-            <TextBlock Style="{StaticResource P2raySectionLabel}" Text="通用" />
+            <TextBlock Style="{StaticResource P2raySectionLabel}" Text="{tr:Tr P2SetGeneral}" />
             <Border Margin="0,0,0,16" Style="{StaticResource P2rayCard}">
                 <StackPanel>
                     <!-- 开机自启动 -->
@@ -46,11 +46,11 @@
                             </Border>
 
                             <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                <TextBlock Style="{StaticResource P2rayBody}" Text="开机自启动" />
+                                <TextBlock Style="{StaticResource P2rayBody}" Text="{tr:Tr P2SetAutoRun}" />
                                 <TextBlock
                                     Margin="0,2,0,0"
                                     Style="{StaticResource P2rayMicro}"
-                                    Text="登录 Windows 后自动运行 P2ray" />
+                                    Text="{tr:Tr P2SetAutoRunHint}" />
                             </StackPanel>
 
                             <ToggleButton
@@ -85,11 +85,11 @@
                             </Border>
 
                             <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                <TextBlock Style="{StaticResource P2rayBody}" Text="启动时最小化" />
+                                <TextBlock Style="{StaticResource P2rayBody}" Text="{tr:Tr P2SetAutoHide}" />
                                 <TextBlock
                                     Margin="0,2,0,0"
                                     Style="{StaticResource P2rayMicro}"
-                                    Text="下次启动直接收进托盘，不弹窗打扰" />
+                                    Text="{tr:Tr P2SetAutoHideHint}" />
                             </StackPanel>
 
                             <ToggleButton
@@ -124,11 +124,11 @@
                             </Border>
 
                             <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                <TextBlock Style="{StaticResource P2rayBody}" Text="自动更新间隔" />
+                                <TextBlock Style="{StaticResource P2rayBody}" Text="{tr:Tr P2SetAutoUpdate}" />
                                 <TextBlock
                                     Margin="0,2,0,0"
                                     Style="{StaticResource P2rayMicro}"
-                                    Text="定期刷新规则与识别库，点一下切换取值" />
+                                    Text="{tr:Tr P2SetAutoUpdateHint}" />
                             </StackPanel>
 
                             <Button
@@ -143,7 +143,7 @@
             </Border>
 
             <!-- ═══ 网络 ═══ -->
-            <TextBlock Style="{StaticResource P2raySectionLabel}" Text="网络" />
+            <TextBlock Style="{StaticResource P2raySectionLabel}" Text="{tr:Tr P2SetNetwork}" />
             <Border Margin="0,0,0,16" Style="{StaticResource P2rayCard}">
                 <StackPanel>
                     <!-- 局域网连接 -->
@@ -169,11 +169,11 @@
                             </Border>
 
                             <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                <TextBlock Style="{StaticResource P2rayBody}" Text="允许局域网连接" />
+                                <TextBlock Style="{StaticResource P2rayBody}" Text="{tr:Tr P2SetAllowLan}" />
                                 <TextBlock
                                     Margin="0,2,0,0"
                                     Style="{StaticResource P2rayMicro}"
-                                    Text="同一 WiFi 下的手机等设备也能走这台电脑" />
+                                    Text="{tr:Tr P2SetAllowLanHint}" />
                             </StackPanel>
 
                             <ToggleButton
@@ -208,11 +208,11 @@
                             </Border>
 
                             <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                <TextBlock Style="{StaticResource P2rayBody}" Text="UDP 转发" />
+                                <TextBlock Style="{StaticResource P2rayBody}" Text="{tr:Tr P2SetUdp}" />
                                 <TextBlock
                                     Margin="0,2,0,0"
                                     Style="{StaticResource P2rayMicro}"
-                                    Text="语音通话与联机游戏需要，关掉可能导致它们断线" />
+                                    Text="{tr:Tr P2SetUdpHint}" />
                             </StackPanel>
 
                             <ToggleButton
@@ -247,11 +247,11 @@
                             </Border>
 
                             <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                <TextBlock Style="{StaticResource P2rayBody}" Text="日志级别" />
+                                <TextBlock Style="{StaticResource P2rayBody}" Text="{tr:Tr P2SetLogLevel}" />
                                 <TextBlock
                                     Margin="0,2,0,0"
                                     Style="{StaticResource P2rayMicro}"
-                                    Text="排查问题时调高，平时保持 warning 即可" />
+                                    Text="{tr:Tr P2SetLogLevelHint}" />
                             </StackPanel>
 
                             <Button
@@ -266,7 +266,7 @@
             </Border>
 
             <!-- ═══ 订阅 ═══ -->
-            <TextBlock Style="{StaticResource P2raySectionLabel}" Text="订阅" />
+            <TextBlock Style="{StaticResource P2raySectionLabel}" Text="{tr:Tr P2HomeSubs}" />
             <Border Margin="0,0,0,16" Style="{StaticResource P2rayCard}">
                 <StackPanel>
                     <Border Style="{StaticResource P2rayRow}">
@@ -291,7 +291,7 @@
                             </Border>
 
                             <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                <TextBlock Style="{StaticResource P2rayBody}" Text="订阅管理" />
+                                <TextBlock Style="{StaticResource P2rayBody}" Text="{tr:Tr P2SetSubManage}" />
                                 <TextBlock
                                     x:Name="txtSubCount"
                                     Margin="0,2,0,0"
@@ -302,7 +302,7 @@
                                 Grid.Column="2"
                                 VerticalAlignment="Center"
                                 Click="BtnManageSub_Click"
-                                Content="管理"
+                                Content="{tr:Tr P2SetManage}"
                                 Style="{StaticResource P2raySecondaryButton}" />
                         </Grid>
                     </Border>
@@ -329,19 +329,19 @@
                             </Border>
 
                             <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                <TextBlock Style="{StaticResource P2rayBody}" Text="更新全部订阅" />
+                                <TextBlock Style="{StaticResource P2rayBody}" Text="{tr:Tr P2HomeUpdateAllSubs}" />
                                 <TextBlock
                                     x:Name="txtSubUpdateHint"
                                     Margin="0,2,0,0"
                                     Style="{StaticResource P2rayMicro}"
-                                    Text="拉取最新节点列表，失败时自动重试" />
+                                    Text="{tr:Tr P2SetUpdateSubsHint}" />
                             </StackPanel>
 
                             <Button
                                 Grid.Column="2"
                                 VerticalAlignment="Center"
                                 Click="BtnUpdateSub_Click"
-                                Content="更新"
+                                Content="{tr:Tr P2HomeUpdate}"
                                 Style="{StaticResource P2raySecondaryButton}" />
                         </Grid>
                     </Border>
@@ -349,7 +349,7 @@
             </Border>
 
             <!-- ═══ 高级功能 ═══ -->
-            <TextBlock Style="{StaticResource P2raySectionLabel}" Text="高级功能" />
+            <TextBlock Style="{StaticResource P2raySectionLabel}" Text="{tr:Tr P2SetAdvanced}" />
             <Border Margin="0,0,0,16" Style="{StaticResource P2rayCard}">
                 <Border Style="{StaticResource P2rayRowLast}">
                     <StackPanel>
@@ -376,7 +376,7 @@
                                 Grid.Column="1"
                                 VerticalAlignment="Center"
                                 Style="{StaticResource P2rayBody}"
-                                Text="配置与规则" />
+                                Text="{tr:Tr P2SetConfigRules}" />
                         </Grid>
 
                         <!-- 原来的顶栏功能收在这里 -->
@@ -385,49 +385,49 @@
                                 x:Name="btnCoreSetting"
                                 Margin="0,0,8,8"
                                 Click="BtnCoreSetting_Click"
-                                Content="内核设置"
+                                Content="{tr:Tr P2CoreTitle}"
                                 Style="{StaticResource P2raySecondaryButton}" />
                             <Button
                                 x:Name="btnRoutingSetting"
                                 Margin="0,0,8,8"
                                 Click="BtnRouting_Click"
-                                Content="路由"
+                                Content="{tr:Tr P2SetRouting}"
                                 Style="{StaticResource P2raySecondaryButton}" />
                             <Button
                                 x:Name="btnDnsSetting"
                                 Margin="0,0,8,8"
                                 Click="BtnDns_Click"
-                                Content="DNS"
+                                Content="{tr:Tr P2SetDns}"
                                 Style="{StaticResource P2raySecondaryButton}" />
                             <Button
                                 x:Name="btnFullConfig"
                                 Margin="0,0,8,8"
                                 Click="BtnFullConfig_Click"
-                                Content="完整配置模板"
+                                Content="{tr:Tr P2SetFullTemplate}"
                                 Style="{StaticResource P2raySecondaryButton}" />
                             <Button
                                 x:Name="btnHotkey"
                                 Margin="0,0,8,8"
                                 Click="BtnHotkey_Click"
-                                Content="全局热键"
+                                Content="{tr:Tr P2SetHotkey}"
                                 Style="{StaticResource P2raySecondaryButton}" />
                             <Button
                                 x:Name="btnBackup"
                                 Margin="0,0,8,8"
                                 Click="BtnBackup_Click"
-                                Content="备份与恢复"
+                                Content="{tr:Tr P2SetBackup}"
                                 Style="{StaticResource P2raySecondaryButton}" />
                             <Button
                                 x:Name="btnRebootAdmin"
                                 Margin="0,0,8,8"
                                 Click="BtnRebootAdmin_Click"
-                                Content="以管理员重启"
+                                Content="{tr:Tr P2SetRestartAdmin}"
                                 Style="{StaticResource P2raySecondaryButton}" />
                             <Button
                                 x:Name="btnClearStat"
                                 Margin="0,0,8,8"
                                 Click="BtnClearStat_Click"
-                                Content="清除统计"
+                                Content="{tr:Tr P2SetClearStats}"
                                 Style="{StaticResource P2raySecondaryButton}" />
                         </WrapPanel>
                     </StackPanel>
@@ -435,7 +435,7 @@
             </Border>
 
             <!-- ═══ 数据 ═══ -->
-            <TextBlock Style="{StaticResource P2raySectionLabel}" Text="数据" />
+            <TextBlock Style="{StaticResource P2raySectionLabel}" Text="{tr:Tr P2SetData}" />
             <Border Margin="0,0,0,16" Style="{StaticResource P2rayCard}">
                 <StackPanel>
                                         <Border Style="{StaticResource P2rayRow}">
@@ -458,11 +458,11 @@
                                     Kind="ChartTimelineVariant" />
                             </Border>
                             <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                <TextBlock Style="{StaticResource P2rayBody}" Text="流量统计保留" />
+                                <TextBlock Style="{StaticResource P2rayBody}" Text="{tr:Tr P2SetRetention}" />
                                 <TextBlock
                                     Margin="0,2,0,0"
                                     Style="{StaticResource P2rayMicro}"
-                                    Text="超过保留期的统计会自动清理，0 表示永久保留" />
+                                    Text="{tr:Tr P2SetRetentionHint}" />
                             </StackPanel>
                             <Button
                                 x:Name="btnRetention"
@@ -495,7 +495,7 @@
                             </Border>
 
                             <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                <TextBlock Style="{StaticResource P2rayBody}" Text="程序目录" />
+                                <TextBlock Style="{StaticResource P2rayBody}" Text="{tr:Tr P2SetProgramDir}" />
                                 <TextBlock
                                     x:Name="txtDataDir"
                                     Margin="0,2,0,0"
@@ -507,7 +507,7 @@
                                 Grid.Column="2"
                                 VerticalAlignment="Center"
                                 Click="BtnOpenDir_Click"
-                                Content="打开"
+                                Content="{tr:Tr P2SetOpen}"
                                 Style="{StaticResource P2raySecondaryButton}" />
                         </Grid>
                     </Border>
@@ -534,18 +534,18 @@
                             </Border>
 
                             <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                <TextBlock Style="{StaticResource P2rayBody}" Text="日志与备份" />
+                                <TextBlock Style="{StaticResource P2rayBody}" Text="{tr:Tr P2SetLogsBackup}" />
                                 <TextBlock
                                     Margin="0,2,0,0"
                                     Style="{StaticResource P2rayMicro}"
-                                    Text="运行记录与自动备份存放的位置" />
+                                    Text="{tr:Tr P2SetLogsBackupHint}" />
                             </StackPanel>
 
                             <Button
                                 Grid.Column="2"
                                 VerticalAlignment="Center"
                                 Click="BtnOpenLogDir_Click"
-                                Content="打开"
+                                Content="{tr:Tr P2SetOpen}"
                                 Style="{StaticResource P2raySecondaryButton}" />
                         </Grid>
                     </Border>
@@ -553,7 +553,7 @@
             </Border>
 
             <!-- ═══ 关于 ═══ -->
-            <TextBlock Style="{StaticResource P2raySectionLabel}" Text="关于" />
+            <TextBlock Style="{StaticResource P2raySectionLabel}" Text="{tr:Tr P2SetAbout}" />
             <Border Style="{StaticResource P2rayCard}">
                 <StackPanel>
                     <Border Style="{StaticResource P2rayRow}">
@@ -581,7 +581,7 @@
                                 Grid.Column="1"
                                 VerticalAlignment="Center"
                                 Style="{StaticResource P2rayBody}"
-                                Text="版本" />
+                                Text="{tr:Tr P2SetVersion}" />
 
                             <TextBlock
                                 x:Name="txtVersionAbout"
@@ -613,11 +613,11 @@
                             </Border>
 
                             <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                <TextBlock Style="{StaticResource P2rayBody}" Text="开源许可" />
+                                <TextBlock Style="{StaticResource P2rayBody}" Text="{tr:Tr P2SetLicense}" />
                                 <TextBlock
                                     Margin="0,2,0,0"
                                     Style="{StaticResource P2rayMicro}"
-                                    Text="基于 v2rayN 二次开发，遵循 GPL-3.0" />
+                                    Text="{tr:Tr P2SetLicenseHint}" />
                             </StackPanel>
                         </Grid>
                     </Border>
@@ -647,14 +647,14 @@
                                 Grid.Column="1"
                                 VerticalAlignment="Center"
                                 Style="{StaticResource P2rayBody}"
-                                Text="检查更新" />
+                                Text="{tr:Tr P2NavCheckUpdate}" />
 
                             <Button
                                 x:Name="btnCheckUpdate"
                                 Grid.Column="2"
                                 VerticalAlignment="Center"
                                 Click="BtnCheckUpdate_Click"
-                                Content="检查"
+                                Content="{tr:Tr P2SetCheck}"
                                 Style="{StaticResource P2raySecondaryButton}" />
                         </Grid>
                     </Border>
