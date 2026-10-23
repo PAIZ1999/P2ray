@@ -2343,4 +2343,19 @@ The "Get Certificate" action may fail if a self-signed certificate is used or if
   <data name="P2SetHoursFmt" xml:space="preserve">
     <value>{0} h</value>
   </data>
+  <data name="P2SetCores" xml:space="preserve">
+    <value>Cores</value>
+  </data>
+  <data name="P2SetCoreMissing" xml:space="preserve">
+    <value>Not installed</value>
+  </data>
+  <data name="P2SetOpenFolder" xml:space="preserve">
+    <value>Open folder</value>
+  </data>
+  <data name="P2SetCheckCoreUpdate" xml:space="preserve">
+    <value>Check core updates</value>
+  </data>
+  <data name="P2SetCheckCoreUpdateHint" xml:space="preserve">
+    <value>Downloads the latest core from its official release</value>
+  </data>
 </root>

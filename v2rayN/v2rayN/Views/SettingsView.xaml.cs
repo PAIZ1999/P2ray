@@ -1,3 +1,6 @@
+using System.Windows.Controls;
+using ServiceLib.Services;
+using System.Diagnostics;
 using ServiceLib.Resx;
 using System.Windows;
 using ReactiveUI;
@@ -41,6 +44,7 @@ public partial class SettingsView : ReactiveUserControl<DashboardViewModel>
         RefreshAutoUpdateButton();
         RefreshLogLevelButton();
         RefreshRetentionButton();
+        RefreshCoreVersions();
     }
 
     #region 通用
@@ -201,8 +205,51 @@ public partial class SettingsView : ReactiveUserControl<DashboardViewModel>
 
         await ConfigHandler.SaveConfig(config);
         RefreshRetentionButton();
+        RefreshCoreVersions();
     }
 
+    /// <summary>
+    /// 读三个内核的已装版本，填到设置页的「内核」卡片。
+    ///
+    /// 全程在后台跑、用 Dispatcher 回写：这个方法是设置页构造里发起的，
+    /// 直接在 UI 线程上等待子进程会在某些环境下卡住（实测 CliWrap 版本
+    /// 一直不返回）。后台 + 显式回到 UI 线程最稳。
+    /// </summary>
+    private void RefreshCoreVersions()
+    {
+        _ = Task.Run(async () =>
+        {
+            var xray = await CoreVersionService.GetInstalledVersionAsync(ECoreType.Xray);
+            var singbox = await CoreVersionService.GetInstalledVersionAsync(ECoreType.sing_box);
+            var mihomo = await CoreVersionService.GetInstalledVersionAsync(ECoreType.mihomo);
+        Dispatcher.BeginInvoke(new Action(() =>
+            {
+                txtCoreXray.Text = xray is null ? ResUIHelper.Get("P2SetCoreMissing") : $"v{xray}";
+                txtCoreSingbox.Text = singbox is null ? ResUIHelper.Get("P2SetCoreMissing") : $"v{singbox}";
+                txtCoreMihomo.Text = mihomo is null ? ResUIHelper.Get("P2SetCoreMissing") : $"v{mihomo}";
+            }));
+        });
+    }
+    /// <summary>打开某个内核所在目录（Tag 传内核名）。</summary>
+    private void BtnOpenCoreDir_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { Tag: string core })
+        {
+            return;
+        }
+
+        var dir = Utils.GetBinPath("", core);
+        if (!Directory.Exists(dir))
+        {
+            NoticeManager.Instance.Enqueue($"目录不存在：{dir}");
+            return;
+        }
+
+        Process.Start(new ProcessStartInfo { FileName = dir, UseShellExecute = true });
+    }
+
+    private async void BtnCoreUpdate_Click(object sender, RoutedEventArgs e)
+        => await ShowAsync<CheckUpdateViewModel>();
     private void RefreshRetentionButton()
     {
         var days = AppManager.Instance.Config.GuiItem.TrafficRetentionDays;

@@ -2332,4 +2332,19 @@
   <data name="P2SetHoursFmt" xml:space="preserve">
     <value>{0} 小时</value>
   </data>
+  <data name="P2SetCores" xml:space="preserve">
+    <value>内核</value>
+  </data>
+  <data name="P2SetCoreMissing" xml:space="preserve">
+    <value>未安装</value>
+  </data>
+  <data name="P2SetOpenFolder" xml:space="preserve">
+    <value>打开目录</value>
+  </data>
+  <data name="P2SetCheckCoreUpdate" xml:space="preserve">
+    <value>检查内核更新</value>
+  </data>
+  <data name="P2SetCheckCoreUpdateHint" xml:space="preserve">
+    <value>从官方 Release 拉取最新内核</value>
+  </data>
 </root>

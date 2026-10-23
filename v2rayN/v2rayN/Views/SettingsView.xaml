@@ -349,6 +349,156 @@
             </Border>
 
             <!-- ═══ 高级功能 ═══ -->
+            <TextBlock Style="{StaticResource P2raySectionLabel}" Text="{tr:Tr P2SetCores}" />
+            <Border Margin="0,0,0,16" Style="{StaticResource P2rayCard}">
+                <StackPanel>
+                    <Border Style="{StaticResource P2rayRow}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <Border
+                                Grid.Column="0"
+                                Background="{StaticResource P2rayIconBlue}"
+                                Style="{StaticResource P2rayRowIcon}">
+                                <materialDesign:PackIcon
+                                    Width="13"
+                                    Height="13"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Foreground="White"
+                                    Kind="HexagonOutline" />
+                            </Border>
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                <TextBlock Style="{StaticResource P2rayBody}" Text="Xray" />
+                                <TextBlock
+                                    x:Name="txtCoreXray"
+                                    Margin="0,2,0,0"
+                                    Style="{StaticResource P2rayMicro}"
+                                    Text="—" />
+                            </StackPanel>
+                            <Button
+                                Grid.Column="2"
+                                VerticalAlignment="Center"
+                                Click="BtnOpenCoreDir_Click"
+                                Content="{tr:Tr P2SetOpenFolder}"
+                                Style="{StaticResource P2raySecondaryButton}"
+                                Tag="xray" />
+                        </Grid>
+                    </Border>
+
+                    <Border Style="{StaticResource P2rayRow}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <Border
+                                Grid.Column="0"
+                                Background="{StaticResource P2rayIconTeal}"
+                                Style="{StaticResource P2rayRowIcon}">
+                                <materialDesign:PackIcon
+                                    Width="13"
+                                    Height="13"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Foreground="White"
+                                    Kind="CubeOutline" />
+                            </Border>
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                <TextBlock Style="{StaticResource P2rayBody}" Text="sing-box" />
+                                <TextBlock
+                                    x:Name="txtCoreSingbox"
+                                    Margin="0,2,0,0"
+                                    Style="{StaticResource P2rayMicro}"
+                                    Text="—" />
+                            </StackPanel>
+                            <Button
+                                Grid.Column="2"
+                                VerticalAlignment="Center"
+                                Click="BtnOpenCoreDir_Click"
+                                Content="{tr:Tr P2SetOpenFolder}"
+                                Style="{StaticResource P2raySecondaryButton}"
+                                Tag="sing_box" />
+                        </Grid>
+                    </Border>
+
+                    <Border Style="{StaticResource P2rayRow}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <Border
+                                Grid.Column="0"
+                                Background="{StaticResource P2rayIconPurple}"
+                                Style="{StaticResource P2rayRowIcon}">
+                                <materialDesign:PackIcon
+                                    Width="13"
+                                    Height="13"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Foreground="White"
+                                    Kind="HexagonMultipleOutline" />
+                            </Border>
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                <TextBlock Style="{StaticResource P2rayBody}" Text="mihomo" />
+                                <TextBlock
+                                    x:Name="txtCoreMihomo"
+                                    Margin="0,2,0,0"
+                                    Style="{StaticResource P2rayMicro}"
+                                    Text="—" />
+                            </StackPanel>
+                            <Button
+                                Grid.Column="2"
+                                VerticalAlignment="Center"
+                                Click="BtnOpenCoreDir_Click"
+                                Content="{tr:Tr P2SetOpenFolder}"
+                                Style="{StaticResource P2raySecondaryButton}"
+                                Tag="mihomo" />
+                        </Grid>
+                    </Border>
+
+                    <Border Style="{StaticResource P2rayRow}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <Border
+                                Grid.Column="0"
+                                Background="{StaticResource P2rayIconOrange}"
+                                Style="{StaticResource P2rayRowIcon}">
+                                <materialDesign:PackIcon
+                                    Width="13"
+                                    Height="13"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Foreground="White"
+                                    Kind="Download" />
+                            </Border>
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                <TextBlock Style="{StaticResource P2rayBody}" Text="{tr:Tr P2SetCheckCoreUpdate}" />
+                                <TextBlock
+                                    Margin="0,2,0,0"
+                                    Style="{StaticResource P2rayMicro}"
+                                    Text="{tr:Tr P2SetCheckCoreUpdateHint}" />
+                            </StackPanel>
+                            <Button
+                                Grid.Column="2"
+                                VerticalAlignment="Center"
+                                Click="BtnCoreUpdate_Click"
+                                Content="{tr:Tr P2SetCheck}"
+                                Style="{StaticResource P2raySecondaryButton}" />
+                        </Grid>
+                    </Border>
+                </StackPanel>
+            </Border>
             <TextBlock Style="{StaticResource P2raySectionLabel}" Text="{tr:Tr P2SetAdvanced}" />
             <Border Margin="0,0,0,16" Style="{StaticResource P2rayCard}">
                 <Border Style="{StaticResource P2rayRowLast}">
