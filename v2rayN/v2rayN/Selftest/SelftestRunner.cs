@@ -112,6 +112,9 @@ public static class SelftestRunner
             result["trafficDownBefore"] = before.Down;
             result["trafficDownAfter"] = after.Down;
             result["trafficGrew"] = after.Down > before.Down;
+            result["etwSeen"] = ServiceLib.Services.AppStatService.Instance.DebugSeenEvents;
+            result["etwMatched"] = ServiceLib.Services.AppStatService.Instance.DebugMatchedEvents;
+            result["appRows"] = (await SQLiteHelper.Instance.TableAsync<ServiceLib.Models.Entities.AppStatItem>().ToListAsync()).Count;
             result["trafficRowsAfter"] = after.Rows;
 
             return await FinishAsync(outPath, result, after.Down > before.Down ? 0 : 4);

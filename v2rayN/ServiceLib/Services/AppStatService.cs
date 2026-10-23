@@ -33,6 +33,8 @@ public class AppStatService
     private TraceEventSession? _session;
     private Thread? _thread;
     private volatile bool _running;
+    private long _seenEvents;   // TEMPDBG
+    private long _matchedEvents;   // TEMPDBG
     private string? _lastError;
 
     /// <summary>是否具备运行条件（管理员）。</summary>
@@ -72,6 +74,10 @@ public class AppStatService
 
         try
         {
+            // 清掉同名残留会话：进程被强杀时 ETW 会话会留在系统里（实测 Running），
+            // 之后新实例再订阅就收不到任何事件 —— 表现是按应用永远是空的。
+            StopStaleSession();
+
             _session = new TraceEventSession(SessionName) { StopOnDispose = true };
             _session.EnableKernelProvider(KernelTraceEventParser.Keywords.NetworkTCPIP);
 
@@ -136,6 +142,12 @@ public class AppStatService
     /// </summary>
     public bool ProxyOnly { get; set; } = true;
 
+    /// <summary>诊断用：ETW 收到的原始事件数（自检读取，不影响统计）。</summary>
+    public long DebugSeenEvents => _seenEvents;
+
+    /// <summary>诊断用：通过回环代理端口过滤后的事件数。</summary>
+    public long DebugMatchedEvents => _matchedEvents;
+
     private static int ProxyPort()
     {
         try
@@ -155,6 +167,7 @@ public class AppStatService
     /// <summary>ETW 回调里不能做重活：只做内存加法。</summary>
     private void Accumulate(int pid, long up, long down, string? addr, int port)
     {
+        _seenEvents++;   // TEMPDBG
         if (ProxyOnly)
         {
             var proxyPort = ProxyPort();
@@ -174,6 +187,7 @@ public class AppStatService
             return;
         }
 
+        _matchedEvents++;   // TEMPDBG
         var key = $"{(ProxyOnly ? "p" : "a")}|{DateTime.Now:yyyyMMdd}|{name}";
         var needFlush = false;
         lock (_lock)
@@ -351,4 +365,26 @@ public class AppStatService
 
     /// <summary>运行状态说明：空串表示正常。</summary>
     public string StatusHint => !IsSupported ? UnsupportedHint : (_lastError ?? string.Empty);
+
+    /// <summary>停掉上次运行残留的同名 ETW 会话（logman 在 Windows 上自带）。</summary>
+    private static void StopStaleSession()
+    {
+        try
+        {
+            using var proc = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = "logman.exe",
+                Arguments = $"stop {SessionName} -ets",
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+            });
+            proc?.WaitForExit(3000);
+        }
+        catch (Exception ex)
+        {
+            Logging.SaveLog($"{_tag}.StopStaleSession", ex);
+        }
+    }
 }
