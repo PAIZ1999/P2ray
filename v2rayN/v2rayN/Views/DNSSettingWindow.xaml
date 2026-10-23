@@ -17,7 +17,15 @@
     Style="{StaticResource WindowGlobal}"
     WindowStartupLocation="CenterScreen"
     mc:Ignorable="d">
-    <DockPanel Margin="{StaticResource Margin8}">
+    <DockPanel Margin="20,16,20,18">
+        <StackPanel DockPanel.Dock="Top" Margin="0,0,0,14">
+            <TextBlock Style="{StaticResource P2rayH1}" Text="{x:Static resx:ResUI.menuDNSSetting}" />
+            <TextBlock
+                Margin="0,3,0,0"
+                Style="{StaticResource P2rayMicro}"
+                Text="DNS 决定域名如何解析。不确定时保持默认即可，改错会导致无法上网。" />
+        </StackPanel>
+
         <StackPanel
             Margin="{StaticResource Margin4}"
             HorizontalAlignment="Center"
@@ -28,17 +36,50 @@
                 MinWidth="100"
                 Content="{x:Static resx:ResUI.TbConfirm}"
                 IsDefault="True"
-                Style="{StaticResource DefButton}" />
+                Style="{StaticResource P2rayPrimaryButton}" />
             <Button
                 x:Name="btnCancel"
                 MinWidth="100"
                 Margin="{StaticResource MarginLeftRight8}"
                 Content="{x:Static resx:ResUI.TbCancel}"
                 IsCancel="true"
-                Style="{StaticResource DefButton}" />
+                Style="{StaticResource P2raySecondaryButton}" />
         </StackPanel>
 
         <TabControl HorizontalContentAlignment="Left">
+            <TabControl.ItemContainerStyle>
+                <Style TargetType="TabItem">
+                    <Setter Property="Foreground" Value="{StaticResource P2rayTextSecondaryBrush}" />
+                    <Setter Property="FontSize" Value="{StaticResource P2rayFontCaption}" />
+                    <Setter Property="Padding" Value="14,8" />
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="TabItem">
+                                <Border
+                                    x:Name="bd"
+                                    Padding="{TemplateBinding Padding}"
+                                    Background="Transparent"
+                                    BorderBrush="Transparent"
+                                    BorderThickness="0,0,0,2">
+                                    <ContentPresenter
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        ContentSource="Header" />
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Foreground" Value="{StaticResource P2rayTextPrimaryBrush}" />
+                                    </Trigger>
+                                    <Trigger Property="IsSelected" Value="True">
+                                        <Setter TargetName="bd" Property="BorderBrush" Value="{StaticResource P2rayAccentBrush}" />
+                                        <Setter Property="Foreground" Value="{StaticResource P2rayTextPrimaryBrush}" />
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </TabControl.ItemContainerStyle>
             <TabItem Header="{x:Static resx:ResUI.ThBasicDNSSettings}">
                 <ScrollViewer VerticalScrollBarVisibility="Visible">
                     <Grid x:Name="gridBasicDNSSettings" Margin="{StaticResource Margin8}">
