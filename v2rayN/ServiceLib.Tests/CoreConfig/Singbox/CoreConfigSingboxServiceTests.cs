@@ -1,5 +1,6 @@
 namespace ServiceLib.Tests.CoreConfig.Singbox;
 
+[NotInParallel]
 public class CoreConfigSingboxServiceTests
 {
     [Test]

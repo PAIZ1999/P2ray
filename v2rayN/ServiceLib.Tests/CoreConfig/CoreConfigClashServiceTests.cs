@@ -10,6 +10,7 @@ namespace ServiceLib.Tests.CoreConfig.Clash;
 ///      缺了它那份功能就是空的；
 ///   3. 用户自己的 proxies 段被保留，不被改写。
 /// </summary>
+[NotInParallel]
 public class CoreConfigClashServiceTests
 {
     private const string SampleYaml = """

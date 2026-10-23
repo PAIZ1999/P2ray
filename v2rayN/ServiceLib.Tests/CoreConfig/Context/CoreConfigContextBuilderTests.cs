@@ -1,5 +1,6 @@
 namespace ServiceLib.Tests.CoreConfig.Context;
 
+[NotInParallel]
 public class CoreConfigContextBuilderTests
 {
     [Test]

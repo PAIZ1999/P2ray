@@ -24,8 +24,7 @@ public class TrafficStatService
     private DateTime _lastFlush = DateTime.MinValue;
 
     private CancellationTokenSource? _pollCts;
-    private long _lastUp;
-    private long _lastDown;
+    private readonly TrafficDeltaTracker _tracker = new();
 
     /// <summary>
     /// 开始自行轮询 xray 的 /debug/vars。
@@ -56,24 +55,13 @@ public class TrafficStatService
                     }
 
                     var (up, down) = totals.Value;
-                    if (up < 0 || down < 0)
+                    // 首次读数只作基线；内核重启导致计数归零时同样只重置基线，
+                    // 不会把负差额算成流量
+                    var delta = _tracker.Feed(up, down);
+                    if (delta.Up > 0 || delta.Down > 0)
                     {
-                        continue;
+                        Add(delta.Up, delta.Down);
                     }
-
-                    // 内核实例换了以后累计值会归零，此时不能把差额算成负数
-                    if (up < _lastUp || down < _lastDown)
-                    {
-                        _lastUp = up;
-                        _lastDown = down;
-                        continue;
-                    }
-
-                    var dUp = up - _lastUp;
-                    var dDown = down - _lastDown;
-                    _lastUp = up;
-                    _lastDown = down;
-                    Add(dUp, dDown);
                 }
                 catch (OperationCanceledException) when (token.IsCancellationRequested)
                 {
@@ -115,8 +103,9 @@ public class TrafficStatService
 
         if (running is ECoreType.sing_box or ECoreType.mihomo)
         {
-            var conns = await ClashApiManager.Instance.GetConnections().ConfigureAwait(false);
-            return conns is null ? null : ((long)conns.uploadTotal, (long)conns.downloadTotal);
+            var clashUrl = $"{Global.HttpProtocol}{Global.Loopback}:{AppManager.Instance.StatePort2}/connections";
+            var clashRaw = await HttpClientHelper.Instance.TryGetAsync(clashUrl, token).ConfigureAwait(false);
+            return TrafficTotalsParser.ParseClashTotals(clashRaw);
         }
 
         if (running is not (ECoreType.Xray or ECoreType.v2fly or ECoreType.v2fly_v5))

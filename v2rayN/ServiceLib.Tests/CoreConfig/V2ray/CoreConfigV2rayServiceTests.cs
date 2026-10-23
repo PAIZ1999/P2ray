@@ -1,5 +1,6 @@
 namespace ServiceLib.Tests.CoreConfig.V2ray;
 
+[NotInParallel]
 public class CoreConfigV2rayServiceTests
 {
     [Test]

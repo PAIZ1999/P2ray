@@ -2,6 +2,7 @@ using ServiceLib.Tests.CoreConfig;
 
 namespace ServiceLib.Tests.Handler;
 
+[NotInParallel]
 public class ConfigHandlerCustomSubscriptionTests
 {
     private const string FullXrayConfigs = """
