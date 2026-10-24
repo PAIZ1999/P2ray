@@ -59,6 +59,16 @@ public partial class App
         mainWindow.Show();
         MainWindow = mainWindow;
 
+        // 诊断探针：只写日志，不改行为。结果见 guiConfigs/uithread-db-probe.log
+        if (e.Args.Any(t => t == "--db-probe"))
+        {
+            Dispatcher.BeginInvoke(new Action(async () =>
+            {
+                await Diagnostics.UiThreadDbProbe.RunAsync(Dispatcher);
+                Dispatcher.Invoke(() => Shutdown(0));
+            }), System.Windows.Threading.DispatcherPriority.Background);
+        }
+
         // 隐藏的自检入口：只给验证用，正常启动不受影响
         if (e.Args.Any(t => t == "--selftest"))
         {
