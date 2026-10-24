@@ -2347,4 +2347,13 @@
   <data name="P2SetCheckCoreUpdateHint" xml:space="preserve">
     <value>从官方 Release 拉取最新内核</value>
   </data>
+  <data name="P2TrafficConnCount" xml:space="preserve">
+    <value>连接次数</value>
+  </data>
+  <data name="P2TrafficConnTotal" xml:space="preserve">
+    <value>区间内连接次数合计</value>
+  </data>
+  <data name="P2TrafficDomainHintXray" xml:space="preserve">
+    <value>Xray 内核不提供 clash API，这里按 access log 统计连接次数（不含字节）。需在设置里打开日志、级别 info。</value>
+  </data>
 </root>

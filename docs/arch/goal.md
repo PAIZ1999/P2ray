@@ -57,7 +57,8 @@ pwsh -NoProfile -File scripts/arch-gates.ps1
 
 | 限制 | 原因 | 依据 |
 |---|---|---|
-| 「按域名」「按应用」在 Xray 内核下为空 | 二者依赖 clash API，Xray 不提供；其 stats API 只有入站/出站/用户粒度 | ADR-0001 |
+| Xray 下「按域名」只有**连接次数**，没有字节 | access log 只记录连接，不含字节；Xray stats API 无逐连接粒度 | ADR-0004 |
+| 「按应用」在 Xray 内核下为空 | 需要 clash API 的 sourcePort 与字节 | ADR-0001 |
 | mihomo 不能用于普通协议 | 普通协议配置由程序生成，只有 Xray / sing-box 两种格式 | goal ③ 约束 |
 | 短连接可能漏计 | 按应用是采样式（1 秒轮询），4 秒突发约捕获 20% | ADR-0001 |
 

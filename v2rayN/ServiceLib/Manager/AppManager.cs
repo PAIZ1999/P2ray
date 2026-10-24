@@ -93,6 +93,8 @@ public sealed class AppManager
         SQLiteHelper.Instance.CreateTable<TrafficStatItem>();
         // 按域名统计：仅 mihomo / sing-box 内核下有数据
         SQLiteHelper.Instance.CreateTable<DomainStatItem>();
+        // Xray 下的按域名只有连接次数（access log），单独一张表，不混用字节口径
+        SQLiteHelper.Instance.CreateTable<DomainCountItem>();
         // 按应用统计：ETW 内核网络事件，需管理员权限
         SQLiteHelper.Instance.CreateTable<AppStatItem>();
 #pragma warning disable CS0618

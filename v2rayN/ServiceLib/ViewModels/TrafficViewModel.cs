@@ -101,6 +101,25 @@ public partial class TrafficViewModel : ReactiveObject
     [Reactive]
     public partial string DomainHint { get; set; } = string.Empty;
 
+    /// <summary>域名表列头：clash 内核是「下行」，Xray 内核是「连接次数」。</summary>
+    [Reactive]
+    public partial string DomainDownHeader { get; set; } = string.Empty;
+
+    [Reactive]
+    public partial string DomainUpHeader { get; set; } = string.Empty;
+
+    /// <summary>合计标签：口径不同，文案也不同（字节 / 次数）。</summary>
+    [Reactive]
+    public partial string DomainTotalLabel { get; set; } = string.Empty;
+
+    /// <summary>Xray 口径下没有上行，整列隐藏。</summary>
+    [Reactive]
+    public partial double DomainUpWidth { get; set; } = 80;
+
+    /// <summary>页面顶部那句说明：clash 口径与 access log 口径不同，文案要跟着换。</summary>
+    [Reactive]
+    public partial string DomainHintTop { get; set; } = string.Empty;
+
     /// <summary>按域名聚合的结果。</summary>
     [Reactive]
     public partial BulkObservableCollection<DomainStatRow> Domains { get; set; } = [];
@@ -378,8 +397,11 @@ public partial class TrafficViewModel : ReactiveObject
     /// </summary>
     private async Task BuildDomainsAsync(int days)
     {
-        IsDomainSupported = DomainStatService.IsSupported;
-        DomainHint = DomainStatService.UnsupportedHint;
+        // 两种内核两种口径：clash 系（sing-box/mihomo）给字节，Xray 只能从 access log 数次数。
+        var isClash = DomainStatService.IsSupported;
+        var isXray = XrayDomainStatService.IsSupported;
+        IsDomainSupported = isClash || isXray;
+        DomainHint = isClash ? DomainStatService.UnsupportedHint : XrayDomainStatService.UnsupportedHint;
 
         if (!IsDomainSupported)
         {
@@ -387,6 +409,18 @@ public partial class TrafficViewModel : ReactiveObject
             DomainTotalText = "—";
             return;
         }
+
+        if (!isClash)
+        {
+            await BuildDomainsByCountAsync(days);
+            return;
+        }
+
+        DomainDownHeader = ResUIHelper.Get("P2TrafficDown");
+        DomainUpHeader = ResUIHelper.Get("P2TrafficUp");
+        DomainUpWidth = 80;
+        DomainHintTop = ResUIHelper.Get("P2TrafficDomainHint");
+        DomainTotalLabel = ResUIHelper.Get("P2TrafficDomainTotal");
 
         var list = await DomainStatService.Instance.GetRangeAsync(days);
         var total = list.Sum(t => t.Down);
@@ -405,6 +439,43 @@ public partial class TrafficViewModel : ReactiveObject
                 DownBarWidth = Math.Max(320.0 * t.Down / (max > 0 ? max : 1), t.Down > 0 ? 2 : 0),
                 UpBarWidth = Math.Max(320.0 * t.Up / (max > 0 ? max : 1), t.Up > 0 ? 2 : 0),
             };
+        }).ToList();
+
+        Domains = new BulkObservableCollection<DomainStatRow>(rows);
+    }
+
+    /// <summary>
+    /// Xray 内核下的按域名：只有连接次数。列头与合计标签都换成"次数"口径，避免和字节混淆。
+    /// </summary>
+    private async Task BuildDomainsByCountAsync(int days)
+    {
+        DomainDownHeader = ResUIHelper.Get("P2TrafficConnCount");
+        DomainUpHeader = string.Empty;   // Xray 下没有"上行"列，隐藏，避免同一表头出现两次
+        DomainUpWidth = 0;   // 「上行」列收起
+        DomainHintTop = ResUIHelper.Get("P2TrafficDomainHintXray");
+        DomainTotalLabel = ResUIHelper.Get("P2TrafficConnTotal");
+
+        if (DomainHint.IsNotEmpty())
+        {
+            Domains = [];
+            DomainTotalText = "—";
+            return;
+        }
+
+        var list = await XrayDomainStatService.Instance.GetRangeAsync(days);
+        var total = list.Sum(t => t.Count);
+        DomainTotalText = $"{total:N0}";
+
+        var max = list.Count > 0 ? list.Max(t => t.Count) : 0;
+        var rows = list.Take(50).Select(t => new DomainStatRow
+        {
+            Host = t.Key,
+            DownText = $"{t.Count:N0}",
+            UpText = "—",
+            UpWidth = 0,
+            ShareText = max > 0 ? $"{t.Count * 100.0 / max:F0}%" : "0%",
+            DownBarWidth = Math.Max(320.0 * t.Count / (max > 0 ? max : 1), t.Count > 0 ? 2 : 0),
+            UpBarWidth = 0,
         }).ToList();
 
         Domains = new BulkObservableCollection<DomainStatRow>(rows);
@@ -550,8 +621,8 @@ public class TrafficDayItem
 
     /// <summary>上行条宽度（px）。</summary>
     public double UpBarWidth { get; set; }
-}
 
+}
 /// <summary>按域名统计的一行。</summary>
 public class DomainStatRow
 {
@@ -566,6 +637,9 @@ public class DomainStatRow
     public double DownBarWidth { get; set; }
 
     public double UpBarWidth { get; set; }
+
+    /// <summary>「上行」列宽：Xray 口径下没有这一列，置 0 收起。</summary>
+    public double UpWidth { get; set; } = 80;
 }
 /// <summary>折线上的一个数据点。像素坐标由视图计算，VM 只给数值与文案。</summary>
 public class TrafficSeriesPoint

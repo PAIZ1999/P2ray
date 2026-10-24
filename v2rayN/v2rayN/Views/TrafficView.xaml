@@ -411,6 +411,8 @@
                 <TextBlock
                     Margin="0,18,0,10"
                     Style="{StaticResource P2rayMicro}"
+                    
+                    x:Name="txtDomainHintTop"
                     Text="{tr:Tr P2TrafficDomainHint}" />
 
                 <Border Padding="14,12" Style="{StaticResource P2rayCard}">
@@ -419,6 +421,7 @@
                             <TextBlock
                                 VerticalAlignment="Center"
                                 Style="{StaticResource P2rayMicro}"
+                                x:Name="txtDomainTotalLabel"
                                 Text="{tr:Tr P2TrafficDomainTotal}" />
                             <TextBlock
                                 x:Name="txtDomainTotal"
@@ -464,11 +467,13 @@
                                         Width="90"
                                         HorizontalAlignment="Right"
                                         Style="{StaticResource P2rayMicro}"
+                                        x:Name="txtDomainDownHeader"
                                         Text="{tr:Tr P2TrafficDown}" />
                                     <TextBlock
                                         Width="80"
                                         HorizontalAlignment="Right"
                                         Style="{StaticResource P2rayMicro}"
+                                        x:Name="txtDomainUpHeader"
                                         Text="{tr:Tr P2TrafficUp}" />
                                 </StackPanel>
                             </Grid>
@@ -527,7 +532,7 @@
                                                     Foreground="{StaticResource P2rayAccentTextBrush}"
                                                     Text="{Binding DownText}" />
                                                 <TextBlock
-                                                    Width="80"
+                                                Width="{Binding UpWidth}"
                                                     HorizontalAlignment="Right"
                                                     FontFamily="Consolas, Cascadia Mono, monospace"
                                                     FontSize="{StaticResource P2rayFontCaption}"

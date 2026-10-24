@@ -58,6 +58,13 @@ public partial class TrafficView : ReactiveUserControl<TrafficViewModel>
             this.OneWayBind(ViewModel, vm => vm.Ranges, v => v.lstRanges.ItemsSource).DisposeWith(disposables);
             this.OneWayBind(ViewModel, vm => vm.Days, v => v.lstDays.ItemsSource).DisposeWith(disposables);
             this.OneWayBind(ViewModel, vm => vm.Domains, v => v.lstDomains.ItemsSource).DisposeWith(disposables);
+            // 列头随内核切换口径：clash 系是「下行/上行」，Xray 下是「连接次数」
+            this.OneWayBind(ViewModel, vm => vm.DomainDownHeader, v => v.txtDomainDownHeader.Text).DisposeWith(disposables);
+            this.OneWayBind(ViewModel, vm => vm.DomainUpHeader, v => v.txtDomainUpHeader.Text).DisposeWith(disposables);
+            // Xray 口径下没有「上行」列：宽度给 0 即收起，不必引入转换器
+            this.OneWayBind(ViewModel, vm => vm.DomainUpWidth, v => v.txtDomainUpHeader.Width).DisposeWith(disposables);
+            this.OneWayBind(ViewModel, vm => vm.DomainHintTop, v => v.txtDomainHintTop.Text).DisposeWith(disposables);
+            this.OneWayBind(ViewModel, vm => vm.DomainTotalLabel, v => v.txtDomainTotalLabel.Text).DisposeWith(disposables);
             this.OneWayBind(ViewModel, vm => vm.Apps, v => v.lstApps.ItemsSource).DisposeWith(disposables);
 
             this.OneWayBind(ViewModel, vm => vm.RangeTotalDownText, v => v.txtRangeDown.Text).DisposeWith(disposables);

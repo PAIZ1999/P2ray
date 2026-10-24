@@ -1,21 +1,23 @@
 ---
 id: adr:0004
-object: Xray 下「按域名」能否做 —— access log 实测可行，但只能给「连接次数」
+object: Xray 下「按域名」= 连接次数（方案 A，已实施）
 type: decision
-status: proposed
+status: accepted
 version: v0.1.0
 verified_at: 2026-10-24
 updated: 2026-10-24
-decided: null
+decided: 2026-10-24
 scope:
   covers: [实测数据, 判据核对, 三种可选方案, 需要谁批准]
   excludes: [实现细节（未批准前不写）, clash 内核的口径 → adr_0001]
 criterion: 批准人能在 3 分钟内决定"做 / 不做 / 只做连接次数"
 ---
 
-# ADR 0004（提案）· Xray 按域名：可行，但口径是「连接次数」
+# ADR 0004 · Xray 按域名 = 连接次数（方案 A，已实施）
 
-> **状态：提案，未实现。** 按 `goal.md` ③ 的规矩，改变产品能力范围需要批准。
+> **状态：已批准（方案 A）并实施于 v1.11.0。**
+
+
 
 ## 背景
 

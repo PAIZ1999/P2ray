@@ -2358,4 +2358,13 @@ The "Get Certificate" action may fail if a self-signed certificate is used or if
   <data name="P2SetCheckCoreUpdateHint" xml:space="preserve">
     <value>Downloads the latest core from its official release</value>
   </data>
+  <data name="P2TrafficConnCount" xml:space="preserve">
+    <value>Connections</value>
+  </data>
+  <data name="P2TrafficConnTotal" xml:space="preserve">
+    <value>Total connections in range</value>
+  </data>
+  <data name="P2TrafficDomainHintXray" xml:space="preserve">
+    <value>Xray has no clash API; this page counts connections from the access log (no byte counts). Logging must be enabled at info level.</value>
+  </data>
 </root>

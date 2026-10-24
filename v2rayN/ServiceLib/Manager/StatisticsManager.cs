@@ -29,6 +29,7 @@ public class StatisticsManager
             // 已用 --selftest 复现：内核走了 4,013,583 字节，数据库 0 增长。
             TrafficStatService.Instance.StartPolling();
             DomainStatService.Instance.StartPolling();
+            XrayDomainStatService.Instance.Start();
             AppStatService.Instance.Start();
 
             await InitData();
