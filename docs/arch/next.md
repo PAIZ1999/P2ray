@@ -14,10 +14,14 @@ criterion: 读完知道下一步做什么，且只有一件事
 
 # 下一动作
 
-**把 G5（离线统计链路）接进 CI**：现在它只能本地跑。
+**查清「数据库异步调用在 UI 线程上挂起」到底是不是产品缺陷。**
 
-做法：在 `.github/workflows/build.yml` 的 win-x64 job 里，`Build release` 之后加一步，
-运行 `scripts/arch-gates.ps1 -OnlyStats`（需在脚本里加这个开关：只跑 G5，复用已构建的产物），
-并把 `docs/arch/state/goals/*.tsv` 作为 artifact 上传。
+这个现象在本项目已出现 4 次（订阅更新、内核版本读取、自检连接、设置页初始化），
+每次都是"文件写完了、数据库那步没回来、日志里也没有异常"。
 
-判据不变：`trafficGrew == true` 且库增量 ≥ 1MB。
+做法：在应用启动时于 **UI 线程** 执行一次
+`SQLiteHelper.Instance.TableAsync<ProfileItem>().ToListAsync()`，用 5 秒看门狗记录耗时，
+结果（成功 / 超时 / 异常）写到 `guiLogs` 里的一行；连跑两次确认是否稳定复现。
+
+判据：同一台机器上连续两次都超时 ⇒ 是产品缺陷，按 P0 修（把这类调用移出 UI 线程）；
+只有一次超时 ⇒ 记为偶发，加超时保护即可，不扩大改动。
