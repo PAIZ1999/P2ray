@@ -181,7 +181,7 @@ public static class SelftestRunner
             var psi = new System.Diagnostics.ProcessStartInfo
             {
                 FileName = "curl.exe",
-                Arguments = $"-s -o NUL --socks5-hostname 127.0.0.1:{port} --limit-rate 250k --max-time 40 https://speed.cloudflare.com/__down?bytes=5000000",
+                Arguments = $"-s -o NUL --socks5-hostname 127.0.0.1:{port} --limit-rate 250k --max-time 40 https://speed.cloudflare.com/__down?bytes=5000000 https://www.gstatic.com/generate_204",
                 UseShellExecute = false,
                 CreateNoWindow = true,
             };
