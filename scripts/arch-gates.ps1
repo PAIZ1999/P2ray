@@ -17,7 +17,7 @@
 #>
 [CmdletBinding()]
 param(
-    [switch]$IncludeTraffic,
+    [switch]$OnlyStats,
     [string]$Unit = 'adhoc',
     [string]$GoalId = 'g-p2ray-opt',
     [string]$DotnetPath = ''
@@ -42,10 +42,112 @@ function Resolve-Dotnet {
     return 'dotnet'
 }
 
+$appExe = Join-Path $repo 'v2rayN\v2rayN\bin\Debug\net10.0-windows10.0.19041.0\P2ray.exe'
+if (-not (Test-Path $appExe)) {
+    # CI 里跑的是 Release 产物
+    foreach ($rid in @('win-x64', 'win-arm64')) {
+        $candidate = Join-Path $repo "dist\P2ray-$rid\P2ray.exe"
+        if (Test-Path $candidate) { $appExe = $candidate; break }
+    }
+}
+$appJson = Join-Path (Split-Path -Parent $appExe) 'guiConfigs\selftest.json'
+
 $dotnet = Resolve-Dotnet
 Write-Host "dotnet = $dotnet"
 Write-Host ("repo   = {0}" -f $repo)
 Write-Host ''
+
+function Invoke-OfflineStatsGate {
+    if (-not (Test-Path $appExe)) {
+        Add-Result 'G5 统计链路(离线)' 'FAIL' '找不到 P2ray.exe'
+        return
+    }
+
+    # 找一个空闲端口给假 clash 服务
+    $port = 0
+    foreach ($candidate in (24000..24040 | Get-Random -Count 20)) {
+        $probe = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Loopback, $candidate)
+        try { $probe.Start(); $probe.Stop(); $port = $candidate; break } catch { }
+    }
+    if ($port -eq 0) {
+        Add-Result 'G5 统计链路(离线)' 'SKIP' '找不到空闲端口'
+        return
+    }
+
+    $job = Start-Job -ScriptBlock {
+        param($p, $seconds)
+        $listener = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Loopback, $p)
+        $listener.Start()
+        $sw = [System.Diagnostics.Stopwatch]::StartNew()
+        $total = 0
+        try {
+            while ($sw.Elapsed.TotalSeconds -lt $seconds) {
+                if (-not $listener.Pending()) { Start-Sleep -Milliseconds 40; continue }
+                $client = $listener.AcceptTcpClient()
+                try {
+                    $stream = $client.GetStream()
+                    $buf = New-Object byte[] 2048
+                    $null = $stream.Read($buf, 0, 2048)
+                    $total += 1048576          # 每次被请求就涨 1MB，模拟内核在走流量
+                    $body = '{"downloadTotal":' + $total + ',"uploadTotal":0,"connections":[]}'
+                    $bytes = [System.Text.Encoding]::UTF8.GetBytes($body)
+                    $head = "HTTP/1.1 200 OK`r`nContent-Type: application/json`r`nContent-Length: $($bytes.Length)`r`nConnection: close`r`n`r`n"
+                    $hb = [System.Text.Encoding]::ASCII.GetBytes($head)
+                    $stream.Write($hb, 0, $hb.Length)
+                    $stream.Write($bytes, 0, $bytes.Length)
+                    $stream.Flush()
+                } finally {
+                    $client.Close()
+                }
+            }
+        } finally {
+            $listener.Stop()
+        }
+    } -ArgumentList $port, 45
+
+    try {
+        Start-Sleep -Seconds 2
+        Remove-Item $appJson -Force -ErrorAction SilentlyContinue
+        Get-Process P2ray -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.Id -Force }
+
+        $proc = Start-Process $appExe -ArgumentList '--selftest', '--fake-clash', $port -PassThru -WindowStyle Minimized
+        $exited = $proc.WaitForExit(90000)
+        if (-not $exited) { Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue }
+
+        if (-not (Test-Path $appJson)) {
+            Add-Result 'G5 统计链路(离线)' 'FAIL' '自检没有产出 selftest.json'
+            return
+        }
+
+        $o = Get-Content $appJson -Raw | ConvertFrom-Json
+        $before = [double]$o.trafficDownBefore
+        $after = [double]$o.trafficDownAfter
+        $delta = $after - $before
+        if ([bool]$o.trafficGrew -and $delta -ge 1000000) {
+            Add-Result 'G5 统计链路(离线)' 'PASS' ("管道通：库增量 {0} 字节（假服务共喂 1MB/次）" -f $delta)
+        } else {
+            Add-Result 'G5 统计链路(离线)' 'FAIL' ("trafficGrew={0}，库增量 {1} 字节" -f $o.trafficGrew, $delta)
+        }
+    } finally {
+        Stop-Job $job -ErrorAction SilentlyContinue
+        Remove-Job $job -Force -ErrorAction SilentlyContinue
+    }
+}
+
+if ($OnlyStats) {
+    Invoke-OfflineStatsGate
+    $verdictEarly = if ($failures -eq 0) { 'met' } else { 'not-yet' }
+    $stateDirEarly = Join-Path $repo 'docs\arch\state\goals'
+    New-Item -ItemType Directory -Path $stateDirEarly -Force | Out-Null
+    $ledgerEarly = Join-Path $stateDirEarly "$GoalId.tsv"
+    if (-not (Test-Path $ledgerEarly)) { "time`tunit`tcommand`texit`tkey_output`tverdict" | Set-Content -Path $ledgerEarly -Encoding utf8 }
+    $keyEarly = ($results | ForEach-Object { "$($_.Id)=$($_.Verdict)" }) -join '; '
+    $rowEarly = "{0}`t{1}`tarch-gates.ps1 -OnlyStats`t{2}`t{3}`t{4}" -f (Get-Date -Format 'yyyy-MM-ddTHH:mm:ss'), $Unit, $(if ($failures -eq 0) { 0 } else { 1 }), $keyEarly, $verdictEarly
+    Add-Content -Path $ledgerEarly -Value $rowEarly -Encoding utf8
+    Write-Host ''
+    Write-Host ("判定: {0}  失败项: {1}" -f $verdictEarly, $failures)
+    exit $(if ($failures -eq 0) { 0 } else { 1 })
+}
 
 # ---------------------------------------------------------------- G1 构建
 $buildOut = & $dotnet build (Join-Path $repo 'v2rayN\v2rayN\v2rayN.csproj') -c Debug -v q --nologo 2>&1
@@ -143,85 +245,7 @@ if (-not $version) {
 # ---------------------------------------------------------------- G5 统计链路（离线）
 # 用假的 clash API 验证"统计管道能不能把数据写进库"，不联网、不需要节点，因此 CI 也能跑。
 # 真实链路由 G6 负责（需 -IncludeTraffic）。
-$exe = Join-Path $repo 'v2rayN\v2rayN\bin\Debug\net10.0-windows10.0.19041.0\P2ray.exe'
-$json = Join-Path $repo 'v2rayN\v2rayN\bin\Debug\net10.0-windows10.0.19041.0\guiConfigs\selftest.json'
 
-function Invoke-OfflineStatsGate {
-    if (-not (Test-Path $exe)) {
-        Add-Result 'G5 统计链路(离线)' 'FAIL' '找不到 P2ray.exe'
-        return
-    }
-
-    # 找一个空闲端口给假 clash 服务
-    $port = 0
-    foreach ($candidate in (24000..24040 | Get-Random -Count 20)) {
-        $probe = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Loopback, $candidate)
-        try { $probe.Start(); $probe.Stop(); $port = $candidate; break } catch { }
-    }
-    if ($port -eq 0) {
-        Add-Result 'G5 统计链路(离线)' 'SKIP' '找不到空闲端口'
-        return
-    }
-
-    $job = Start-Job -ScriptBlock {
-        param($p, $seconds)
-        $listener = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Loopback, $p)
-        $listener.Start()
-        $sw = [System.Diagnostics.Stopwatch]::StartNew()
-        $total = 0
-        try {
-            while ($sw.Elapsed.TotalSeconds -lt $seconds) {
-                if (-not $listener.Pending()) { Start-Sleep -Milliseconds 40; continue }
-                $client = $listener.AcceptTcpClient()
-                try {
-                    $stream = $client.GetStream()
-                    $buf = New-Object byte[] 2048
-                    $null = $stream.Read($buf, 0, 2048)
-                    $total += 1048576          # 每次被请求就涨 1MB，模拟内核在走流量
-                    $body = '{"downloadTotal":' + $total + ',"uploadTotal":0,"connections":[]}'
-                    $bytes = [System.Text.Encoding]::UTF8.GetBytes($body)
-                    $head = "HTTP/1.1 200 OK`r`nContent-Type: application/json`r`nContent-Length: $($bytes.Length)`r`nConnection: close`r`n`r`n"
-                    $hb = [System.Text.Encoding]::ASCII.GetBytes($head)
-                    $stream.Write($hb, 0, $hb.Length)
-                    $stream.Write($bytes, 0, $bytes.Length)
-                    $stream.Flush()
-                } finally {
-                    $client.Close()
-                }
-            }
-        } finally {
-            $listener.Stop()
-        }
-    } -ArgumentList $port, 45
-
-    try {
-        Start-Sleep -Seconds 2
-        Remove-Item $json -Force -ErrorAction SilentlyContinue
-        Get-Process P2ray -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.Id -Force }
-
-        $proc = Start-Process $exe -ArgumentList '--selftest', '--fake-clash', $port -PassThru -WindowStyle Minimized
-        $exited = $proc.WaitForExit(90000)
-        if (-not $exited) { Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue }
-
-        if (-not (Test-Path $json)) {
-            Add-Result 'G5 统计链路(离线)' 'FAIL' '自检没有产出 selftest.json'
-            return
-        }
-
-        $o = Get-Content $json -Raw | ConvertFrom-Json
-        $before = [double]$o.trafficDownBefore
-        $after = [double]$o.trafficDownAfter
-        $delta = $after - $before
-        if ([bool]$o.trafficGrew -and $delta -ge 1000000) {
-            Add-Result 'G5 统计链路(离线)' 'PASS' ("管道通：库增量 {0} 字节（假服务共喂 1MB/次）" -f $delta)
-        } else {
-            Add-Result 'G5 统计链路(离线)' 'FAIL' ("trafficGrew={0}，库增量 {1} 字节" -f $o.trafficGrew, $delta)
-        }
-    } finally {
-        Stop-Job $job -ErrorAction SilentlyContinue
-        Remove-Job $job -Force -ErrorAction SilentlyContinue
-    }
-}
 
 Invoke-OfflineStatsGate
 
@@ -229,21 +253,21 @@ Invoke-OfflineStatsGate
 if (-not $IncludeTraffic) {
     Add-Result 'G6 真实链路' 'SKIP' '未加 -IncludeTraffic（需要可用节点）'
 } else {
-    Remove-Item $json -Force -ErrorAction SilentlyContinue
+    Remove-Item $appJson -Force -ErrorAction SilentlyContinue
     Get-Process P2ray -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.Id -Force }
 
-    if (-not (Test-Path $exe)) {
+    if (-not (Test-Path $appExe)) {
         Add-Result 'G6 真实链路' 'FAIL' '找不到 P2ray.exe'
     } else {
-        $proc = Start-Process $exe -ArgumentList '--selftest' -PassThru -WindowStyle Minimized
+        $proc = Start-Process $appExe -ArgumentList '--selftest' -PassThru -WindowStyle Minimized
         $exited = $proc.WaitForExit(180000)
         if (-not $exited) {
             Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
             Add-Result 'G6 真实链路' 'FAIL' '自检超时（180s）'
-        } elseif (-not (Test-Path $json)) {
+        } elseif (-not (Test-Path $appJson)) {
             Add-Result 'G6 真实链路' 'FAIL' '自检没有产出 selftest.json'
         } else {
-            $o = Get-Content $json -Raw | ConvertFrom-Json
+            $o = Get-Content $appJson -Raw | ConvertFrom-Json
             $grew = [bool]$o.trafficGrew
 
             # 必须用「本次增量」而不是累计值：appDown 是全表累计，clashDown 只统计本次运行，

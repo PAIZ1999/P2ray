@@ -34,7 +34,7 @@ criterion: 每条门禁都能被判为 PASS / FAIL / SKIP，且判据是命令�
 | G2 测试 | `test` job 的 `Run tests` | 同上 |
 | G3 dist 保留配置 | `test` job 的 `Verify dist keeps user config` | 已在 CI 里 |
 | G4 版本与 CI | 本次 run 自身 | 由 CI 结论判定 |
-| G5 统计链路(离线) | **可以加**（不需要网络与节点） | 目前本地跑；接进 CI 是下一步 |
+| G5 统计链路(离线) | `build` job 的 `Arch gate G5` | 不需要网络与节点，已在 CI 里 |
 | G6 真实链路 | 无 | 需要真实节点，只能本地跑 |
 
 ★ 所以 CI 已覆盖 G1–G3；本地跑 `arch-gates.ps1` 的意义是**发版前的单点复核**与 G5。
