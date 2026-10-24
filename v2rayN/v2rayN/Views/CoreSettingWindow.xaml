@@ -54,7 +54,10 @@
                 <ItemsControl x:Name="lstRows" Margin="0,4">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
-                            <Border Style="{StaticResource P2rayRow}">
+                            <Border
+                                Background="Transparent"
+                                MouseLeftButtonUp="Row_Click"
+                                Style="{StaticResource P2rayRow}">
                                 <Grid Margin="6,0">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*" />
@@ -66,6 +69,7 @@
                                         Text="{Binding Protocol}" />
                                     <ComboBox
                                         Grid.Column="1"
+                                        IsSynchronizedWithCurrentItem="False"
                                         ItemsSource="{Binding Cores}"
                                         SelectedItem="{Binding SelectedCore, Mode=TwoWay}"
                                         Style="{StaticResource P2rayComboBox}" />

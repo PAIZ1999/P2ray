@@ -43,7 +43,9 @@ public partial class CoreSettingViewModel : MyReactiveObject
             {
                 ConfigType = protocol,
                 Protocol = ProtocolName(protocol),
-                Cores = Global.CoreTypes,
+                // 每行给一份独立副本：共用同一个 List 实例时，WPF 会让这些 ComboBox
+                // 共享同一个 CollectionView，选择会互相串（点了不生效/选中被弹回）。
+                Cores = [.. Global.CoreTypes],
                 SelectedCore = current.ToString(),
             });
         }
