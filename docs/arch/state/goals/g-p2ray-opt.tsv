@@ -1,0 +1,2 @@
+time	unit	command	exit	key_output	verdict
+2026-10-24T15:55:16	contract-v1	arch-gates.ps1	0	G1 构建=PASS; G2 测试=PASS; G3 dist 保留配置=PASS; G4 版本与 CI=PASS; G5 统计实测=PASS	met

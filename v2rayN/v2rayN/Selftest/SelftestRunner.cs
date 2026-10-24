@@ -98,6 +98,9 @@ public static class SelftestRunner
             result["clashDownBefore"] = clashBefore?.Down;
             result["clashUpBefore"] = clashBefore?.Up;
 
+            var appBefore = await SumAppDownAsync();
+            result["appDownBefore"] = appBefore;
+
             var before = await SumTrafficAsync();
             await GenerateTrafficAsync(port);
 
@@ -112,10 +115,10 @@ public static class SelftestRunner
             result["trafficDownBefore"] = before.Down;
             result["trafficDownAfter"] = after.Down;
             result["trafficGrew"] = after.Down > before.Down;
+            var appAfter = await SumAppDownAsync();
+            result["appDownAfter"] = appAfter;
             var appRows = await SQLiteHelper.Instance.TableAsync<ServiceLib.Models.Entities.AppStatItem>().ToListAsync();
-            result["appDownAfter"] = appRows.Sum(r => r.Down);
             result["appNames"] = string.Join(",", appRows.Select(r => r.Key.Split('|').Last()));
-            result["appRows"] = (await SQLiteHelper.Instance.TableAsync<ServiceLib.Models.Entities.AppStatItem>().ToListAsync()).Count;
             result["trafficRowsAfter"] = after.Rows;
 
             return await FinishAsync(outPath, result, after.Down > before.Down ? 0 : 4);
@@ -202,6 +205,19 @@ public static class SelftestRunner
             return null;
         }
     }
+    private static async Task<long> SumAppDownAsync()
+    {
+        try
+        {
+            var rows = await SQLiteHelper.Instance.TableAsync<ServiceLib.Models.Entities.AppStatItem>().ToListAsync();
+            return rows.Sum(r => r.Down);
+        }
+        catch
+        {
+            return -1;
+        }
+    }
+
     private static async Task<(long Down, int Rows)> SumTrafficAsync()
     {
         try
