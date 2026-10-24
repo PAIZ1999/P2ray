@@ -24,6 +24,13 @@ public static class SelftestRunner
 {
     public static async Task<int> RunAsync(string[] args)
     {
+        // 离线模式：不连节点，用一个假的 clash API 验证统计链路本身
+        var fakeIdx = Array.IndexOf(args, "--fake-clash");
+        if (fakeIdx >= 0 && args.Length > fakeIdx + 1 && int.TryParse(args[fakeIdx + 1], out var fakePort))
+        {
+            return await RunFakeClashAsync(fakePort);
+        }
+
         var outPath = Path.Combine(Utils.GetConfigPath(""), "selftest.json");
         var result = new Dictionary<string, object?>();
         var sw = System.Diagnostics.Stopwatch.StartNew();
@@ -241,6 +248,50 @@ public static class SelftestRunner
         catch
         {
             return -1;
+        }
+    }
+
+    /// <summary>
+    /// 离线验证统计链路：把运行内核伪装成 sing-box、把 clash API 端口指向调用方给的假服务，
+    /// 然后只看"数据库有没有增长"。不联网、不需要节点，因此可以进 CI。
+    /// </summary>
+    private static async Task<int> RunFakeClashAsync(int fakePort)
+    {
+        var outPath = Path.Combine(Utils.GetConfigPath(""), "selftest.json");
+        var result = new Dictionary<string, object?>();
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+
+        try
+        {
+            result["mode"] = "fake-clash";
+            result["fakePort"] = fakePort;
+
+            // 让 TrafficStatService 走 clash 分支（sing-box）并读到假端口
+            AppManager.Instance.RunningCoreType = ECoreType.sing_box;
+            var field = typeof(AppManager).GetField("_statePort2", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            field?.SetValue(AppManager.Instance, fakePort);
+            result["statePort"] = AppManager.Instance.StatePort2;
+
+            var before = await SumTrafficAsync();
+            ServiceLib.Services.TrafficStatService.Instance.StartPolling();
+
+            // 假服务每被请求一次就把总量加一截，等它涨起来
+            await Task.Delay(12000);
+            await ServiceLib.Services.TrafficStatService.Instance.FlushAsync();
+            var after = await SumTrafficAsync();
+
+            result["trafficDownBefore"] = before.Down;
+            result["trafficDownAfter"] = after.Down;
+            result["trafficGrew"] = after.Down > before.Down;
+            result["trafficRowsAfter"] = after.Rows;
+            result["elapsedMs"] = sw.ElapsedMilliseconds;
+
+            return await FinishAsync(outPath, result, after.Down > before.Down ? 0 : 4);
+        }
+        catch (Exception ex)
+        {
+            result["error"] = ex.ToString();
+            return await FinishAsync(outPath, result, 1);
         }
     }
 }

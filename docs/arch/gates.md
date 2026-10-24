@@ -23,7 +23,8 @@ criterion: 每条门禁都能被判为 PASS / FAIL / SKIP，且判据是命令�
 | G2 | 测试全绿且只增不减 | `ServiceLib.Tests.exe` | `失败: 0` 且 `总计 >= 180`（基线写在脚本常量里） | 修到绿；基线只能上调，下调需 ADR |
 | G3 | dist 保留用户配置 | `pwsh scripts/test-preserve-config.ps1` | 8 项断言全过，退出码 0 | 修 `build-release.ps1` 的暂存/还原 |
 | G4 | 版本与 CI | `Directory.Build.props` 的 `<Version>` + GitHub Actions 最近一次 run | 版本单调递增；当前 HEAD 的 run `conclusion=success`（离线则 SKIP） | 发版前必须绿；红则先修 |
-| G5 | 流量统计真有数（真实连接） | `P2ray.exe --selftest`（需可连节点） | `trafficGrew == true` 且 `appDown/clashDown >= 0.9`（Clash 系内核） | 记为 FAIL 并写台账；不许口头解释成"环境问题" |
+| G5 | 统计链路通（**离线**） | 门禁自己起一个假 clash API，再跑 `P2ray.exe --selftest --fake-clash <port>` | `trafficGrew == true` 且库增量 ≥ 1MB | FAIL；说明管道断了，与节点无关 |
+| G6 | 真实链路（需节点） | `P2ray.exe --selftest`（`-IncludeTraffic` 时跑） | `trafficGrew == true` 且 `appDown/clashDown` 在 0.9–1.1，且 clash 增量 ≥ 1MB | 记 FAIL / 流量不足则 SKIP，不许当"统计正常" |
 
 ## CI 侧的覆盖关系（避免重复跑）
 
@@ -33,7 +34,8 @@ criterion: 每条门禁都能被判为 PASS / FAIL / SKIP，且判据是命令�
 | G2 测试 | `test` job 的 `Run tests` | 同上 |
 | G3 dist 保留配置 | `test` job 的 `Verify dist keeps user config` | 已在 CI 里 |
 | G4 版本与 CI | 本次 run 自身 | 由 CI 结论判定 |
-| G5 统计实测 | **无** | 需要真实节点，只能本地跑 |
+| G5 统计链路(离线) | **可以加**（不需要网络与节点） | 目前本地跑；接进 CI 是下一步 |
+| G6 真实链路 | 无 | 需要真实节点，只能本地跑 |
 
 ★ 所以 CI 已覆盖 G1–G3；本地跑 `arch-gates.ps1` 的意义是**发版前的单点复核**与 G5。
 
@@ -59,7 +61,9 @@ criterion: 每条门禁都能被判为 PASS / FAIL / SKIP，且判据是命令�
 
 ## 已知的判据弱点（如实记录）
 
-- **G5 依赖外部节点**：没有可用节点时只能 SKIP，这时的"统计正常"没有证据。
+- **G5 只证明管道通，不证明真实环境对**：假服务喂的字节是可预测的，节点侧的问题（DNS、协议、分片）它看不见。
+- **G6 依赖外部节点**：没有可用节点时只能 SKIP，这时的"统计正常"没有证据。
+- **G5 会临时把进程内的 RunningCoreType 设成 sing_box**：只影响那一次自检进程，不影响用户配置。
 - **G2 的 `总计 >= 180` 只能防倒退，不能防"删测试"**：删掉 5 个再新增 5 个仍为 180，需要人抽查。
 - **G4 依赖 GitHub API**：无网络时 SKIP；SKIP 不等于通过。
 - **界面类改动无法被这五条覆盖**：渲染/交互仍需人眼看截图，门禁只能保证不崩。

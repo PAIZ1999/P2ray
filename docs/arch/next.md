@@ -14,9 +14,10 @@ criterion: 读完知道下一步做什么，且只有一件事
 
 # 下一动作
 
-**把 G5 变成可重复的判据**：现在它依赖"手上有可用节点"，节点不通时只能 SKIP。
+**把 G5（离线统计链路）接进 CI**：现在它只能本地跑。
 
-具体做法：在 `scripts/arch-gates.ps1` 里给 G5 增加一个 `-UseLocalSocks <port>` 选项，
-直接用本机已运行的代理端口造流量，不依赖 P2ray 自己连接；连不上就明确 SKIP 并写原因。
+做法：在 `.github/workflows/build.yml` 的 win-x64 job 里，`Build release` 之后加一步，
+运行 `scripts/arch-gates.ps1 -OnlyStats`（需在脚本里加这个开关：只跑 G5，复用已构建的产物），
+并把 `docs/arch/state/goals/*.tsv` 作为 artifact 上传。
 
-判据不变：`trafficGrew == true` 且 `appDown/clashDown` 在 0.9–1.1。
+判据不变：`trafficGrew == true` 且库增量 ≥ 1MB。

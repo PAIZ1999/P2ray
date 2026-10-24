@@ -117,8 +117,9 @@ if (-not $version) {
                 $runs = Get-Content $tmp -Raw | ConvertFrom-Json
                 $hit = $runs.workflow_runs | Where-Object { $_.head_sha -eq $sha } | Select-Object -First 1
                 if ($hit) {
+                    $state = if ($hit.conclusion) { $hit.conclusion } elseif ($hit.status) { $hit.status } else { 'unknown' }
                     $ciState = if ($hit.conclusion -eq 'success') { 'PASS' } elseif ($hit.conclusion) { 'FAIL' } else { 'SKIP' }
-                    $ciDetail = "run $($hit.conclusion) @ $($sha.Substring(0,8))"
+                    $ciDetail = "run $state @ $($sha.Substring(0,8))"
                 } else {
                     $ciDetail = "没有 HEAD($($sha.Substring(0,8))) 的运行记录"
                 }
@@ -139,26 +140,108 @@ if (-not $version) {
     }
 }
 
-# ---------------------------------------------------------------- G5 流量统计实测
-if (-not $IncludeTraffic) {
-    Add-Result 'G5 统计实测' 'SKIP' '未加 -IncludeTraffic'
-} else {
-    $exe = Join-Path $repo 'v2rayN\v2rayN\bin\Debug\net10.0-windows10.0.19041.0\P2ray.exe'
-    $json = Join-Path $repo 'v2rayN\v2rayN\bin\Debug\net10.0-windows10.0.19041.0\guiConfigs\selftest.json'
+# ---------------------------------------------------------------- G5 统计链路（离线）
+# 用假的 clash API 验证"统计管道能不能把数据写进库"，不联网、不需要节点，因此 CI 也能跑。
+# 真实链路由 G6 负责（需 -IncludeTraffic）。
+$exe = Join-Path $repo 'v2rayN\v2rayN\bin\Debug\net10.0-windows10.0.19041.0\P2ray.exe'
+$json = Join-Path $repo 'v2rayN\v2rayN\bin\Debug\net10.0-windows10.0.19041.0\guiConfigs\selftest.json'
 
-    Get-Process P2ray -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.Id -Force }
+function Invoke-OfflineStatsGate {
+    if (-not (Test-Path $exe)) {
+        Add-Result 'G5 统计链路(离线)' 'FAIL' '找不到 P2ray.exe'
+        return
+    }
+
+    # 找一个空闲端口给假 clash 服务
+    $port = 0
+    foreach ($candidate in (24000..24040 | Get-Random -Count 20)) {
+        $probe = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Loopback, $candidate)
+        try { $probe.Start(); $probe.Stop(); $port = $candidate; break } catch { }
+    }
+    if ($port -eq 0) {
+        Add-Result 'G5 统计链路(离线)' 'SKIP' '找不到空闲端口'
+        return
+    }
+
+    $job = Start-Job -ScriptBlock {
+        param($p, $seconds)
+        $listener = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Loopback, $p)
+        $listener.Start()
+        $sw = [System.Diagnostics.Stopwatch]::StartNew()
+        $total = 0
+        try {
+            while ($sw.Elapsed.TotalSeconds -lt $seconds) {
+                if (-not $listener.Pending()) { Start-Sleep -Milliseconds 40; continue }
+                $client = $listener.AcceptTcpClient()
+                try {
+                    $stream = $client.GetStream()
+                    $buf = New-Object byte[] 2048
+                    $null = $stream.Read($buf, 0, 2048)
+                    $total += 1048576          # 每次被请求就涨 1MB，模拟内核在走流量
+                    $body = '{"downloadTotal":' + $total + ',"uploadTotal":0,"connections":[]}'
+                    $bytes = [System.Text.Encoding]::UTF8.GetBytes($body)
+                    $head = "HTTP/1.1 200 OK`r`nContent-Type: application/json`r`nContent-Length: $($bytes.Length)`r`nConnection: close`r`n`r`n"
+                    $hb = [System.Text.Encoding]::ASCII.GetBytes($head)
+                    $stream.Write($hb, 0, $hb.Length)
+                    $stream.Write($bytes, 0, $bytes.Length)
+                    $stream.Flush()
+                } finally {
+                    $client.Close()
+                }
+            }
+        } finally {
+            $listener.Stop()
+        }
+    } -ArgumentList $port, 45
+
+    try {
+        Start-Sleep -Seconds 2
+        Remove-Item $json -Force -ErrorAction SilentlyContinue
+        Get-Process P2ray -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.Id -Force }
+
+        $proc = Start-Process $exe -ArgumentList '--selftest', '--fake-clash', $port -PassThru -WindowStyle Minimized
+        $exited = $proc.WaitForExit(90000)
+        if (-not $exited) { Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue }
+
+        if (-not (Test-Path $json)) {
+            Add-Result 'G5 统计链路(离线)' 'FAIL' '自检没有产出 selftest.json'
+            return
+        }
+
+        $o = Get-Content $json -Raw | ConvertFrom-Json
+        $before = [double]$o.trafficDownBefore
+        $after = [double]$o.trafficDownAfter
+        $delta = $after - $before
+        if ([bool]$o.trafficGrew -and $delta -ge 1000000) {
+            Add-Result 'G5 统计链路(离线)' 'PASS' ("管道通：库增量 {0} 字节（假服务共喂 1MB/次）" -f $delta)
+        } else {
+            Add-Result 'G5 统计链路(离线)' 'FAIL' ("trafficGrew={0}，库增量 {1} 字节" -f $o.trafficGrew, $delta)
+        }
+    } finally {
+        Stop-Job $job -ErrorAction SilentlyContinue
+        Remove-Job $job -Force -ErrorAction SilentlyContinue
+    }
+}
+
+Invoke-OfflineStatsGate
+
+# ---------------------------------------------------------------- G6 真实链路（可选）
+if (-not $IncludeTraffic) {
+    Add-Result 'G6 真实链路' 'SKIP' '未加 -IncludeTraffic（需要可用节点）'
+} else {
     Remove-Item $json -Force -ErrorAction SilentlyContinue
+    Get-Process P2ray -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.Id -Force }
 
     if (-not (Test-Path $exe)) {
-        Add-Result 'G5 统计实测' 'FAIL' '找不到 P2ray.exe'
+        Add-Result 'G6 真实链路' 'FAIL' '找不到 P2ray.exe'
     } else {
         $proc = Start-Process $exe -ArgumentList '--selftest' -PassThru -WindowStyle Minimized
         $exited = $proc.WaitForExit(180000)
         if (-not $exited) {
             Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
-            Add-Result 'G5 统计实测' 'FAIL' '自检超时（180s）'
+            Add-Result 'G6 真实链路' 'FAIL' '自检超时（180s）'
         } elseif (-not (Test-Path $json)) {
-            Add-Result 'G5 统计实测' 'FAIL' '自检没有产出 selftest.json'
+            Add-Result 'G6 真实链路' 'FAIL' '自检没有产出 selftest.json'
         } else {
             $o = Get-Content $json -Raw | ConvertFrom-Json
             $grew = [bool]$o.trafficGrew
@@ -173,16 +256,15 @@ if (-not $IncludeTraffic) {
             # 这种情况报 SKIP（SKIP ≠ 通过），不许拿它当"统计正常"的证据。
             $minClash = 1000000
             if ($clashDelta -lt $minClash) {
-                Add-Result 'G5 统计实测' 'SKIP' ("本次流量仅 {0} 字节（<{1}），不足以判定；请检查节点后重跑" -f $clashDelta, $minClash)
+                Add-Result 'G6 真实链路' 'SKIP' ("本次流量仅 {0} 字节（<{1}），不足以判定；请检查节点后重跑" -f $clashDelta, $minClash)
             } elseif ($grew -and $ratio -ge 0.9 -and $ratio -le 1.1) {
-                Add-Result 'G5 统计实测' 'PASS' ("trafficGrew=true，按应用捕获率 {0}（app {1} / clash {2}）" -f $ratio, $appDelta, $clashDelta)
+                Add-Result 'G6 真实链路' 'PASS' ("trafficGrew=true，按应用捕获率 {0}（app {1} / clash {2}）" -f $ratio, $appDelta, $clashDelta)
             } else {
-                Add-Result 'G5 统计实测' 'FAIL' ("trafficGrew={0}，app 增量={1}，clash 增量={2}，捕获率={3}" -f $grew, $appDelta, $clashDelta, $ratio)
+                Add-Result 'G6 真实链路' 'FAIL' ("trafficGrew={0}，app 增量={1}，clash 增量={2}，捕获率={3}" -f $grew, $appDelta, $clashDelta, $ratio)
             }
         }
     }
 }
-
 # ---------------------------------------------------------------- 台账
 $stateDir = Join-Path $repo 'docs\arch\state\goals'
 New-Item -ItemType Directory -Path $stateDir -Force | Out-Null
