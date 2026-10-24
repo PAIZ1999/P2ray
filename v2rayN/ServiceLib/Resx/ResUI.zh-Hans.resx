@@ -2294,7 +2294,7 @@
     <value>检查</value>
   </data>
   <data name="P2CoreHint" xml:space="preserve">
-    <value>按协议指定用哪个内核。想用「按域名」统计，把对应协议改成 sing_box 即可。</value>
+    <value>按协议指定用哪个内核。想用「按域名」统计，把对应协议改成 sing_box 即可。mihomo 只支持「自定义配置」（Clash YAML）——普通协议的配置由程序生成，只有 Xray / sing-box 两种格式。</value>
   </data>
   <data name="P2CoreLabel" xml:space="preserve">
     <value>内核</value>

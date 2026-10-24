@@ -9,6 +9,9 @@ namespace ServiceLib.ViewModels;
 public partial class CoreSettingViewModel : MyReactiveObject
 {
     /// <summary>参与配置的协议。Outbound / PolicyGroup / ProxyChain 是内部类型，不暴露。</summary>
+    /// <summary>mihomo 在内核列表里的名字（与 ECoreType 枚举名一致）。</summary>
+    private const string MihomoCoreName = nameof(ECoreType.mihomo);
+
     private static readonly EConfigType[] _protocols =
     [
         EConfigType.VMess, EConfigType.VLESS, EConfigType.Shadowsocks, EConfigType.Trojan,
@@ -45,7 +48,9 @@ public partial class CoreSettingViewModel : MyReactiveObject
                 Protocol = ProtocolName(protocol),
                 // 每行给一份独立副本：共用同一个 List 实例时，WPF 会让这些 ComboBox
                 // 共享同一个 CollectionView，选择会互相串（点了不生效/选中被弹回）。
-                Cores = [.. Global.CoreTypes],
+                // mihomo 只认 Clash YAML，普通协议的配置是程序生成的 Xray/sing-box JSON，
+                // 选了也启动不了；但「自定义配置」由用户自己提供文件，YAML 完全合法。
+                Cores = protocol == EConfigType.Custom ? [.. Global.CoreTypes, MihomoCoreName] : [.. Global.CoreTypes],
                 SelectedCore = current.ToString(),
             });
         }

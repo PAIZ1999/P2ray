@@ -32,7 +32,8 @@
             <TextBlock
                 Margin="0,4,0,0"
                 Style="{StaticResource P2rayMicro}"
-                Text="{tr:Tr P2CoreHint}" />
+                Text="{tr:Tr P2CoreHint}"
+                TextWrapping="Wrap" />
         </StackPanel>
 
         <!-- 列头 -->

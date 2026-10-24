@@ -2305,7 +2305,7 @@ The "Get Certificate" action may fail if a self-signed certificate is used or if
     <value>Check</value>
   </data>
   <data name="P2CoreHint" xml:space="preserve">
-    <value>Pick a core per protocol. For domain stats, switch the protocol to sing_box.</value>
+    <value>Pick a core per protocol. Switch a protocol to sing_box to enable per-domain stats. mihomo works only with Custom configs (Clash YAML); for normal protocols the app generates Xray/sing-box configs only.</value>
   </data>
   <data name="P2CoreLabel" xml:space="preserve">
     <value>Core</value>
