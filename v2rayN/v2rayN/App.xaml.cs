@@ -59,6 +59,12 @@ public partial class App
         mainWindow.Show();
         MainWindow = mainWindow;
 
+        // 性能诊断：连上节点但保持运行，供外部 curl 测时延/吞吐
+        if (e.Args.Any(t => t == "--perf-connect"))
+        {
+            _ = Task.Run(async () => await Diagnostics.PerfConnect.ConnectAsync());
+        }
+
         // 诊断探针：只写日志，不改行为。结果见 guiConfigs/uithread-db-probe.log
         if (e.Args.Any(t => t == "--db-probe"))
         {

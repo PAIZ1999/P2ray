@@ -113,29 +113,53 @@ public class DownloadServiceHeadersTests
             var cancellationToken = _cancellation.Token;
             while (!cancellationToken.IsCancellationRequested)
             {
-                using var client = await _listener.AcceptTcpClientAsync(cancellationToken);
-                await using var stream = client.GetStream();
-                using var reader = new StreamReader(stream, Encoding.ASCII, leaveOpen: true);
-                var requestLine = await reader.ReadLineAsync(cancellationToken);
-                if (requestLine == null)
+                TcpClient client;
+                try
                 {
-                    continue;
+                    // DisposeAsync 会先 Stop() 再等待本任务：Stop 之后 Accept 会抛
+                    // ObjectDisposedException，而不是 OperationCanceledException。
+                    // 不接住它，测试就会随机报"服务器已释放"（实测约 1/5 概率）。
+                    client = await _listener.AcceptTcpClientAsync(cancellationToken);
+                }
+                catch (OperationCanceledException)
+                {
+                    break;
+                }
+                catch (ObjectDisposedException)
+                {
+                    break;
+                }
+                catch (System.Net.Sockets.SocketException)
+                {
+                    break;
                 }
 
-                var headers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-                while (await reader.ReadLineAsync(cancellationToken) is { Length: > 0 } line)
+                using (client)
                 {
-                    var separator = line.IndexOf(':');
-                    var name = line.Substring(0, separator);
-                    var value = line.Substring(separator + 1).Trim();
-                    headers[name] = headers.TryGetValue(name, out var previous) ? $"{previous}, {value}" : value;
-                }
-                Requests.Enqueue(headers);
+                    await using var stream = client.GetStream();
+                    using var reader = new StreamReader(stream, Encoding.ASCII, leaveOpen: true);
+                    var requestLine = await reader.ReadLineAsync(cancellationToken);
+                    if (requestLine == null)
+                    {
+                        continue;
+                    }
 
-                var status = _failFirstRequest && Requests.Count == 1 ? "503 Service Unavailable" : "200 OK";
-                var body = requestLine.StartsWith("HEAD ") ? "" : Body;
-                var response = $"HTTP/1.1 {status}\r\nContent-Length: {Body.Length}\r\nConnection: close\r\n\r\n{body}";
-                await stream.WriteAsync(Encoding.ASCII.GetBytes(response), cancellationToken);
+                    var headers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                    while (await reader.ReadLineAsync(cancellationToken) is { Length: > 0 } line)
+                    {
+                        var separator = line.IndexOf(':');
+                        var name = line.Substring(0, separator);
+                        var value = line.Substring(separator + 1).Trim();
+                        headers[name] = headers.TryGetValue(name, out var previous) ? $"{previous}, {value}" : value;
+                    }
+
+                    Requests.Enqueue(headers);
+
+                    var status = _failFirstRequest && Requests.Count == 1 ? "503 Service Unavailable" : "200 OK";
+                    var body = requestLine.StartsWith("HEAD ") ? "" : Body;
+                    var response = $"HTTP/1.1 {status}\r\nContent-Length: {Body.Length}\r\nConnection: close\r\n\r\n{body}";
+                    await stream.WriteAsync(Encoding.ASCII.GetBytes(response), cancellationToken);
+                }
             }
         }
 
