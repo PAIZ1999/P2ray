@@ -35,6 +35,9 @@ public class XrayDomainStatService
 
     private bool _offsetsLoaded;
 
+    /// <summary>只统计这个时刻之后写入的日志行（从日志里解析出的时间戳判断）。</summary>
+    private readonly DateTime _countSince = DateTime.Now.AddMinutes(-2);
+
     /// <summary>当前内核是 Xray 且日志开着，才有数据。</summary>
     public static bool IsSupported =>
         AppManager.Instance.RunningCoreType is ECoreType.Xray or ECoreType.v2fly or ECoreType.v2fly_v5;
@@ -123,10 +126,17 @@ public class XrayDomainStatService
         var today = DateTime.Now.ToString("yyyyMMdd");
         var touched = new Dictionary<string, long>();
 
-        foreach (var line in chunk.Split('\n'))
+        foreach (var line in chunk.Split((char)10))
         {
             var host = XrayAccessLogParser.ParseHost(line);
             if (host.IsNullOrEmpty())
+            {
+                continue;
+            }
+
+            // 旧行（本次启动之前写入的）不计数，避免首次启用日志时把历史连接也算进来
+            var lineTime = XrayAccessLogParser.ParseTime(line);
+            if (lineTime is not null && lineTime < _countSince)
             {
                 continue;
             }
@@ -281,16 +291,10 @@ public class XrayDomainStatService
 
         if (!_offsets.ContainsKey(path))
         {
-            // 没有记录：从当前文件末尾开始，避免把历史连接再算一遍
-            try
-            {
-                _offsets[path] = new FileInfo(path).Length;
-            }
-            catch
-            {
-                _offsets[path] = 0;
-            }
-
+            // 没有记录：从 0 读，但只统计"本次启动之后"的行（见 _countSince）。
+            // 早期版本这里取文件末尾，结果第一次打开日志时**已有行全被跳过** ——
+            // 用户看到的就是"我打开了 info 还是没有数据"。
+            _offsets[path] = 0;
             SaveOffsets();
         }
     }

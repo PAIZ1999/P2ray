@@ -7,3 +7,10 @@ time	unit	command	exit	key_output	verdict
 2026-10-24T17:35:54	xray-domain-count	arch-gates.ps1	0	G1 构建=PASS; G2 测试=PASS; G3 dist 保留配置=PASS; G4 版本与 CI=PASS; G5 统计链路(离线)=PASS; G6 真实链路=SKIP	met
 2026-10-26T10:06:25	perf-baseline	arch-gates.ps1	1	G1 构建=PASS; G2 测试=FAIL; G3 dist 保留配置=PASS; G4 版本与 CI=PASS; G5 统计链路(离线)=PASS; G6 真实链路=SKIP	not-yet
 2026-10-26T10:09:12	perf-baseline-2	arch-gates.ps1	0	G1 构建=PASS; G2 测试=PASS; G3 dist 保留配置=PASS; G4 版本与 CI=PASS; G5 统计链路(离线)=PASS; G6 真实链路=SKIP	met
+2026-10-26T10:40:25	xray-log-fixes	arch-gates.ps1	1	G1 构建=PASS; G2 测试=PASS; G3 dist 保留配置=PASS; G4 版本与 CI=PASS; G5 统计链路(离线)=FAIL; G6 真实链路=SKIP	not-yet
+2026-10-26T10:40:52	g5-retry-1	arch-gates.ps1 -OnlyStats	1	G5 统计链路(离线)=FAIL	not-yet
+2026-10-26T10:41:09	g5-retry-2	arch-gates.ps1 -OnlyStats	1	G5 统计链路(离线)=FAIL	not-yet
+2026-10-26T10:43:11	g5-timebased	arch-gates.ps1 -OnlyStats	1	G5 统计链路(离线)=FAIL	not-yet
+2026-10-26T10:43:49	g5-wait-settle	arch-gates.ps1 -OnlyStats	1	G5 统计链路(离线)=FAIL	not-yet
+2026-10-26T10:45:32	g5-retake	arch-gates.ps1 -OnlyStats	0	G5 统计链路(离线)=PASS	met
+2026-10-26T10:46:24	v1.11.1-pre	arch-gates.ps1	0	G1 构建=PASS; G2 测试=PASS; G3 dist 保留配置=PASS; G4 版本与 CI=PASS; G5 统计链路(离线)=PASS; G6 真实链路=SKIP	met

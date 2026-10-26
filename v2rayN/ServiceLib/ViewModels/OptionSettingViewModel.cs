@@ -16,6 +16,9 @@ public partial class OptionSettingViewModel : MyReactiveObject, ICloseable
     [Reactive] public partial bool NewPort4LAN { get; set; }
     [Reactive] public partial string User { get; set; }
     [Reactive] public partial string Pass { get; set; }
+    private bool _logEnabledAtLoad;
+    private string _loglevelAtLoad = string.Empty;
+
     [Reactive] public partial bool LogEnabled { get; set; }
     [Reactive] public partial string Loglevel { get; set; }
     [Reactive] public partial string DefFingerprint { get; set; }
@@ -151,6 +154,8 @@ public partial class OptionSettingViewModel : MyReactiveObject, ICloseable
         User = inbound.User;
         Pass = inbound.Pass;
         LogEnabled = _config.CoreBasicItem.LogEnabled;
+        _logEnabledAtLoad = _config.CoreBasicItem.LogEnabled;
+        _loglevelAtLoad = _config.CoreBasicItem.Loglevel;
         Loglevel = _config.CoreBasicItem.Loglevel;
         DefFingerprint = _config.CoreBasicItem.DefFingerprint;
         DefUserAgent = _config.CoreBasicItem.DefUserAgent;
@@ -406,6 +411,15 @@ public partial class OptionSettingViewModel : MyReactiveObject, ICloseable
         {
             await AutoStartupHandler.UpdateTask(_config);
             AppManager.Instance.Reset();
+
+            // 日志开关/级别是生成内核配置时读取的：改完必须重启内核才生效，
+            // 否则用户"打开了 info 还是没有数据"（Xray 的 access log 就靠这个）。
+            var logChanged = _config.CoreBasicItem.LogEnabled != _logEnabledAtLoad
+                             || _config.CoreBasicItem.Loglevel != _loglevelAtLoad;
+            if (logChanged && AppManager.Instance.RunningCoreType != default)
+            {
+                AppEvents.ReloadCoreRequested.Publish();
+            }
 
             NoticeManager.Instance.Enqueue(needReboot ? ResUI.NeedRebootTips : ResUI.OperationSuccess);
             RequestClose?.Invoke(this, EventArgs.Empty);

@@ -13,7 +13,7 @@ namespace ServiceLib.Services;
 public static partial class XrayAccessLogParser
 {
     [GeneratedRegex(
-        @"^\d{4}/\d{2}/\d{2}\s+\d{2}:\d{2}:\d{2}(?:\.\d+)?\s+from\s+\S+?:(?<srcport>\d+)\s+accepted\s+\w+:(?<host>[^\s:\[]+):(?<port>\d+)",
+        @"^(?<time>\d{4}/\d{2}/\d{2}\s+\d{2}:\d{2}:\d{2}(?:\.\d+)?)\s+from\s+\S+?:(?<srcport>\d+)\s+accepted\s+\w+:(?<host>[^\s:\[]+):(?<port>\d+)",
         RegexOptions.CultureInvariant)]
     private static partial Regex LineRegex();
 
@@ -46,5 +46,26 @@ public static partial class XrayAccessLogParser
 
         var m = LineRegex().Match(line!);
         return m.Success && int.TryParse(m.Groups["srcport"].Value, out var port) ? port : null;
+    }
+
+    /// <summary>取该行的时间戳；不是连接行返回 null。</summary>
+    public static DateTime? ParseTime(string? line)
+    {
+        if (line.IsNullOrEmpty())
+        {
+            return null;
+        }
+
+        var m = LineRegex().Match(line!);
+        if (!m.Success)
+        {
+            return null;
+        }
+
+        var text = m.Groups["time"].Value;
+        return DateTime.TryParseExact(text, ["yyyy/MM/dd HH:mm:ss.ffffff", "yyyy/MM/dd HH:mm:ss.fff", "yyyy/MM/dd HH:mm:ss"],
+            System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var dt)
+            ? dt
+            : null;
     }
 }

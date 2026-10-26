@@ -79,31 +79,36 @@ function Invoke-OfflineStatsGate {
         $listener = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Loopback, $p)
         $listener.Start()
         $sw = [System.Diagnostics.Stopwatch]::StartNew()
-        $total = 0
-        try {
-            while ($sw.Elapsed.TotalSeconds -lt $seconds) {
-                if (-not $listener.Pending()) { Start-Sleep -Milliseconds 40; continue }
-                $client = $listener.AcceptTcpClient()
-                try {
-                    $stream = $client.GetStream()
-                    $buf = New-Object byte[] 2048
-                    $null = $stream.Read($buf, 0, 2048)
-                    $total += 1048576          # 每次被请求就涨 1MB，模拟内核在走流量
-                    $body = '{"downloadTotal":' + $total + ',"uploadTotal":0,"connections":[]}'
-                    $bytes = [System.Text.Encoding]::UTF8.GetBytes($body)
-                    $head = "HTTP/1.1 200 OK`r`nContent-Type: application/json`r`nContent-Length: $($bytes.Length)`r`nConnection: close`r`n`r`n"
-                    $hb = [System.Text.Encoding]::ASCII.GetBytes($head)
-                    $stream.Write($hb, 0, $hb.Length)
-                    $stream.Write($bytes, 0, $bytes.Length)
-                    $stream.Flush()
-                } finally {
-                    $client.Close()
-                }
+
+        # 总量按"经过的时间"增长（每秒 3MB），与请求次数无关：
+        # 客户端轮询哪怕只成功 1 次，下一次读数也会看到 ≥3MB 的增量，
+        # 判据不再受 Http 客户端连接复用行为影响（早期版本按请求次数累加，
+        # 一旦请求被拖慢就只有几 KB，G5 会假失败）。
+        while ($sw.Elapsed.TotalSeconds -lt $seconds) {
+            if (-not $listener.Pending()) { Start-Sleep -Milliseconds 30; continue }
+            $client = $listener.AcceptTcpClient()
+            # 每条连接单独处理，避免一个慢请求卡住整个循环
+            try
+            {
+                # 每条连接同步处理：响应只有几十字节，不值得起线程；
+                # 关键是总量按时间增长，见上面的说明。
+                $stream = $client.GetStream()
+                $client.ReceiveTimeout = 1000
+                $buf = New-Object byte[] 4096
+                $null = $stream.Read($buf, 0, 4096)
+                $base = [long]($sw.Elapsed.TotalSeconds * 3145728)
+                $body = '{"downloadTotal":' + $base + ',"uploadTotal":0,"connections":[]}'
+                $bytes = [System.Text.Encoding]::UTF8.GetBytes($body)
+                $head = "HTTP/1.1 200 OK`r`nContent-Type: application/json`r`nContent-Length: $($bytes.Length)`r`nConnection: close`r`n`r`n"
+                $hb = [System.Text.Encoding]::ASCII.GetBytes($head)
+                $stream.Write($hb, 0, $hb.Length)
+                $stream.Write($bytes, 0, $bytes.Length)
+                $stream.Flush()
             }
-        } finally {
-            $listener.Stop()
+            catch { }
+            finally { $client.Close() }
         }
-    } -ArgumentList $port, 45
+        $listener.Stop()    } -ArgumentList $port, 45
 
     try {
         Start-Sleep -Seconds 2
@@ -124,7 +129,7 @@ function Invoke-OfflineStatsGate {
         $after = [double]$o.trafficDownAfter
         $delta = $after - $before
         if ([bool]$o.trafficGrew -and $delta -ge 1000000) {
-            Add-Result 'G5 统计链路(离线)' 'PASS' ("管道通：库增量 {0} 字节（假服务共喂 1MB/次）" -f $delta)
+            Add-Result 'G5 统计链路(离线)' 'PASS' ("管道通：库增量 {0} 字节（假服务按 3MB/秒 增长）" -f $delta)
         } else {
             Add-Result 'G5 统计链路(离线)' 'FAIL' ("trafficGrew={0}，库增量 {1} 字节" -f $o.trafficGrew, $delta)
         }

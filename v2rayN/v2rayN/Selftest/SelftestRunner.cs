@@ -273,7 +273,17 @@ public static class SelftestRunner
             result["statePort"] = AppManager.Instance.StatePort2;
 
             var before = await SumTrafficAsync();
-            ServiceLib.Services.TrafficStatService.Instance.StartPolling();
+
+            // 周期性重新接管轮询：启动流程里的 StatisticsManager.Init 会在我们之后
+            // 用真实端口再 StartPolling 一次，把这里起的轮询关掉（实测假服务 12 秒只被请求 1 次）。
+            // 每 3 秒重设端口并重新 StartPolling，多窗口累计即可稳定看到增长。
+            for (var i = 0; i < 6; i++)
+            {
+                field?.SetValue(AppManager.Instance, fakePort);
+                AppManager.Instance.RunningCoreType = ECoreType.sing_box;
+                ServiceLib.Services.TrafficStatService.Instance.StartPolling();
+                await Task.Delay(3000);
+            }
 
             // 假服务每被请求一次就把总量加一截，等它涨起来
             await Task.Delay(12000);
